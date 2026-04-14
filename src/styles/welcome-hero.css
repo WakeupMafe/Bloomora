@@ -1,0 +1,355 @@
+/* Bloomora welcome — grid + clamp + @container (sin @media) */
+
+.welcome-page {
+  --welcome-heading: #6d5d7e;
+  --welcome-sub: #9b8daa;
+  --welcome-bg-top: #fff5f8;
+  --welcome-bg-mid: #faf5ff;
+  --welcome-bg-bottom: #f8f4ff;
+  --welcome-sparkle: rgba(255, 255, 255, 0.88);
+
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  /* Una sola pantalla: no dejar que el contenido empuje más allá del viewport */
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  row-gap: clamp(0.35rem, 1.5dvh, 1rem);
+  padding-inline: var(--bloomora-page-padding-inline);
+  padding-top: var(--bloomora-page-padding-block-top);
+  padding-bottom: var(--bloomora-page-padding-block-bottom);
+  overflow: clip;
+}
+
+.welcome-bg {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+
+.welcome-bg-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    var(--welcome-bg-top) 0%,
+    var(--welcome-bg-mid) 48%,
+    var(--welcome-bg-bottom) 100%
+  );
+}
+
+.welcome-bg-bloom {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(52px);
+  opacity: 0.5;
+}
+
+.welcome-bg-bloom--pink {
+  width: clamp(11rem, 38vw, 26rem);
+  height: clamp(11rem, 38vw, 26rem);
+  top: -6%;
+  right: -12%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 160, 180, 0.42) 0%,
+    transparent 70%
+  );
+}
+
+.welcome-bg-bloom--lavender {
+  width: clamp(13rem, 42vw, 30rem);
+  height: clamp(13rem, 42vw, 30rem);
+  bottom: -10%;
+  left: -14%;
+  background: radial-gradient(
+    circle,
+    rgba(210, 190, 250, 0.38) 0%,
+    transparent 72%
+  );
+}
+
+.welcome-bg-waves {
+  position: absolute;
+  inset: 0;
+  opacity: 0.11;
+  color: rgba(109, 93, 126, 0.45);
+}
+
+.welcome-bg-waves svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.welcome-sparkles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.welcome-sparkles span {
+  position: absolute;
+  width: clamp(3px, 0.45vw, 5px);
+  height: clamp(3px, 0.45vw, 5px);
+  border-radius: 50%;
+  background: var(--welcome-sparkle);
+  box-shadow: 0 0 clamp(5px, 1vw, 12px) rgba(255, 255, 255, 0.95);
+  opacity: 0.6;
+  animation: welcome-twinkle 4.8s ease-in-out infinite;
+}
+
+.welcome-sparkles span:nth-child(1) {
+  top: 11%;
+  left: 16%;
+  animation-delay: 0s;
+}
+.welcome-sparkles span:nth-child(2) {
+  top: 20%;
+  right: 12%;
+  animation-delay: 0.7s;
+}
+.welcome-sparkles span:nth-child(3) {
+  top: 46%;
+  left: 7%;
+  animation-delay: 1.3s;
+}
+.welcome-sparkles span:nth-child(4) {
+  top: 36%;
+  right: 20%;
+  animation-delay: 1.9s;
+}
+.welcome-sparkles span:nth-child(5) {
+  bottom: 30%;
+  left: 26%;
+  animation-delay: 0.25s;
+}
+.welcome-sparkles span:nth-child(6) {
+  bottom: 16%;
+  right: 16%;
+  animation-delay: 1.15s;
+}
+
+@keyframes welcome-twinkle {
+  0%,
+  100% {
+    opacity: 0.32;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.92;
+    transform: scale(1.2);
+  }
+}
+
+.welcome-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(0.5rem, 2vw, 1rem);
+  width: 100%;
+  max-width: min(100%, 75rem);
+  margin-inline: auto;
+}
+
+.welcome-header-brand {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.45rem, 1.8vw, 0.85rem);
+  min-width: 0;
+}
+
+.welcome-register {
+  flex-shrink: 0;
+  border-radius: 9999px;
+  padding: 0.4rem clamp(0.65rem, 2vw, 0.95rem);
+  font-size: clamp(0.7rem, 1.9vw, 0.8125rem);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  color: #e85d8f;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(248, 180, 200, 0.65);
+  box-shadow: 0 1px 3px rgba(232, 93, 143, 0.08);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.15s ease;
+}
+
+.welcome-register:hover {
+  color: #d9467a;
+  background: rgba(255, 245, 249, 0.95);
+  border-color: rgba(244, 184, 208, 0.95);
+}
+
+.welcome-register:active {
+  transform: scale(0.98);
+}
+
+.welcome-beta {
+  font-size: clamp(0.65rem, 1.8vw, 0.75rem);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--welcome-sub);
+}
+
+.welcome-main {
+  display: grid;
+  align-items: stretch;
+  justify-items: stretch;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Bloques del hero: móvil = título → conejito → CTA; PC = columna (título+CTA junto) | conejito */
+.welcome-hero {
+  container-type: inline-size;
+  container-name: welcome-hero;
+  display: grid;
+  grid-template-columns: 1fr;
+  row-gap: clamp(0.4rem, 2dvh + 0.2rem, 1.75rem);
+  align-items: center;
+  align-content: center;
+  justify-items: center;
+  min-height: 0;
+  max-height: 100%;
+  width: 100%;
+  max-width: min(100%, 75rem);
+  margin-inline: auto;
+  overflow: hidden;
+}
+
+/* Móvil: los hijos reales del grid son lead, mascot, cta (el wrapper usa display:contents) */
+.welcome-col-text {
+  display: contents;
+}
+
+.welcome-lead {
+  grid-row: 1;
+  display: grid;
+  row-gap: clamp(0.65rem, 2vw, 1.1rem);
+  width: 100%;
+  max-width: min(100%, 38rem);
+  text-align: center;
+  text-wrap: balance;
+}
+
+.welcome-title {
+  margin: 0;
+  font-size: clamp(1.5rem, 4.5vw + 0.45rem, 2.85rem);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  color: var(--welcome-heading);
+}
+
+.welcome-subtitle {
+  margin: 0;
+  font-size: clamp(0.9rem, 1.6vw + 0.35rem, 1.15rem);
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--welcome-sub);
+  max-width: 36ch;
+  margin-inline: auto;
+}
+
+.welcome-mascot-wrap {
+  grid-row: 2;
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.welcome-mascot {
+  display: block;
+  width: auto;
+  max-width: min(100%, clamp(13rem, 72vw, 26rem));
+  /* Móvil: conejito más grande; sigue acotado por dvh para no romper el layout */
+  max-height: min(46dvh, 320px);
+  height: auto;
+  object-fit: contain;
+  object-position: center;
+  filter: drop-shadow(0 clamp(8px, 2dvh, 22px) clamp(16px, 3.5dvh, 42px)
+    rgba(124, 107, 181, 0.24));
+}
+
+.welcome-cta {
+  grid-row: 3;
+  display: grid;
+  row-gap: clamp(0.35rem, 1.2dvh, 0.85rem);
+  width: 100%;
+  max-width: min(100%, clamp(11.5rem, 88vw, 24rem));
+  margin-top: 0;
+}
+
+.welcome-cta-note {
+  margin: 0;
+  font-size: clamp(0.62rem, 1.5vw, 0.74rem);
+  line-height: 1.45;
+  color: var(--welcome-sub);
+  text-align: center;
+  opacity: 0.9;
+}
+
+/* PC: una sola fila — texto+CTA en flex (sin hueco por altura del conejo) | mascota */
+@container welcome-hero (min-width: 40rem) {
+  .welcome-hero {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    column-gap: clamp(1.25rem, 3.5vw, 2.75rem);
+    row-gap: 0;
+    align-items: center;
+    justify-items: start;
+  }
+
+  .welcome-col-text {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: clamp(0.28rem, 0.9vw, 0.5rem);
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    max-width: min(100%, 38rem);
+    justify-self: start;
+    align-self: center;
+  }
+
+  .welcome-lead {
+    grid-row: auto;
+    text-align: start;
+    margin-inline: 0;
+  }
+
+  .welcome-subtitle {
+    margin-inline: 0;
+  }
+
+  .welcome-cta {
+    grid-row: auto;
+    justify-self: stretch;
+    margin-top: 0;
+    max-width: min(100%, clamp(12rem, 28vw, 20rem));
+  }
+
+  .welcome-mascot-wrap {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    align-self: center;
+  }
+
+  .welcome-mascot {
+    max-width: min(100%, clamp(17rem, 44vw, 38rem));
+    max-height: min(62dvh, 560px);
+  }
+}

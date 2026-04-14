@@ -1,0 +1,187 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Bloomora — pastel premium palette (CSS variables for runtime theming) */
+  --color-bloomora-snow: #faf8ff;
+  --color-bloomora-mist: #f3f0fb;
+  --color-bloomora-lavender-50: #ece8f7;
+  --color-bloomora-lavender-100: #ddd6f5;
+  --color-bloomora-lilac: #b8a8e8;
+  --color-bloomora-violet: #7c6bb5;
+  --color-bloomora-deep: #5b4a8c;
+  --color-bloomora-rose: #f4b8d0;
+  --color-bloomora-rose-deep: #e89bb8;
+  --color-bloomora-blush: #fdeef4;
+  --color-bloomora-sky: #c9e4f5;
+  --color-bloomora-sky-deep: #9bcfe9;
+  --color-bloomora-text: #4a3f6b;
+  --color-bloomora-text-muted: #8b7fb0;
+  --color-bloomora-white: #ffffff;
+  --color-bloomora-line: rgba(91, 74, 140, 0.12);
+
+  /* Redondeada / amable, cercana a Biski (Canva); Biski no tiene licencia web pública */
+  --font-sans: 'Quicksand', system-ui, sans-serif;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.75rem;
+  --radius-pill: 9999px;
+
+  --shadow-bloomora-soft: 0 18px 50px -24px rgba(91, 74, 140, 0.35);
+  --shadow-bloomora-card: 0 12px 40px -20px rgba(124, 107, 181, 0.28);
+  --shadow-bloomora-inner: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+
+  --spacing-safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@layer base {
+  :root {
+    /* Mismo criterio que la pantalla de bienvenida — reutilizar en toda la app */
+    --bloomora-page-padding-inline: clamp(1rem, 1.35rem + 5.5vw, 5.75rem);
+    --bloomora-page-padding-block-top: max(
+      calc(clamp(0.75rem, 0.65rem + 1.25dvh, 2.15rem) + 8px),
+      env(safe-area-inset-top, 0px)
+    );
+    --bloomora-page-padding-block-bottom: max(
+      0.75rem,
+      env(safe-area-inset-bottom, 0px)
+    );
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
+  }
+
+  body {
+    @apply min-h-dvh bg-bloomora-snow font-sans text-bloomora-text antialiased;
+    overflow-x: hidden;
+  }
+
+  #root {
+    @apply min-h-dvh;
+  }
+}
+
+@layer components {
+  .app-shell-padding {
+    box-sizing: border-box;
+    padding-inline: var(--bloomora-page-padding-inline);
+    padding-top: var(--bloomora-page-padding-block-top);
+    padding-bottom: var(--bloomora-page-padding-block-bottom);
+  }
+
+  /* Dashboard: la barra fija lleva el espacio inferior; solo safe area aquí */
+  .app-shell-padding--dashboard {
+    box-sizing: border-box;
+    padding-inline: var(--bloomora-page-padding-inline);
+    padding-top: var(--bloomora-page-padding-block-top);
+    padding-bottom: max(
+      0.75rem,
+      var(--bloomora-page-padding-block-bottom)
+    );
+  }
+
+  /* Vista de metas en desktop: menos padding lateral para aprovechar más ancho */
+  @media (min-width: 1024px) {
+    .app-shell-padding--goals-wide {
+      padding-inline: clamp(1rem, 0.9rem + 2.2vw, 3.1rem);
+    }
+  }
+
+  /* Contenedor principal fluido para formularios/paginas single-card */
+  .app-content-fluid {
+    width: min(100%, clamp(80vw, 86vw, 92vw));
+    margin-inline: auto;
+  }
+
+  @media (min-width: 1024px) {
+    .app-content-fluid {
+      width: min(100%, clamp(60vw, 68vw, 96rem));
+    }
+  }
+
+  .app-fluid-title {
+    font-size: clamp(1.35rem, 1.05rem + 1.05vw, 2rem);
+    line-height: 1.15;
+    letter-spacing: 0.01em;
+  }
+
+  .app-principal-card {
+    border-radius: clamp(1rem, 0.8rem + 0.6vw, 1.65rem);
+    padding: clamp(1rem, 0.8rem + 0.9vw, 2rem);
+    gap: clamp(0.85rem, 0.6rem + 0.5vw, 1.35rem);
+  }
+
+  /* Lista de agenda: scroll vertical suave, estética Bloomora */
+  .agenda-task-scroll {
+    scrollbar-gutter: stable;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-inline-end: 10px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(124, 107, 181, 0.45) rgba(236, 232, 247, 0.65);
+  }
+
+  .agenda-task-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .agenda-task-scroll::-webkit-scrollbar-track {
+    background: rgba(236, 232, 247, 0.6);
+    border-radius: 9999px;
+  }
+
+  .agenda-task-scroll::-webkit-scrollbar-thumb {
+    background: rgba(124, 107, 181, 0.4);
+    border-radius: 9999px;
+  }
+
+  .agenda-task-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(124, 107, 181, 0.55);
+  }
+
+  @keyframes bloomora-tracker-month-in {
+    from {
+      opacity: 0;
+      transform: translateX(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .bloomora-tracker-month-animate {
+    animation: bloomora-tracker-month-in 0.32s ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bloomora-tracker-month-animate {
+      animation: none;
+    }
+  }
+
+  @keyframes bloomora-toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(14px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .bloomora-toast-enter {
+    animation: bloomora-toast-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bloomora-toast-enter {
+      animation: none;
+      opacity: 1;
+    }
+  }
+}
