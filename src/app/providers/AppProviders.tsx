@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { type ReactNode, useState } from 'react'
 import { BloomoraToastProvider } from '@/contexts/BloomoraToastContext'
 import { UserPhoneProvider } from '@/contexts/UserPhoneContext'
+import { BloomoraThemeSync } from '@/theme/BloomoraThemeSync'
 
 type AppProvidersProps = {
   children: ReactNode
@@ -24,7 +25,10 @@ export function AppProviders({ children }: AppProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
       <BloomoraToastProvider>
-        <UserPhoneProvider>{children}</UserPhoneProvider>
+        <UserPhoneProvider>
+          <BloomoraThemeSync />
+          {children}
+        </UserPhoneProvider>
       </BloomoraToastProvider>
     </QueryClientProvider>
   )

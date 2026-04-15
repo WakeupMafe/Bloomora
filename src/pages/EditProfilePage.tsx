@@ -14,6 +14,7 @@ import {
   useUpdateProfileMutation,
 } from '@/hooks/useBloomoraProfile'
 import { isValidCedula, normalizeCedula } from '@/lib/cedula'
+import { resolveAppThemeId, type AppThemeId } from '@/theme/bloomoraAppThemes'
 import { cn } from '@/utils/cn'
 
 const THEME_SWATCHES = [
@@ -24,8 +25,6 @@ const THEME_SWATCHES = [
   { id: 'sky', className: 'bg-[#7dd3fc] ring-[#bae6fd]' },
   { id: 'mint', className: 'bg-[#86efac] ring-[#bbf7d0]' },
 ] as const
-
-type ThemeId = (typeof THEME_SWATCHES)[number]['id']
 
 type AvatarOptionId = 'bunny' | 'conejoBoy' | 'conejoLofi' | 'conejitaGirl'
 
@@ -66,12 +65,6 @@ function TrashIcon({ className }: { className?: string }) {
   )
 }
 
-function themeIdFromProfile(db: string | undefined | null): ThemeId {
-  if (!db) return 'pink'
-  const hit = THEME_SWATCHES.find((t) => t.id === db)
-  return hit ? hit.id : 'pink'
-}
-
 function avatarIdFromProfile(preset: string | null | undefined): AvatarOptionId {
   if (preset && IMAGE_AVATAR_IDS.includes(preset as AvatarOptionId))
     return preset as AvatarOptionId
@@ -91,7 +84,7 @@ export function EditProfilePage() {
   const [name, setName] = useState('')
   const [cedula, setCedula] = useState('')
   const [email, setEmail] = useState('')
-  const [themeId, setThemeId] = useState<ThemeId>('pink')
+  const [themeId, setThemeId] = useState<AppThemeId>('pink')
   const [avatarId, setAvatarId] = useState<AvatarOptionId>('bunny')
   const [saveError, setSaveError] = useState<string | null>(null)
 
@@ -100,7 +93,7 @@ export function EditProfilePage() {
     setName(profile.full_name?.trim() || 'Usuario')
     setCedula(profile.cedula ?? '')
     setEmail(profile.email ?? '')
-    setThemeId(themeIdFromProfile(profile.preferred_theme))
+    setThemeId(resolveAppThemeId(profile.preferred_theme))
     setAvatarId(avatarIdFromProfile(profile.avatar_preset))
   }, [profile])
 
