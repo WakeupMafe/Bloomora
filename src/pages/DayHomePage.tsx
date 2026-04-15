@@ -18,7 +18,7 @@ export function DayHomePage() {
       <main className="app-shell-padding--dashboard mx-auto w-full max-w-[1200px]">
         <DashboardAppHeader />
 
-        <div className="mt-6 grid min-w-0 grid-cols-1 gap-6 sm:mt-8 lg:mt-10 lg:grid-cols-2 lg:gap-8">
+        <div className="mt-6 grid min-w-0 grid-cols-1 gap-6 sm:mt-8 lg:mt-10 lg:grid-cols-2 lg:items-start lg:gap-8">
           <AgendaCard className="min-h-0 min-w-0 w-full" />
           <GoalProgressCard className="min-h-0 min-w-0 w-full max-w-full" />
         </div>

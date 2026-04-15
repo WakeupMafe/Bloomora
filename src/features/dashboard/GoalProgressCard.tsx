@@ -229,7 +229,7 @@ export function GoalProgressCard({ className }: GoalProgressCardProps) {
         </div>
       </header>
 
-      <div className="mt-5 grid min-h-0 min-w-0 w-full max-w-full flex-1 grid-cols-1 gap-8 lg:grid-cols-[minmax(11rem,17.5rem)_minmax(0,1fr)] lg:items-start lg:gap-8 xl:grid-cols-[minmax(13rem,21.25rem)_minmax(0,1fr)] xl:gap-10">
+      <div className="mt-5 grid min-w-0 w-full max-w-full grid-cols-1 gap-8 lg:grid-cols-[minmax(11rem,17.5rem)_minmax(0,1fr)] lg:items-start lg:gap-8 xl:grid-cols-[minmax(13rem,21.25rem)_minmax(0,1fr)] xl:gap-10">
         <div className="flex w-full min-w-0 max-w-full flex-col items-center overflow-x-clip text-center lg:max-w-full lg:justify-self-center">
           {isLoading ? (
             <p className="py-6 text-sm text-bloomora-text-muted">

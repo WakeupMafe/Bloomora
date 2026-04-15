@@ -176,7 +176,7 @@ export function EditProfilePage() {
             <p className="mt-8 text-center text-sm text-bloomora-text-muted">
               Cargando perfil…
             </p>
-          ) : (
+          ) : profile ? (
             <form
               onSubmit={handleSave}
               className="mt-6 flex flex-col gap-8 sm:mt-8"
@@ -377,7 +377,95 @@ export function EditProfilePage() {
                   </div>
                 </fieldset>
               </section>
+
+              <section
+                className="border-t border-bloomora-line/20 pt-8"
+                aria-labelledby="profile-agenda-notify-heading"
+              >
+                <h2
+                  id="profile-agenda-notify-heading"
+                  className="text-base font-bold text-bloomora-deep sm:text-lg"
+                >
+                  Avisos de agenda
+                </h2>
+                <p className="mt-2 max-w-prose text-sm leading-relaxed text-bloomora-text-muted">
+                  Cuando termine un bloque del día de hoy, Bloomora puede vibrar, reproducir un sonido breve,
+                  mostrarte un mensaje y, si el navegador lo permite, enviar una notificación.
+                </p>
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white/75 px-4 py-3.5 ring-1 ring-bloomora-line/35">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-bloomora-deep">
+                      Avisos al terminar un bloque
+                    </p>
+                    <p className="mt-0.5 text-xs text-bloomora-text-muted">
+                      Puedes cambiarlo cuando quieras.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={profile.notify_agenda_block_end !== false}
+                    disabled={updateMut.isPending}
+                    onClick={() => {
+                      const wasOn = profile.notify_agenda_block_end !== false
+                      updateMut.mutate(
+                        { notify_agenda_block_end: !wasOn },
+                        {
+                          onSuccess: () =>
+                            showToast(
+                              wasOn
+                                ? 'Avisos de bloque desactivados'
+                                : 'Avisos de bloque activados',
+                            ),
+                          onError: (err) =>
+                            showToast(
+                              err instanceof Error
+                                ? err.message
+                                : 'No se pudo guardar la preferencia.',
+                            ),
+                        },
+                      )
+                    }}
+                    className={cn(
+                      'relative h-8 w-[3.25rem] shrink-0 rounded-full transition focus:outline-none focus-visible:ring-2 focus-visible:ring-bloomora-lilac/50 disabled:opacity-50',
+                      profile.notify_agenda_block_end !== false
+                        ? 'bg-bloomora-violet shadow-inner'
+                        : 'bg-bloomora-line/50',
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'absolute top-1 flex h-6 w-6 rounded-full bg-white shadow-sm transition-transform',
+                        profile.notify_agenda_block_end !== false
+                          ? 'left-1 translate-x-[1.35rem]'
+                          : 'left-1 translate-x-0',
+                      )}
+                      aria-hidden
+                    />
+                    <span className="sr-only">
+                      {profile.notify_agenda_block_end !== false
+                        ? 'Desactivar avisos al terminar bloques'
+                        : 'Activar avisos al terminar bloques'}
+                    </span>
+                  </button>
+                </div>
+                {profile.notify_agenda_block_end !== false &&
+                typeof Notification !== 'undefined' &&
+                Notification.permission === 'default' ? (
+                  <button
+                    type="button"
+                    className="mt-3 text-left text-xs font-semibold text-bloomora-violet underline-offset-2 hover:underline"
+                    onClick={() => void Notification.requestPermission()}
+                  >
+                    Permitir notificaciones del navegador en este dispositivo
+                  </button>
+                ) : null}
+              </section>
             </form>
+          ) : (
+            <p className="mt-8 text-center text-sm text-bloomora-text-muted">
+              No pudimos cargar tu perfil. Vuelve a entrar desde Comenzar.
+            </p>
           )}
 
           <div className="mt-10 border-t border-bloomora-line/15 pt-6">

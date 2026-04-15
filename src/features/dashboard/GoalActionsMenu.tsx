@@ -64,7 +64,8 @@ export function GoalActionsMenu({
         {isNarrow ? (
           <button
             type="button"
-            className="fixed inset-0 border-0 bg-bloomora-deep/15 p-0"
+            data-backdrop
+            className="fixed inset-0 border-0 bg-bloomora-deep/15 p-0 transition-[background-color] duration-200 ease-out hover:bg-bloomora-deep/22 active:bg-bloomora-deep/28"
             style={{ zIndex: Z_BACKDROP_MOBILE }}
             aria-label="Cerrar menú"
             onClick={close}

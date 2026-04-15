@@ -55,7 +55,8 @@ export function BloomoraConfirmDialog({
     <>
       <button
         type="button"
-        className="fixed inset-0 border-0 bg-bloomora-deep/20 p-0 backdrop-blur-[2px]"
+        data-backdrop
+        className="fixed inset-0 border-0 bg-bloomora-deep/20 p-0 backdrop-blur-[2px] transition-[background-color] duration-200 ease-out hover:bg-bloomora-deep/26 active:bg-bloomora-deep/30"
         style={{ zIndex: Z_BACKDROP }}
         aria-label="Cerrar"
         onClick={onCancel}
@@ -117,7 +118,7 @@ export function BloomoraConfirmDialog({
             className={cn(
               'sm:min-w-[6.5rem]',
               tone === 'danger' &&
-                'bg-gradient-to-r from-red-500 to-rose-500 shadow-[0_12px_32px_-8px_rgba(244,63,94,0.45)] hover:brightness-[1.05]',
+                'bg-gradient-to-r from-red-500 to-rose-500 shadow-[0_12px_32px_-8px_rgba(244,63,94,0.45)] hover:brightness-[1.08] hover:saturate-110 hover:shadow-[0_14px_36px_-8px_rgba(244,63,94,0.5)]',
             )}
           >
             {isPending ? '…' : confirmLabel}

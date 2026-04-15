@@ -35,6 +35,7 @@ export function useUpdateProfileMutation(phone: string | null) {
           | 'avatar_preset'
           | 'preferred_theme'
           | 'mascot_name'
+          | 'notify_agenda_block_end'
         >
       >,
     ) => {

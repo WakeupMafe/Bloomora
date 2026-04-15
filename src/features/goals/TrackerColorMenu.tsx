@@ -135,7 +135,8 @@ export function TrackerColorMenu({
         {isNarrow ? (
           <button
             type="button"
-            className="fixed inset-0 border-0 bg-bloomora-deep/20 p-0 backdrop-blur-[2px]"
+            data-backdrop
+            className="fixed inset-0 border-0 bg-bloomora-deep/20 p-0 backdrop-blur-[2px] transition-[background-color] duration-200 ease-out hover:bg-bloomora-deep/26 active:bg-bloomora-deep/30"
             style={{ zIndex: Z_BACKDROP }}
             aria-label="Cerrar selector de color"
             onClick={close}

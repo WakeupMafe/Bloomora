@@ -1,4 +1,5 @@
-import { type FormEvent, useCallback, useMemo, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { defaultNewBlockDurationMin } from '@/data/dashboardMock'
 import { DashboardCard } from '@/components/dashboard/DashboardCard'
 import { AgendaTaskRow } from '@/features/dashboard/AgendaTaskRow'
@@ -12,7 +13,9 @@ import {
   useAgendaMutations,
   useBloomoraAgenda,
 } from '@/hooks/useBloomoraAgenda'
+import { useAgendaBlockEndAlerts } from '@/hooks/useAgendaBlockEndAlerts'
 import { useBloomoraGoals } from '@/hooks/useBloomoraGoals'
+import { useBloomoraProfile } from '@/hooks/useBloomoraProfile'
 import { useGoalTaskTemplates } from '@/hooks/useGoalTaskTemplates'
 import {
   addLocalDays,
@@ -53,10 +56,34 @@ type AgendaCardProps = {
 
 export function AgendaCard({ className }: AgendaCardProps) {
   const { showToast } = useBloomoraToast()
-  const { cedula } = useUserPhone()
+  const { cedula, phone } = useUserPhone()
+  const { data: profile } = useBloomoraProfile(phone)
+  const agendaBlockNotifyOn =
+    profile == null || profile.notify_agenda_block_end !== false
   const [cursorDate, setCursorDate] = useState(() => startOfLocalDay(new Date()))
   const dayKey = useMemo(() => toDateKeyLocal(cursorDate), [cursorDate])
   const headerLabel = useMemo(() => titleCaseAgendaDate(cursorDate), [cursorDate])
+  const isViewingToday = useMemo(() => {
+    const today = startOfLocalDay(new Date())
+    return toDateKeyLocal(cursorDate) === toDateKeyLocal(today)
+  }, [cursorDate])
+
+  const [deviceNow, setDeviceNow] = useState(() => new Date())
+  useEffect(() => {
+    if (!isViewingToday) return
+    const id = window.setInterval(() => setDeviceNow(new Date()), 1000)
+    return () => window.clearInterval(id)
+  }, [isViewingToday])
+
+  const deviceTimeLabel = useMemo(
+    () =>
+      deviceNow.toLocaleTimeString('es', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      }),
+    [deviceNow],
+  )
 
   const { data: tasks = [], isLoading, isError } = useBloomoraAgenda(
     cedula,
@@ -72,6 +99,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
     addSubtask,
     toggleSubtask,
     removeSubtask,
+    renameSubtask,
   } = useAgendaMutations(cedula, dayKey)
 
   const [showCreateForm, setShowCreateForm] = useState(false)
@@ -94,6 +122,18 @@ export function AgendaCard({ className }: AgendaCardProps) {
   const sortedTasks = useMemo(
     () => [...tasks].sort((a, b) => a.startMin - b.startMin),
     [tasks],
+  )
+
+  const { blockEndPrompt, dismissBlockEndPrompt } = useAgendaBlockEndAlerts(
+    dayKey,
+    sortedTasks,
+    {
+      enabled:
+        agendaBlockNotifyOn &&
+        !isLoading &&
+        !isError &&
+        sortedTasks.length > 0,
+    },
   )
   const orderedGoalOptions = useMemo(() => {
     if (!goals.length) return goals
@@ -267,6 +307,38 @@ export function AgendaCard({ className }: AgendaCardProps) {
       )}
     >
       <BloomoraConfirmDialog
+        open={blockEndPrompt != null}
+        title="Bloque terminado ✨"
+        description={
+          blockEndPrompt
+            ? `«${blockEndPrompt.title}» llegó a su hora de fin (${formatMinutes12h(blockEndPrompt.endMin)}). ¿Quieres marcar la tarea como completada?`
+            : undefined
+        }
+        cancelLabel="No, gracias"
+        confirmLabel="Sí, completar"
+        tone="default"
+        isPending={toggle.isPending}
+        onCancel={dismissBlockEndPrompt}
+        onConfirm={() => {
+          if (!blockEndPrompt) return
+          const id = blockEndPrompt.taskId
+          toggle.mutate(
+            { id, completed: true },
+            {
+              onSuccess: () => {
+                showToast('¡Tarea marcada como hecha!')
+                dismissBlockEndPrompt()
+              },
+              onError: (err) => {
+                showToast(
+                  err instanceof Error ? err.message : 'No se pudo actualizar la tarea.',
+                )
+              },
+            },
+          )
+        }}
+      />
+      <BloomoraConfirmDialog
         open={deleteIntent != null}
         title="¿Eliminar esta tarea?"
         description={
@@ -284,7 +356,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
           runDeleteTask(deleteIntent.id)
         }}
       />
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3 sm:mb-5">
+      <div className="mb-4 flex shrink-0 flex-wrap items-end justify-between gap-3 sm:mb-5">
         <div className="min-w-0">
           <h2 className="text-lg font-bold tracking-tight text-bloomora-deep sm:text-xl">
             Tareas del día
@@ -302,7 +374,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
         </button>
       </div>
 
-      <div className="mb-5 flex shrink-0 justify-center sm:mb-6">
+      <div className="mb-5 flex shrink-0 justify-center sm:mb-6 lg:mb-4">
         <div className="inline-flex max-w-full items-center gap-1 rounded-full bg-bloomora-white/90 px-3 py-2.5 text-xs font-semibold text-bloomora-deep shadow-[0_4px_16px_rgba(124,107,181,0.08)] ring-1 ring-bloomora-line/50 sm:gap-2 sm:px-4 sm:text-sm">
           <button
             type="button"
@@ -326,8 +398,39 @@ export function AgendaCard({ className }: AgendaCardProps) {
         </div>
       </div>
 
+      {isViewingToday ? (
+        <div className="mb-4 shrink-0 space-y-2 text-center sm:mb-5 lg:mb-3">
+          <p className="text-[0.7rem] font-semibold tabular-nums tracking-wide text-bloomora-deep sm:text-sm">
+            {deviceTimeLabel}
+          </p>
+          {!agendaBlockNotifyOn && profile != null ? (
+            <p className="text-[0.65rem] text-bloomora-text-muted sm:text-xs">
+              Avisos de fin de bloque desactivados en{' '}
+              <Link
+                to="/app/profile"
+                className="font-semibold text-bloomora-violet underline-offset-2 hover:underline"
+              >
+                tu perfil
+              </Link>
+              .
+            </p>
+          ) : null}
+          {agendaBlockNotifyOn &&
+          typeof Notification !== 'undefined' &&
+          Notification.permission === 'default' ? (
+            <button
+              type="button"
+              className="text-[0.65rem] font-semibold text-bloomora-violet underline-offset-2 hover:underline sm:text-xs"
+              onClick={() => void Notification.requestPermission()}
+            >
+              Activar notificaciones del navegador para avisos al terminar un bloque
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
       {isError ? (
-        <div className="space-y-1 text-center text-sm text-red-600">
+        <div className="shrink-0 space-y-1 text-center text-sm text-red-600">
           <p>No se pudieron cargar las tareas.</p>
           <p className="text-xs font-normal text-bloomora-text-muted">
             Comprueba en Supabase{' '}
@@ -355,7 +458,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
         </div>
       ) : null}
 
-      <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-col">
         {isLoading ? (
           <p className="py-8 text-center text-sm text-bloomora-text-muted">
             Cargando…
@@ -376,9 +479,8 @@ export function AgendaCard({ className }: AgendaCardProps) {
         {!isLoading && sortedTasks.length > 0 ? (
           <div
             className={cn(
-              'agenda-task-scroll min-h-0 flex-1 rounded-xl ring-1 ring-bloomora-line/25',
-              'max-h-[min(40dvh,18rem)] sm:max-h-[min(36dvh,20rem)]',
-              'lg:max-h-none lg:overflow-visible lg:pr-1',
+              'agenda-task-scroll shrink-0 rounded-xl pr-1 ring-1 ring-bloomora-line/25',
+              'h-[min(12.5rem,34dvh)] sm:h-[min(13.5rem,32dvh)] lg:h-[13.5rem] xl:h-[14.5rem]',
             )}
           >
             <ul className="divide-y divide-bloomora-line/30">
@@ -420,6 +522,11 @@ export function AgendaCard({ className }: AgendaCardProps) {
                         ? (removeSubtask.variables?.subtaskId ?? null)
                         : null
                     }
+                    isRenamingSubtaskId={
+                      renameSubtask.isPending
+                        ? (renameSubtask.variables?.subtaskId ?? null)
+                        : null
+                    }
                     onAdd={(title) =>
                       addSubtask.mutate(
                         { taskId: task.id, title },
@@ -451,6 +558,19 @@ export function AgendaCard({ className }: AgendaCardProps) {
                         },
                       )
                     }
+                    onRename={async (subtaskId, title) => {
+                      try {
+                        await renameSubtask.mutateAsync({ subtaskId, title })
+                        showToast('Paso actualizado')
+                      } catch (err) {
+                        showToast(
+                          err instanceof Error
+                            ? err.message
+                            : 'No se pudo guardar el paso.',
+                        )
+                        throw err
+                      }
+                    }}
                   />
                 </li>
               ))}

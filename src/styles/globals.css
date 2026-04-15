@@ -49,6 +49,13 @@
     );
   }
 
+  /* Móvil / tablet: menos padding lateral para que el contenido use ~≥90% del ancho útil */
+  @media (max-width: 1023px) {
+    :root {
+      --bloomora-page-padding-inline: clamp(0.65rem, 2.8vw, 1rem);
+    }
+  }
+
   html {
     -webkit-tap-highlight-color: transparent;
     overflow-x: hidden;
@@ -90,9 +97,9 @@
     }
   }
 
-  /* Contenedor principal fluido para formularios/paginas single-card */
+  /* Contenedor principal fluido: móvil ≥90% del viewport; desktop sigue acotado elegante */
   .app-content-fluid {
-    width: min(100%, clamp(80vw, 86vw, 92vw));
+    width: min(100%, clamp(90vw, 96vw, 100%));
     margin-inline: auto;
   }
 
@@ -118,7 +125,8 @@
   .agenda-task-scroll {
     scrollbar-gutter: stable;
     overflow-x: hidden;
-    overflow-y: auto;
+    /* Siempre reserva la barra vertical en la lista de tareas (sin depender del overflow del documento). */
+    overflow-y: scroll;
     padding-inline-end: 10px;
     scrollbar-width: thin;
     scrollbar-color: rgba(124, 107, 181, 0.45) rgba(236, 232, 247, 0.65);
@@ -182,6 +190,32 @@
     .bloomora-toast-enter {
       animation: none;
       opacity: 1;
+    }
+  }
+
+  /*
+   * Botones nativos (<button>): transición ease-out en colores/sombras y ligero
+   * feedback al pulsar. :where() mantiene baja especificidad para no pisar utilidades
+   * Tailwind (p. ej. active:scale-*). Los overlays llevan data-backdrop.
+   */
+  :where(button:not(:disabled):not([data-backdrop])) {
+    transition-property: color, background-color, border-color, box-shadow, transform,
+      filter, opacity;
+    transition-duration: 220ms;
+    transition-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+  }
+
+  :where(button:not(:disabled):not([data-backdrop])):active {
+    transform: scale(0.972);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :where(button:not(:disabled):not([data-backdrop])) {
+      transition-duration: 0.01ms;
+    }
+
+    :where(button:not(:disabled):not([data-backdrop])):active {
+      transform: none;
     }
   }
 }

@@ -19,6 +19,8 @@ export type ProfileRow = {
   onboarding_completed: boolean
   preferred_theme: string
   mascot_name: string | null
+  /** Avisos al terminar un bloque de la agenda; ausente/null se trata como activado (compat.). */
+  notify_agenda_block_end?: boolean | null
   created_at: string
   updated_at: string
 }
@@ -147,6 +149,7 @@ export async function updateProfile(
       | 'avatar_preset'
       | 'preferred_theme'
       | 'mascot_name'
+      | 'notify_agenda_block_end'
     >
   >,
 ): Promise<void> {

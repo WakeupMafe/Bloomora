@@ -1,4 +1,5 @@
-import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { BloomoraLogo } from '@/components/brand/BloomoraLogo'
 import { BackButton } from '@/components/navigation/BackButton'
 import { Button } from '@/components/ui/Button'
@@ -18,18 +19,38 @@ export function ListsPage() {
   const addListMut = useAddListMutation(cedula)
   const updateTitleMut = useUpdateListTitleMutation(cedula)
   const deleteListMut = useDeleteListMutation(cedula)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const listParam = searchParams.get('list')
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [newListTitle, setNewListTitle] = useState('')
   const [listTitleEdit, setListTitleEdit] = useState('')
   const [newItem, setNewItem] = useState('')
 
+  const selectList = useCallback(
+    (id: string) => {
+      setSelectedId(id)
+      setSearchParams({ list: id }, { replace: true })
+    },
+    [setSearchParams],
+  )
+
   useEffect(() => {
-    if (!selectedId && lists.length > 0) setSelectedId(lists[0].id)
-    if (selectedId && !lists.some((l) => l.id === selectedId)) {
-      setSelectedId(lists[0]?.id ?? null)
+    if (lists.length === 0) {
+      setSelectedId(null)
+      if (listParam) setSearchParams({}, { replace: true })
+      return
     }
-  }, [lists, selectedId])
+    if (listParam && lists.some((l) => l.id === listParam)) {
+      setSelectedId(listParam)
+      return
+    }
+    if (listParam) {
+      setSearchParams({}, { replace: true })
+    }
+    if (selectedId && lists.some((l) => l.id === selectedId)) return
+    setSelectedId(lists[0]!.id)
+  }, [lists, listParam, selectedId, setSearchParams])
 
   const selected = useMemo(
     () => lists.find((l) => l.id === selectedId) ?? null,
@@ -103,7 +124,7 @@ export function ListsPage() {
                 <li key={l.id} className="shrink-0 snap-start lg:w-full lg:shrink">
                   <button
                     type="button"
-                    onClick={() => setSelectedId(l.id)}
+                    onClick={() => selectList(l.id)}
                     className={cn(
                       'flex max-w-[min(85vw,16rem)] items-center gap-2 rounded-2xl px-3 py-3 text-left text-sm font-semibold transition touch-manipulation',
                       'min-h-[2.75rem] whitespace-nowrap lg:max-w-none lg:w-full lg:whitespace-normal',
@@ -112,12 +133,6 @@ export function ListsPage() {
                         : 'bg-white/70 text-bloomora-deep ring-1 ring-bloomora-line/35 hover:bg-white hover:ring-bloomora-lilac/25',
                     )}
                   >
-                    <span
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-100/95 to-violet-100/90 text-[0.85rem] shadow-inner ring-1 ring-white/80"
-                      aria-hidden
-                    >
-                      🌷
-                    </span>
                     <span className="min-w-0 truncate lg:whitespace-normal">{l.title}</span>
                   </button>
                 </li>
@@ -182,7 +197,10 @@ export function ListsPage() {
                       if (!window.confirm('¿Eliminar esta lista y sus ítems?'))
                         return
                       deleteListMut.mutate(selected.id, {
-                        onSuccess: () => setSelectedId(null),
+                        onSuccess: () => {
+                          setSelectedId(null)
+                          setSearchParams({}, { replace: true })
+                        },
                       })
                     }}
                   >
@@ -196,7 +214,7 @@ export function ListsPage() {
                   Cosas de la lista
                 </h2>
                 <p className="mt-1 text-xs text-bloomora-text-muted">
-                  Cada cosa lleva su viñeta 🌷 — márcala cuando la hagas.
+                  Márcala cuando la hagas.
                 </p>
                 {itemsLoading ? (
                   <p className="mt-3 text-sm text-bloomora-text-muted">
@@ -292,12 +310,6 @@ function ListItemRow({
           }}
         >
           <div className="flex items-start gap-3">
-            <span
-              className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-100 to-violet-100 text-base shadow-inner ring-1 ring-white/90"
-              aria-hidden
-            >
-              🌷
-            </span>
             <input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
@@ -305,7 +317,7 @@ function ListItemRow({
               autoFocus
             />
           </div>
-          <div className="flex flex-wrap gap-2 pl-12 sm:pl-[3.25rem]">
+          <div className="flex flex-wrap gap-2">
             <Button type="submit" size="sm" className="min-h-10 touch-manipulation">
               Guardar
             </Button>
@@ -325,12 +337,6 @@ function ListItemRow({
         </form>
       ) : (
         <div className="flex gap-3">
-          <span
-            className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-100 to-violet-100 text-base shadow-inner ring-1 ring-white/90"
-            aria-hidden
-          >
-            🌷
-          </span>
           <div className="flex min-w-0 flex-1 items-start gap-3">
             <button
               type="button"

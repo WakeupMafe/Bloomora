@@ -1,4 +1,7 @@
-/** Minutos desde medianoche (0–1439). */
+/** Minutos desde medianoche (0–1439) según reloj local del dispositivo. */
+export function minutesSinceMidnightLocal(d = new Date()): number {
+  return d.getHours() * 60 + d.getMinutes()
+}
 
 export function formatMinutes12h(totalMinutes: number): string {
   const m = ((totalMinutes % 1440) + 1440) % 1440

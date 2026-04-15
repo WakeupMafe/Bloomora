@@ -9,6 +9,7 @@ import {
   listSubtasksForTaskIds,
   markLinkedGoalsDoneForDay,
   setAgendaSubtaskCompleted,
+  updateAgendaSubtaskTitle,
   updateAgendaTask,
   type AgendaSubtaskRow,
   type AgendaTaskRow,
@@ -234,6 +235,19 @@ export function useAgendaMutations(cedula: string | null, dayKey: string) {
     onSuccess: invalidate,
   })
 
+  const renameSubtask = useMutation({
+    mutationFn: async (vars: { subtaskId: string; title: string }) => {
+      if (!cedula) throw new Error('Sin sesión')
+      await updateAgendaSubtaskTitle(
+        requireSupabase(),
+        cedula,
+        Number(vars.subtaskId),
+        vars.title,
+      )
+    },
+    onSuccess: invalidate,
+  })
+
   return {
     toggle,
     addTask,
@@ -242,5 +256,6 @@ export function useAgendaMutations(cedula: string | null, dayKey: string) {
     addSubtask,
     toggleSubtask,
     removeSubtask,
+    renameSubtask,
   }
 }

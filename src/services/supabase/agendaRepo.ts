@@ -377,6 +377,23 @@ export async function deleteAgendaSubtask(
   if (error) throw error
 }
 
+export async function updateAgendaSubtaskTitle(
+  sb: SupabaseClient,
+  userCedula: string,
+  subtaskId: number,
+  title: string,
+) {
+  const trimmed = title.trim()
+  if (!trimmed) throw new Error('El paso no puede estar vacío.')
+
+  const { error } = await sb
+    .from('subtasks')
+    .update({ title: trimmed })
+    .eq('id', subtaskId)
+    .eq('user_cedula', userCedula)
+  if (error) throw error
+}
+
 export async function markLinkedGoalsDoneForDay(
   sb: SupabaseClient,
   params: {
