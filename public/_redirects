@@ -1,0 +1,2 @@
+# SPA (React Router): cualquier ruta sirve index.html para evitar 404 al recargar.
+/*    /index.html   200

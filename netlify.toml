@@ -1,0 +1,9 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Misma regla que public/_redirects: recargas en /app/..., /entrar, etc.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
