@@ -37,7 +37,7 @@ export function ListsCard() {
   }
 
   return (
-    <DashboardCard className="bg-gradient-to-br from-bloomora-white via-bloomora-blush/25 to-bloomora-mist/40 p-5 shadow-[0_8px_28px_rgba(91,74,140,0.07)] ring-1 ring-bloomora-line/25 sm:p-6">
+    <DashboardCard className="bg-gradient-to-br from-bloomora-white via-bloomora-blush/25 to-bloomora-mist/40 p-4 shadow-[0_8px_28px_rgba(91,74,140,0.07)] ring-1 ring-bloomora-line/25 sm:p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -77,13 +77,19 @@ export function ListsCard() {
 
       {!isLoading && count > 0 ? (
         <ul
-          className="mt-5 flex flex-wrap gap-2"
+          className="mt-4 flex flex-wrap gap-2 sm:mt-5"
           aria-label="Vista previa de listas"
         >
           {lists.map((list) => (
             <li key={list.id}>
-              <span className="inline-flex max-w-[min(100%,14rem)] items-center rounded-full bg-white/85 px-3 py-1.5 text-sm font-medium text-bloomora-deep ring-1 ring-bloomora-line/30">
-                <span className="truncate">{list.title}</span>
+              <span className="inline-flex max-w-[min(100%,16rem)] items-center gap-1.5 rounded-full bg-white/90 py-1.5 pl-2 pr-3 text-sm font-medium text-bloomora-deep shadow-sm ring-1 ring-bloomora-line/30 sm:max-w-[14rem]">
+                <span
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-100 to-violet-100 text-[0.75rem]"
+                  aria-hidden
+                >
+                  🌷
+                </span>
+                <span className="min-w-0 truncate">{list.title}</span>
               </span>
             </li>
           ))}

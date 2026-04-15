@@ -74,49 +74,65 @@ export function ListsPage() {
   }
 
   return (
-    <div className="app-shell-padding app-content-fluid mx-auto flex min-h-dvh flex-col gap-6 bg-bloomora-snow pb-16">
-      <header className="flex items-center justify-between gap-4">
+    <div className="app-shell-padding app-content-fluid mx-auto flex min-h-dvh flex-col gap-5 bg-bloomora-snow pb-[max(4rem,env(safe-area-inset-bottom))] sm:gap-6">
+      <header className="flex items-center justify-between gap-3">
         <BloomoraLogo size="sm" />
         <BackButton to="/app" />
       </header>
 
       <h1 className="app-fluid-title font-bold text-bloomora-deep">Tus listas</h1>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,14rem)_1fr]">
-        <aside className="space-y-3 rounded-[18px] bg-white/90 p-4 ring-1 ring-bloomora-line/40">
-          <p className="text-xs font-bold uppercase tracking-wide text-bloomora-text-muted">
-            Listas
+      <div className="flex min-w-0 flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] lg:items-start lg:gap-8">
+        <aside className="min-w-0 space-y-3 rounded-[clamp(1rem,0.85rem+0.8vw,1.35rem)] bg-white/92 p-4 shadow-[0_6px_24px_-10px_rgba(124,107,181,0.12)] ring-1 ring-bloomora-line/40 sm:p-5">
+          <p className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-bloomora-text-muted">
+            Tus listas
           </p>
           {listsLoading ? (
             <p className="text-sm text-bloomora-text-muted">Cargando…</p>
           ) : lists.length === 0 ? (
             <p className="text-sm text-bloomora-text-muted">Sin listas aún.</p>
           ) : (
-            <ul className="space-y-1">
+            <ul
+              className={cn(
+                'flex gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]',
+                'snap-x snap-mandatory',
+                'lg:flex-col lg:gap-2 lg:overflow-visible lg:pb-0 lg:snap-none',
+              )}
+            >
               {lists.map((l) => (
-                <li key={l.id}>
+                <li key={l.id} className="shrink-0 snap-start lg:w-full lg:shrink">
                   <button
                     type="button"
                     onClick={() => setSelectedId(l.id)}
                     className={cn(
-                      'w-full truncate rounded-lg px-2 py-2 text-left text-sm font-semibold transition',
+                      'flex max-w-[min(85vw,16rem)] items-center gap-2 rounded-2xl px-3 py-3 text-left text-sm font-semibold transition touch-manipulation',
+                      'min-h-[2.75rem] whitespace-nowrap lg:max-w-none lg:w-full lg:whitespace-normal',
                       selectedId === l.id
-                        ? 'bg-bloomora-lavender-50 text-bloomora-deep ring-1 ring-bloomora-lilac/35'
-                        : 'text-bloomora-deep hover:bg-white/80',
+                        ? 'bg-gradient-to-r from-bloomora-lavender-50 to-white text-bloomora-deep shadow-sm ring-2 ring-bloomora-lilac/40'
+                        : 'bg-white/70 text-bloomora-deep ring-1 ring-bloomora-line/35 hover:bg-white hover:ring-bloomora-lilac/25',
                     )}
                   >
-                    {l.title}
+                    <span
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-100/95 to-violet-100/90 text-[0.85rem] shadow-inner ring-1 ring-white/80"
+                      aria-hidden
+                    >
+                      🌷
+                    </span>
+                    <span className="min-w-0 truncate lg:whitespace-normal">{l.title}</span>
                   </button>
                 </li>
               ))}
             </ul>
           )}
-          <form onSubmit={handleCreateList} className="space-y-2 border-t border-bloomora-line/20 pt-3">
+          <form
+            onSubmit={handleCreateList}
+            className="space-y-2 border-t border-bloomora-line/20 pt-3"
+          >
             <input
               value={newListTitle}
               onChange={(e) => setNewListTitle(e.target.value)}
               placeholder="Nueva lista…"
-              className="w-full rounded-lg border border-bloomora-line/50 px-2 py-2 text-xs font-semibold"
+              className="w-full rounded-xl border border-bloomora-line/50 bg-white/95 px-3 py-2.5 text-sm font-semibold outline-none ring-bloomora-lilac/20 focus:ring-2"
             />
             <Button
               type="submit"
@@ -129,7 +145,7 @@ export function ListsPage() {
           </form>
         </aside>
 
-        <section className="min-w-0 rounded-[22px] bg-white/90 p-5 ring-1 ring-bloomora-line/40 sm:p-6">
+        <section className="min-w-0 rounded-[clamp(1.1rem,0.95rem+0.9vw,1.5rem)] bg-white/92 p-4 shadow-[0_8px_32px_-12px_rgba(124,107,181,0.14)] ring-1 ring-bloomora-line/40 sm:p-6">
           {!selected ? (
             <p className="text-sm text-bloomora-text-muted">
               Crea o elige una lista.
@@ -138,52 +154,60 @@ export function ListsPage() {
             <>
               <form
                 onSubmit={handleRenameList}
-                className="flex flex-wrap items-end gap-2 border-b border-bloomora-line/15 pb-4"
+                className="flex flex-col gap-3 border-b border-bloomora-line/15 pb-4 sm:flex-row sm:flex-wrap sm:items-end"
               >
-                <label className="min-w-0 flex-1 text-xs font-semibold text-bloomora-text-muted">
+                <label className="min-w-0 flex-1 text-xs font-semibold text-bloomora-text-muted sm:min-w-[12rem]">
                   Nombre de la lista
                   <input
                     value={listTitleEdit}
                     onChange={(e) => setListTitleEdit(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-bloomora-line/50 px-3 py-2 text-base font-bold text-bloomora-deep"
+                    className="mt-1 w-full rounded-xl border border-bloomora-line/50 bg-white/95 px-3 py-2.5 text-[clamp(0.95rem,0.88rem+0.4vw,1.05rem)] font-bold text-bloomora-deep outline-none ring-bloomora-lilac/20 focus:ring-2"
                   />
                 </label>
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={updateTitleMut.isPending}
-                >
-                  Guardar nombre
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="text-red-600"
-                  onClick={() => {
-                    if (!window.confirm('¿Eliminar esta lista y sus ítems?'))
-                      return
-                    deleteListMut.mutate(selected.id, {
-                      onSuccess: () => setSelectedId(null),
-                    })
-                  }}
-                >
-                  Eliminar lista
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="submit"
+                    size="sm"
+                    disabled={updateTitleMut.isPending}
+                    className="min-h-10 touch-manipulation"
+                  >
+                    Guardar nombre
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="min-h-10 text-red-600 touch-manipulation"
+                    onClick={() => {
+                      if (!window.confirm('¿Eliminar esta lista y sus ítems?'))
+                        return
+                      deleteListMut.mutate(selected.id, {
+                        onSuccess: () => setSelectedId(null),
+                      })
+                    }}
+                  >
+                    Eliminar lista
+                  </Button>
+                </div>
               </form>
 
               <div className="mt-5">
-                <h2 className="text-sm font-bold text-bloomora-deep">Ítems</h2>
+                <h2 className="text-sm font-bold text-bloomora-deep">
+                  Cosas de la lista
+                </h2>
+                <p className="mt-1 text-xs text-bloomora-text-muted">
+                  Cada cosa lleva su viñeta 🌷 — márcala cuando la hagas.
+                </p>
                 {itemsLoading ? (
-                  <p className="mt-2 text-sm text-bloomora-text-muted">
+                  <p className="mt-3 text-sm text-bloomora-text-muted">
                     Cargando…
                   </p>
                 ) : items.length === 0 ? (
-                  <p className="mt-2 text-sm text-bloomora-text-muted">
-                    Lista vacía. Añade algo abajo.
+                  <p className="mt-3 rounded-2xl bg-bloomora-lavender-50/50 px-4 py-4 text-center text-sm text-bloomora-text-muted ring-1 ring-bloomora-line/25">
+                    Lista vacía. Escribe abajo y añade tu primer paso.
                   </p>
                 ) : (
-                  <ul className="mt-3 divide-y divide-bloomora-line/25">
+                  <ul className="mt-4 flex flex-col gap-3">
                     {items.map((it) => (
                       <ListItemRow
                         key={it.id}
@@ -204,16 +228,20 @@ export function ListsPage() {
                 )}
               </div>
 
-              <form onSubmit={handleAddItem} className="mt-5 flex gap-2">
+              <form
+                onSubmit={handleAddItem}
+                className="mt-6 flex flex-col gap-3 sm:mt-5 sm:flex-row sm:items-stretch"
+              >
                 <input
                   value={newItem}
                   onChange={(e) => setNewItem(e.target.value)}
-                  placeholder="Nuevo ítem…"
-                  className="min-w-0 flex-1 rounded-xl border border-bloomora-line/50 px-3 py-2 text-sm font-semibold"
+                  placeholder="Algo más para la lista…"
+                  className="min-h-12 min-w-0 flex-1 rounded-2xl border border-bloomora-line/50 bg-white/95 px-4 py-3 text-[clamp(0.9rem,0.85rem+0.35vw,1rem)] font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/25 focus:ring-2 touch-manipulation"
                 />
                 <Button
                   type="submit"
                   size="sm"
+                  className="min-h-12 shrink-0 px-6 sm:self-end"
                   disabled={!newItem.trim() || addItem.isPending}
                 >
                   Añadir
@@ -246,75 +274,107 @@ function ListItemRow({
   }, [item.title])
 
   return (
-    <li className="flex flex-wrap items-center gap-2 py-3">
-      <button
-        type="button"
-        role="checkbox"
-        aria-checked={item.done}
-        onClick={() => onToggle(!item.done)}
-        className={cn(
-          'flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2',
-          item.done
-            ? 'border-bloomora-rose-deep bg-bloomora-rose text-white'
-            : 'border-bloomora-line/50 bg-white',
-        )}
-      >
-        {item.done ? '✓' : null}
-      </button>
+    <li
+      className={cn(
+        'overflow-hidden rounded-2xl border border-bloomora-line/30',
+        'bg-gradient-to-br from-white via-[#fffafc] to-bloomora-lavender-50/35',
+        'p-3 shadow-[0_4px_18px_-6px_rgba(124,107,181,0.12)] ring-1 ring-white/70',
+        'sm:p-4',
+      )}
+    >
       {editing ? (
         <form
-          className="flex min-w-0 flex-1 flex-wrap gap-2"
+          className="flex flex-col gap-3"
           onSubmit={(e) => {
             e.preventDefault()
             onRename(draft)
             setEditing(false)
           }}
         >
-          <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            className="min-w-0 flex-1 rounded-lg border border-bloomora-line/50 px-2 py-1 text-sm"
-          />
-          <Button type="submit" size="sm">
-            OK
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setDraft(item.title)
-              setEditing(false)
-            }}
-          >
-            Cancelar
-          </Button>
+          <div className="flex items-start gap-3">
+            <span
+              className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-100 to-violet-100 text-base shadow-inner ring-1 ring-white/90"
+              aria-hidden
+            >
+              🌷
+            </span>
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              className="min-h-11 min-w-0 flex-1 rounded-xl border border-bloomora-line/50 bg-white/95 px-3 py-2 text-sm font-semibold outline-none ring-bloomora-lilac/25 focus:ring-2"
+              autoFocus
+            />
+          </div>
+          <div className="flex flex-wrap gap-2 pl-12 sm:pl-[3.25rem]">
+            <Button type="submit" size="sm" className="min-h-10 touch-manipulation">
+              Guardar
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="min-h-10 touch-manipulation"
+              onClick={() => {
+                setDraft(item.title)
+                setEditing(false)
+              }}
+            >
+              Cancelar
+            </Button>
+          </div>
         </form>
       ) : (
-        <>
+        <div className="flex gap-3">
           <span
-            className={cn(
-              'min-w-0 flex-1 text-sm font-semibold',
-              item.done && 'text-bloomora-text-muted line-through',
-            )}
+            className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-100 to-violet-100 text-base shadow-inner ring-1 ring-white/90"
+            aria-hidden
           >
-            {item.title}
+            🌷
           </span>
-          <button
-            type="button"
-            className="text-xs font-semibold text-bloomora-violet"
-            onClick={() => setEditing(true)}
-          >
-            Editar
-          </button>
-          <button
-            type="button"
-            className="text-xs font-semibold text-red-600"
-            onClick={onDelete}
-          >
-            Quitar
-          </button>
-        </>
+          <div className="flex min-w-0 flex-1 items-start gap-3">
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={item.done}
+              onClick={() => onToggle(!item.done)}
+              className={cn(
+                'mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 text-sm font-bold transition touch-manipulation',
+                item.done
+                  ? 'border-bloomora-rose-deep bg-bloomora-rose text-white shadow-sm'
+                  : 'border-bloomora-rose/40 bg-white text-transparent hover:border-bloomora-rose/70',
+              )}
+            >
+              {item.done ? '✓' : ''}
+            </button>
+            <div className="min-w-0 flex-1">
+              <p
+                className={cn(
+                  'text-[clamp(0.9rem,0.84rem+0.35vw,1rem)] font-semibold leading-snug text-bloomora-deep',
+                  item.done &&
+                    'text-bloomora-text-muted line-through decoration-pink-200/80',
+                )}
+              >
+                {item.title}
+              </p>
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-bloomora-violet ring-1 ring-bloomora-line/40 transition hover:bg-bloomora-lavender-50 touch-manipulation"
+                  onClick={() => setEditing(true)}
+                >
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  className="rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-red-600/90 ring-1 ring-red-100 transition hover:bg-red-50/80 touch-manipulation"
+                  onClick={onDelete}
+                >
+                  Quitar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </li>
   )
