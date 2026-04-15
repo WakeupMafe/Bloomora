@@ -79,10 +79,11 @@ export function GoalTrackerGrid({
   const now = new Date()
   const swatch = getTrackerSwatch(trackerColorId, accent)
 
+  /** En <sm las esferas son más chicas para que 7 columnas respiren en celulares estrechos. */
   const cell =
     compact
-      ? 'min-h-9 min-w-0 rounded-full text-[11px] font-semibold sm:min-h-10'
-      : 'min-h-11 min-w-0 rounded-full text-xs font-semibold sm:min-h-12 sm:text-sm'
+      ? 'min-h-8 min-w-0 rounded-full text-[10px] font-semibold sm:min-h-9 sm:text-[11px] md:min-h-10'
+      : 'min-h-10 min-w-0 rounded-full text-[11px] font-semibold sm:min-h-11 sm:text-xs md:min-h-12 md:text-sm'
 
   return (
     <div
@@ -121,8 +122,8 @@ export function GoalTrackerGrid({
           'grid grid-cols-7',
           /* ≥~10px entre círculos: más aire que antes (pedido mín. +6px respecto al layout muy junto) */
           compact
-            ? 'gap-x-3.5 gap-y-3.5 sm:gap-x-4 sm:gap-y-4'
-            : 'gap-x-4 gap-y-4 sm:gap-x-[1.05rem] sm:gap-y-[1.05rem]',
+            ? 'gap-x-3 gap-y-3 sm:gap-x-3.5 sm:gap-y-3.5 md:gap-x-4 md:gap-y-4'
+            : 'gap-x-3 gap-y-3 sm:gap-x-[1.05rem] sm:gap-y-[1.05rem]',
         )}
       >
         {WD_LABELS.map((label) => (
@@ -143,7 +144,7 @@ export function GoalTrackerGrid({
                   key={key}
                   className={cn(
                     cell,
-                    'pointer-events-none invisible mx-auto flex aspect-square max-w-[3rem] sm:max-w-[3.25rem]',
+                    'pointer-events-none invisible mx-auto flex aspect-square max-w-[2.375rem] sm:max-w-[3rem] md:max-w-[3.25rem]',
                   )}
                   aria-hidden
                 />
@@ -170,7 +171,7 @@ export function GoalTrackerGrid({
                 style={complete ? getCompletedCellStyle(swatch) : undefined}
                 className={cn(
                   cell,
-                  'mx-auto flex aspect-square max-w-[3rem] items-center justify-center transition-all duration-200 ease-out sm:max-w-[3.25rem]',
+                  'mx-auto flex aspect-square max-w-[2.375rem] items-center justify-center transition-all duration-200 ease-out sm:max-w-[3rem] md:max-w-[3.25rem]',
                   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloomora-lilac',
                   complete &&
                     'scale-[1.02] hover:scale-[1.05] hover:brightness-[1.03] active:scale-95',
@@ -200,7 +201,7 @@ export function GoalTrackerGrid({
               >
                 {complete ? (
                   <span
-                    className="text-sm drop-shadow-sm sm:text-base [text-shadow:0_1px_2px_rgba(0,0,0,0.12)]"
+                    className="text-xs drop-shadow-sm sm:text-sm md:text-base [text-shadow:0_1px_2px_rgba(0,0,0,0.12)]"
                     aria-hidden
                   >
                     ✓
