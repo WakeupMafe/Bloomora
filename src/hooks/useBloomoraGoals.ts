@@ -136,6 +136,7 @@ export function useUpdateGoalFieldsMutation(cedula: string | null) {
         progress_label: string | null
         percent_display: number
         tracker_color_id: string | null
+        prioridad: 'Alta' | 'Media' | 'Baja'
       }>
     }) => {
       await updateGoalFields(

@@ -280,6 +280,59 @@
     color: rgba(160, 154, 182, 0.92) !important;
   }
 
+  /* Prioridad (pills): contraste en oscuro + zoom en hover (clase en componente) */
+  html[data-bloomora-theme='dark'] .bloomora-goal-priority {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 2px 8px rgba(0, 0, 0, 0.35);
+    --tw-ring-shadow: 0 0 #0000;
+    --tw-ring-offset-shadow: 0 0 #0000;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-goal-priority-segment--idle {
+    color: rgba(248, 246, 255, 0.9) !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+    --tw-ring-shadow: 0 0 #0000;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-goal-priority-segment--idle:hover {
+    background: rgba(255, 255, 255, 0.16) !important;
+    color: #ffffff !important;
+  }
+
+  html[data-bloomora-theme='dark']
+    .bloomora-goal-priority-segment--active.bloomora-goal-priority-segment--alta {
+    background: rgba(251, 113, 133, 0.3) !important;
+    color: #ffe4e8 !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      0 0 0 1px rgba(251, 113, 133, 0.45);
+  }
+
+  html[data-bloomora-theme='dark']
+    .bloomora-goal-priority-segment--active.bloomora-goal-priority-segment--media {
+    background: rgba(167, 139, 250, 0.34) !important;
+    color: #f5f3ff !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 0 0 1px rgba(167, 139, 250, 0.5);
+  }
+
+  html[data-bloomora-theme='dark']
+    .bloomora-goal-priority-segment--active.bloomora-goal-priority-segment--baja {
+    background: rgba(56, 189, 248, 0.26) !important;
+    color: #e0f2fe !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 0 0 1px rgba(56, 189, 248, 0.45);
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-goal-priority-segment:focus-visible {
+    --tw-ring-offset-color: #121212;
+  }
+
   /*
    * Tracker de metas (panel + cuadrícula): fondo calendario gris mate, círculos de día blancos.
    * Los gradientes pastel del componente se anulan aquí cuando `data-bloomora-theme="dark"`.
@@ -490,33 +543,41 @@
     gap: clamp(0.85rem, 0.6rem + 0.5vw, 1.35rem);
   }
 
-  /* Lista de agenda: scroll vertical suave, estética Bloomora */
+  /*
+   * Lista de agenda / metas: en móvil/tablet (<lg) sin scroll interno — solo la página hace scroll
+   * (evita doble barra al expandir «Pasos»). En desktop (lg+) scroll interno con altura máxima.
+   */
   .agenda-task-scroll {
-    scrollbar-gutter: stable;
     overflow-x: hidden;
-    /* Siempre reserva la barra vertical en la lista de tareas (sin depender del overflow del documento). */
-    overflow-y: scroll;
-    padding-inline-end: 10px;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(124, 107, 181, 0.45) rgba(236, 232, 247, 0.65);
+    overflow-y: visible;
   }
 
-  .agenda-task-scroll::-webkit-scrollbar {
-    width: 6px;
-  }
+  @media (min-width: 1024px) {
+    .agenda-task-scroll {
+      scrollbar-gutter: stable;
+      overflow-y: auto;
+      padding-inline-end: 10px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(124, 107, 181, 0.45) rgba(236, 232, 247, 0.65);
+    }
 
-  .agenda-task-scroll::-webkit-scrollbar-track {
-    background: rgba(236, 232, 247, 0.6);
-    border-radius: 9999px;
-  }
+    .agenda-task-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
 
-  .agenda-task-scroll::-webkit-scrollbar-thumb {
-    background: rgba(124, 107, 181, 0.4);
-    border-radius: 9999px;
-  }
+    .agenda-task-scroll::-webkit-scrollbar-track {
+      background: rgba(236, 232, 247, 0.6);
+      border-radius: 9999px;
+    }
 
-  .agenda-task-scroll::-webkit-scrollbar-thumb:hover {
-    background: rgba(124, 107, 181, 0.55);
+    .agenda-task-scroll::-webkit-scrollbar-thumb {
+      background: rgba(124, 107, 181, 0.4);
+      border-radius: 9999px;
+    }
+
+    .agenda-task-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(124, 107, 181, 0.55);
+    }
   }
 
   @keyframes bloomora-tracker-month-in {

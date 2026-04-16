@@ -86,6 +86,46 @@ export async function playAgendaBlockSparkleSound(): Promise<void> {
   }
 }
 
+/**
+ * Campanas suaves al llegar a 0 en el cronómetro: notas ascendentes (grave → agudo).
+ * Misma pila de audio que el resto de la app (ensureContext).
+ */
+export async function playCountdownGentleBellsSound(): Promise<void> {
+  try {
+    const ctx = await ensureContext()
+    if (!ctx) return
+
+    const t0 = ctx.currentTime
+    // Campanitas: frecuencias suben poco a poco; volumen sube levemente con cada golpe
+    const bells = [
+      { f: 523.25, vol: 0.06, len: 0.35 },
+      { f: 659.25, vol: 0.075, len: 0.34 },
+      { f: 783.99, vol: 0.09, len: 0.33 },
+      { f: 987.77, vol: 0.1, len: 0.32 },
+      { f: 1174.66, vol: 0.11, len: 0.36 },
+    ]
+
+    let t = 0
+    for (const { f, vol, len } of bells) {
+      const start = t0 + t
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(f, start)
+      gain.gain.setValueAtTime(0.0001, start)
+      gain.gain.exponentialRampToValueAtTime(vol, start + 0.02)
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + len)
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.start(start)
+      osc.stop(start + len + 0.02)
+      t += 0.22
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
 let unlockRegistered = false
 
 /**

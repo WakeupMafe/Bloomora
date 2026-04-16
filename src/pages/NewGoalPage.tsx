@@ -32,7 +32,16 @@ const inputClassName =
 const selectClassName =
   'bloomora-form-input bloomora-new-goal-select mt-1.5 w-full min-h-11 rounded-pill border border-bloomora-line/50 bg-bloomora-white px-4 py-2.5 text-sm font-semibold text-bloomora-deep'
 
-const ICON_OPTIONS = ['🌸', '🔥', '💪', '📚', '💧', '🧠'] as const
+const ICON_OPTIONS = [
+  '🌸',
+  '🔥',
+  '💪',
+  '📚',
+  '💧',
+  '🧠',
+  '🥦',
+  '🏋️',
+] as const
 
 export function NewGoalPage() {
   const navigate = useNavigate()

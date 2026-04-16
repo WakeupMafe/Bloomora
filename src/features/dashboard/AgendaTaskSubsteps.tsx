@@ -144,7 +144,7 @@ export function AgendaTaskSubsteps({
                         value={editDraft}
                         onChange={(e) => setEditDraft(e.target.value)}
                         maxLength={200}
-                        className="w-full rounded-lg border border-bloomora-sky-deep/35 bg-white/95 px-2.5 py-2 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-sky/30 focus:ring-2"
+                        className="w-full rounded-lg border border-bloomora-sky-deep/35 bg-white/95 px-2.5 py-2 text-sm font-semibold text-zinc-900 placeholder:text-zinc-500 outline-none ring-bloomora-sky/30 focus:ring-2"
                         autoFocus
                         aria-label="Editar texto del paso"
                       />
@@ -260,7 +260,7 @@ export function AgendaTaskSubsteps({
                 onChange={(e) => setDraft(e.target.value)}
                 placeholder="Escribe un paso y pulsa Añadir"
                 maxLength={200}
-                className="w-full rounded-xl border border-bloomora-sky-deep/30 bg-white/95 px-3 py-2 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-sky/35 focus:ring-2 focus:ring-bloomora-sky-deep/30"
+                className="w-full rounded-xl border border-bloomora-sky-deep/30 bg-white/95 px-3 py-2 text-sm font-semibold text-zinc-900 placeholder:text-zinc-500 outline-none ring-bloomora-sky/35 focus:ring-2 focus:ring-bloomora-sky-deep/30"
               />
             </label>
             <Button type="submit" size="sm" disabled={!draft.trim() || isAdding}>

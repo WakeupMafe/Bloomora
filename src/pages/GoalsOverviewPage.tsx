@@ -5,6 +5,7 @@ import { BackButton } from '@/components/navigation/BackButton'
 import { Button } from '@/components/ui/Button'
 import ConejoBoy from '@/assets/ConejoBoy.png'
 import type { MockGoalRow } from '@/data/dashboardMock'
+import { GoalPriorityPicker } from '@/features/goals/GoalPriorityPicker'
 import { GoalTrackerGrid } from '@/features/goals/GoalTrackerGrid'
 import { MonthNavPill } from '@/features/goals/MonthNavPill'
 import { getCompletedDaysForMonth } from '@/features/goals/goalTrackerUtils'
@@ -15,16 +16,11 @@ import {
   useBloomoraGoals,
   useClearGoalsMutation,
   useToggleGoalDayMutation,
+  useUpdateGoalFieldsMutation,
   useUpdateGoalTrackerColorMutation,
 } from '@/hooks/useBloomoraGoals'
 
 type GoalsViewMode = 'lista' | 'tablero' | 'calendario'
-
-function priorityClasses(priority: MockGoalRow['prioridad']) {
-  if (priority === 'Alta') return 'bg-rose-100 text-rose-700 ring-rose-200'
-  if (priority === 'Baja') return 'bg-sky-100 text-sky-700 ring-sky-200'
-  return 'bg-violet-100 text-violet-700 ring-violet-200'
-}
 
 function statusClasses(status: MockGoalRow['estado']) {
   if (status === 'Completada') return 'bg-emerald-100 text-emerald-700 ring-emerald-200'
@@ -40,6 +36,7 @@ export function GoalsOverviewPage() {
   const clearGoalsMut = useClearGoalsMutation(cedula)
   const toggleGoalDayMut = useToggleGoalDayMutation(cedula)
   const setTrackerMut = useUpdateGoalTrackerColorMutation(cedula)
+  const updateGoalFieldsMut = useUpdateGoalFieldsMutation(cedula)
 
   const [viewYear, setViewYear] = useState(() => new Date().getFullYear())
   const [viewMonthIndex0, setViewMonthIndex0] = useState(
@@ -52,6 +49,15 @@ export function GoalsOverviewPage() {
     setViewYear(d.getFullYear())
     setViewMonthIndex0(d.getMonth())
   }, [viewYear, viewMonthIndex0])
+
+  const handlePriorityChange = (goalId: string, prioridad: MockGoalRow['prioridad']) => {
+    updateGoalFieldsMut.mutate(
+      { goalId, patch: { prioridad } },
+      {
+        onError: () => showToast('No se pudo actualizar la prioridad.'),
+      },
+    )
+  }
 
   const handleClearGoals = () => {
     if (goals.length === 0) return
@@ -150,9 +156,7 @@ export function GoalsOverviewPage() {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <h2 className="text-lg font-bold text-bloomora-deep">{goal.title}</h2>
-                    <p className="mt-1 text-sm text-bloomora-text-muted">
-                      {goal.categoria} · {goal.prioridad}
-                    </p>
+                    <p className="mt-1 text-sm text-bloomora-text-muted">{goal.categoria}</p>
                     <p className="mt-1 text-sm font-semibold text-bloomora-deep/90">
                       {goal.progreso} / {goal.objetivo} dias
                     </p>
@@ -161,9 +165,14 @@ export function GoalsOverviewPage() {
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${priorityClasses(goal.prioridad)}`}>
-                      {goal.prioridad}
-                    </span>
+                    <GoalPriorityPicker
+                      value={goal.prioridad}
+                      onChange={(p) => handlePriorityChange(goal.id, p)}
+                      disabled={
+                        updateGoalFieldsMut.isPending &&
+                        updateGoalFieldsMut.variables?.goalId === goal.id
+                      }
+                    />
                     <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${statusClasses(goal.estado)}`}>
                       {goal.estado}
                     </span>
@@ -193,7 +202,17 @@ export function GoalsOverviewPage() {
                     {goal.estado}
                   </span>
                 </div>
-                <p className="mt-2 text-sm text-bloomora-text-muted">{goal.categoria} · {goal.prioridad}</p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <p className="text-sm text-bloomora-text-muted">{goal.categoria}</p>
+                  <GoalPriorityPicker
+                    value={goal.prioridad}
+                    onChange={(p) => handlePriorityChange(goal.id, p)}
+                    disabled={
+                      updateGoalFieldsMut.isPending &&
+                      updateGoalFieldsMut.variables?.goalId === goal.id
+                    }
+                  />
+                </div>
                 <p className="mt-1 text-sm font-semibold text-bloomora-deep">{goal.progreso} / {goal.objetivo} dias</p>
                 <div className="mt-2 flex items-center justify-between">
                   <span className="text-xs font-medium text-orange-600">
@@ -222,15 +241,21 @@ export function GoalsOverviewPage() {
                     <h2 className="text-lg font-bold text-bloomora-deep">
                       {goal.title}
                     </h2>
-                    <p className="mt-1 text-sm text-bloomora-text-muted">
-                      {goal.categoria} · {goal.prioridad}
-                    </p>
+                    <p className="mt-1 text-sm text-bloomora-text-muted">{goal.categoria}</p>
                     <p className="text-xs font-medium text-bloomora-text-muted">
                       {goal.progreso} / {goal.objetivo} dias · 🔥 {goal.streak}{' '}
                       {goal.streak === 1 ? 'dia' : 'dias'}
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center justify-end gap-2">
+                    <GoalPriorityPicker
+                      value={goal.prioridad}
+                      onChange={(p) => handlePriorityChange(goal.id, p)}
+                      disabled={
+                        updateGoalFieldsMut.isPending &&
+                        updateGoalFieldsMut.variables?.goalId === goal.id
+                      }
+                    />
                     <TrackerColorMenu
                       compact
                       value={goal.trackerColorId}

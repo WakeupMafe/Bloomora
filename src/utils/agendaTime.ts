@@ -59,17 +59,14 @@ export function blockDurationSeconds(startMin: number, endMin: number): number {
   return Math.max(60, spanMin * 60)
 }
 
+/**
+ * Cabecera de agenda: «Miércoles, 15 Abril» (día de la semana, número y mes; sin año).
+ */
 export function titleCaseAgendaDate(d: Date): string {
-  const raw = d.toLocaleDateString('es-CO', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
-  return raw
-    .replace(/,/g, ' ')
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join(' ')
+  const weekday = new Intl.DateTimeFormat('es', { weekday: 'long' }).format(d)
+  const month = new Intl.DateTimeFormat('es', { month: 'long' }).format(d)
+  const day = d.getDate()
+  const w = weekday.charAt(0).toUpperCase() + weekday.slice(1)
+  const m = month.charAt(0).toUpperCase() + month.slice(1)
+  return `${w}, ${day} ${m}`
 }

@@ -199,6 +199,7 @@ export async function insertGoal(
       progress_label: fields.progress_label ?? null,
       percent_display: pct,
       tracker_color_id: trackerId,
+      prioridad: 'Media',
       auto_match_enabled: true,
     })
     .select('id')
@@ -219,6 +220,7 @@ export async function updateGoalFields(
       | 'progress_label'
       | 'percent_display'
       | 'tracker_color_id'
+      | 'prioridad'
     >
   >,
 ) {

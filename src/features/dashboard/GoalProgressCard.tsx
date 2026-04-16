@@ -301,13 +301,6 @@ export function GoalProgressCard({ className }: GoalProgressCardProps) {
                   <p className="mt-2.5 text-sm font-semibold tabular-nums text-bloomora-deep">
                     {Math.round(overallPercent)}% combinado
                   </p>
-                  <p className="mt-3 w-full max-w-[17rem] px-1 text-xs leading-relaxed text-bloomora-text-muted sm:text-sm lg:max-w-full">
-                    <span className="font-medium text-bloomora-deep/80">
-                      Selecciona una meta
-                    </span>{" "}
-                    en la lista para ver su nombre, su porcentaje y el detalle de
-                    avance.
-                  </p>
                 </>
               ) : null}
             </div>
