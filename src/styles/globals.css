@@ -188,6 +188,44 @@
     color: #ffffff !important;
   }
 
+  /* Chip minimizado del contador (móvil): más grande y con estilo por tema */
+  .bloomora-mobile-countdown-chip {
+    background-color: color-mix(
+      in srgb,
+      var(--color-bloomora-violet) 18%,
+      var(--color-bloomora-white)
+    ) !important;
+    border-radius: 1rem !important;
+  }
+
+  .bloomora-mobile-countdown-chip .bloomora-mobile-countdown-time {
+    color: var(--color-bloomora-violet) !important;
+  }
+
+  .bloomora-mobile-countdown-chip .bloomora-mobile-countdown-expand-btn {
+    color: var(--color-bloomora-violet) !important;
+    background-color: rgba(255, 255, 255, 0.45);
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-mobile-countdown-chip {
+    background-color: #4b4b54 !important;
+    border-color: rgba(173, 216, 255, 0.35) !important;
+  }
+
+  html[data-bloomora-theme='dark']
+    .bloomora-mobile-countdown-chip
+    .bloomora-mobile-countdown-time {
+    color: #8ecbf5 !important;
+  }
+
+  html[data-bloomora-theme='dark']
+    .bloomora-mobile-countdown-chip
+    .bloomora-mobile-countdown-expand-btn {
+    color: #8ecbf5 !important;
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(142, 203, 245, 0.35) !important;
+  }
+
   /* Nueva meta: panel profundo, inputs tipo píldora, acento cyan (referencia UI oscura) */
   html[data-bloomora-theme='dark'] .bloomora-new-goal-page .bloomora-new-goal-card {
     background: linear-gradient(165deg, #1e1f26 0%, #1a1b1e 45%, #16171c 100%) !important;
@@ -649,3 +687,4 @@
     }
   }
 }
+

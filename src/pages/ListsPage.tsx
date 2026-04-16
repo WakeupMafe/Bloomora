@@ -11,6 +11,7 @@ import {
   useListItemsMutations,
   useUpdateListTitleMutation,
 } from '@/hooks/useBloomoraListItems'
+import { ListItemAgendaMenu } from '@/features/lists/ListItemAgendaMenu'
 import { cn } from '@/utils/cn'
 
 export function ListsPage() {
@@ -229,6 +230,7 @@ export function ListsPage() {
                     {items.map((it) => (
                       <ListItemRow
                         key={it.id}
+                        cedula={cedula}
                         item={it}
                         onToggle={(done) =>
                           toggleItem.mutate({ id: it.id, done })
@@ -274,11 +276,13 @@ export function ListsPage() {
 }
 
 function ListItemRow({
+  cedula,
   item,
   onToggle,
   onRename,
   onDelete,
 }: {
+  cedula: string | null
   item: { id: string; title: string; done: boolean }
   onToggle: (done: boolean) => void
   onRename: (title: string) => void
@@ -290,6 +294,10 @@ function ListItemRow({
   useEffect(() => {
     setDraft(item.title)
   }, [item.title])
+
+  const markAsTransferred = () => {
+    if (!item.done) onToggle(true)
+  }
 
   return (
     <li
@@ -335,7 +343,7 @@ function ListItemRow({
           </div>
         </form>
       ) : (
-        <div className="flex gap-3">
+        <div className="flex gap-2 sm:gap-3">
           <div className="flex min-w-0 flex-1 items-start gap-3">
             <button
               type="button"
@@ -379,6 +387,12 @@ function ListItemRow({
               </div>
             </div>
           </div>
+          <ListItemAgendaMenu
+            cedula={cedula}
+            itemTitle={item.title}
+            itemDone={item.done}
+            onTransferred={markAsTransferred}
+          />
         </div>
       )}
     </li>

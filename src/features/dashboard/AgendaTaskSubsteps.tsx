@@ -33,20 +33,21 @@ export function AgendaTaskSubsteps({
   const [draft, setDraft] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editDraft, setEditDraft] = useState('')
+  const safeSubtasks = Array.isArray(subtasks) ? subtasks : []
 
   const summary = useMemo(() => {
-    const done = subtasks.filter((s) => s.completed).length
-    const total = subtasks.length
+    const done = safeSubtasks.filter((s) => s.completed).length
+    const total = safeSubtasks.length
     if (total === 0) return ''
     return `${done} de ${total} listos`
-  }, [subtasks])
+  }, [safeSubtasks])
 
   useEffect(() => {
-    if (editingId && !subtasks.some((s) => s.id === editingId)) {
+    if (editingId && !safeSubtasks.some((s) => s.id === editingId)) {
       setEditingId(null)
       setEditDraft('')
     }
-  }, [subtasks, editingId])
+  }, [safeSubtasks, editingId])
 
   const handleAdd = (e: FormEvent) => {
     e.preventDefault()
@@ -131,9 +132,9 @@ export function AgendaTaskSubsteps({
           aria-labelledby={`agenda-substeps-toggle-${taskId}`}
           className="space-y-2.5 border-t border-bloomora-sky-deep/15 bg-bloomora-sky/35 px-3 pb-3.5 pt-2.5 md:px-4 md:pb-4"
         >
-          {subtasks.length > 0 ? (
+          {safeSubtasks.length > 0 ? (
             <ol className="space-y-1.5">
-              {subtasks.map((s, idx) => (
+              {safeSubtasks.map((s, idx) => (
                 <li key={s.id}>
                   {editingId === s.id ? (
                     <form

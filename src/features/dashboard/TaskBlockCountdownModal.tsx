@@ -304,7 +304,7 @@ export function TaskBlockCountdownModal({
         "bg-bloomora-white/98 ring-bloomora-line/35",
         isNarrow
           ? minimizedMobile
-            ? "gap-0 rounded-full px-1 py-1 ring-bloomora-line/40"
+            ? "bloomora-mobile-countdown-chip gap-0 rounded-2xl px-1.5 py-1.5 ring-bloomora-line/40"
             : "gap-4 rounded-[22px] p-5"
           : "max-w-[min(100vw-2rem,24rem)] gap-4 rounded-2xl p-6",
       )}
@@ -320,10 +320,10 @@ export function TaskBlockCountdownModal({
           role="group"
           aria-label="Arrastra para mover el contador. Pulsa expandir para más opciones."
         >
-          <div className="flex items-center gap-1.5 pr-1">
+          <div className="flex items-center gap-2 pr-1">
             <p
               className={cn(
-                "bloomora-modal-time font-mono text-[clamp(1.35rem,5.5vw,1.75rem)] font-bold tabular-nums tracking-tight text-bloomora-deep",
+                "bloomora-modal-time bloomora-mobile-countdown-time font-mono text-[clamp(1.55rem,6.8vw,1.95rem)] font-bold tabular-nums tracking-tight text-bloomora-deep",
                 done && "bloomora-modal-time--done text-bloomora-violet",
               )}
               aria-live="polite"
@@ -332,7 +332,7 @@ export function TaskBlockCountdownModal({
             </p>
             <button
               type="button"
-              className="flex h-9 shrink-0 items-center justify-center rounded-full px-2 text-bloomora-violet ring-1 ring-bloomora-line/40 hover:bg-bloomora-lavender-50/80"
+              className="bloomora-mobile-countdown-expand-btn flex h-10 shrink-0 items-center justify-center rounded-xl px-2.5 text-bloomora-violet ring-1 ring-bloomora-line/40 hover:bg-bloomora-lavender-50/80"
               aria-label="Expandir panel del cronómetro"
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => {
@@ -341,7 +341,7 @@ export function TaskBlockCountdownModal({
               }}
             >
               <svg
-                className="h-4 w-4"
+                className="h-[1.05rem] w-[1.05rem]"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"

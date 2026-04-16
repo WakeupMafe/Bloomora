@@ -22,8 +22,8 @@ export function DayHomePage() {
         <DashboardAppHeader />
 
         <div className="mt-6 grid min-w-0 grid-cols-1 gap-6 sm:mt-8 lg:mt-10 lg:grid-cols-2 lg:items-stretch lg:gap-8">
-          <AgendaCard className="h-full min-h-0 min-w-0 w-full lg:max-h-[550px]" />
-          <GoalProgressCard className="h-full min-h-0 min-w-0 w-full max-w-full lg:max-h-[550px]" />
+          <AgendaCard className="h-full min-h-0 min-w-0 w-full max-h-[600px] lg:max-h-[550px]" />
+          <GoalProgressCard className="h-full min-h-0 min-w-0 w-full max-w-full max-h-[600px] lg:max-h-[550px]" />
         </div>
 
         <div className="mt-6 min-w-0 sm:mt-8 lg:mt-10">
