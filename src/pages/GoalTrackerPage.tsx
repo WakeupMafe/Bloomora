@@ -74,14 +74,14 @@ export function GoalTrackerPage() {
   }
 
   return (
-    <div className="app-shell-padding app-content-fluid mx-auto flex min-h-dvh flex-col gap-6 bg-bloomora-snow pb-16">
+    <div className="bloomora-goal-tracker-page app-shell-padding app-content-fluid mx-auto flex min-h-dvh flex-col gap-6 bg-bloomora-snow pb-16">
       <header className="flex items-center justify-between gap-4">
         <BloomoraLogo size="sm" />
         <BackButton />
       </header>
 
       {editingTitle ? (
-        <div className="flex flex-wrap items-end gap-2 rounded-[18px] bg-white/80 p-3 ring-1 ring-bloomora-line/30">
+        <div className="bloomora-title-edit-strip flex flex-wrap items-end gap-2 rounded-[18px] bg-white/80 p-3 ring-1 ring-bloomora-line/30">
           <label className="min-w-0 flex-1 text-xs font-semibold text-bloomora-text-muted">
             Nombre de la meta
             <input

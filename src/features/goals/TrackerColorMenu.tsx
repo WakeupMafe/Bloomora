@@ -40,7 +40,7 @@ function SwatchButton({
       onClick={onPick}
       className={cn(
         'h-8 w-8 shrink-0 rounded-full transition-transform hover:scale-110 active:scale-95',
-        'ring-2 ring-offset-2 ring-offset-[#fffafc]',
+        'ring-2 ring-offset-2 ring-offset-bloomora-blush',
         active
           ? 'ring-bloomora-deep scale-105'
           : 'ring-transparent hover:ring-bloomora-line/80',
@@ -150,7 +150,7 @@ export function TrackerColorMenu({
           aria-modal={isNarrow ? true : undefined}
           aria-label="Paleta de colores del calendario"
           className={cn(
-            'flex flex-col overflow-hidden bg-[#fffafc]/[0.98] shadow-[0_16px_48px_rgba(91,74,140,0.18)] ring-1 ring-bloomora-line/35 backdrop-blur-md',
+            'flex flex-col overflow-hidden bg-bloomora-blush/[0.98] shadow-[0_16px_48px_rgba(91,74,140,0.18)] ring-1 ring-bloomora-line/35 backdrop-blur-md',
             isNarrow
               ? 'fixed rounded-[22px] p-3 sm:p-4'
               : 'fixed rounded-2xl p-3 sm:p-4',

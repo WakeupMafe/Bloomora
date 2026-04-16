@@ -37,6 +37,21 @@
 
 @layer base {
   :root {
+    /* Gradientes y botón primario (también se sobrescriben por tema en runtime) */
+    --bloomora-btn-from: #ff9aab;
+    --bloomora-btn-to: #ffc2d1;
+    --bloomora-btn-shadow: rgba(255, 154, 171, 0.5);
+    --bloomora-btn-shadow-hover: rgba(255, 140, 160, 0.58);
+    --bloomora-list-cta-from: #ff9eb3;
+    --bloomora-list-cta-via: #e8b4ff;
+    --bloomora-list-cta-to: #9b86f0;
+    --bloomora-list-border-from: #ffb8d0;
+    --bloomora-list-border-via: #dcc8ff;
+    --bloomora-list-border-to: #a89cf0;
+    --bloomora-list-add-from: #ff8fab;
+    --bloomora-list-add-to: #f4a8d0;
+    --bloomora-list-panel-glow: rgba(236, 139, 184, 0.35);
+
     /* Mismo criterio que la pantalla de bienvenida — reutilizar en toda la app */
     --bloomora-page-padding-inline: clamp(1rem, 1.35rem + 5.5vw, 5.75rem);
     --bloomora-page-padding-block-top: max(
@@ -54,6 +69,210 @@
     :root {
       --bloomora-page-padding-inline: clamp(0.65rem, 2.8vw, 1rem);
     }
+  }
+
+  html[data-bloomora-theme='dark'] {
+    color-scheme: dark;
+  }
+
+  /* Wordmark: rosa en temas claros; blanco sólido en oscuro (gana a utilidades Tailwind). */
+  html[data-bloomora-theme='dark'] .bloomora-logo-wordmark {
+    color: #ffffff !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  }
+
+  /* Bienvenida sigue con fondo claro: wordmark rosa aunque el perfil use tema oscuro. */
+  html[data-bloomora-theme='dark'] .welcome-page .bloomora-logo-wordmark {
+    color: #e89bb8;
+    text-shadow: none;
+  }
+
+  /* Degradados / blobs decorativos: en oscuro solo cuenta bg-bloomora-snow (plano). */
+  html[data-bloomora-theme='dark'] .bloomora-page-glows {
+    display: none;
+  }
+
+  /* Tarjeta principal (p. ej. Editar perfil): sin gradiente en oscuro. */
+  .bloomora-elevated-panel {
+    background: linear-gradient(165deg, #ffffff 0%, #fdf8ff 38%, #f5f0fc 100%);
+    box-shadow: 0 10px 40px -12px rgba(91, 74, 140, 0.15);
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-elevated-panel {
+    background: var(--color-bloomora-lavender-50);
+    box-shadow: 0 12px 44px -14px rgba(0, 0, 0, 0.55);
+  }
+
+  /* Inputs: blanco en claro; relieve sutil en oscuro. */
+  .bloomora-form-input {
+    background-color: rgba(255, 255, 255, 0.95);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-form-input {
+    background-color: var(--color-bloomora-lavender-100);
+    box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.35);
+  }
+
+  /* Fila de ítem en listas: gradiente suave en claro; plano en oscuro. */
+  .bloomora-list-item-surface {
+    background-color: var(--color-bloomora-white);
+    background-image: linear-gradient(
+      to bottom right,
+      var(--color-bloomora-white),
+      var(--color-bloomora-blush),
+      color-mix(in srgb, var(--color-bloomora-lavender-50) 38%, transparent)
+    );
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-list-item-surface {
+    background-color: var(--color-bloomora-lavender-100);
+    background-image: none;
+  }
+
+  /*
+   * Tracker de metas (panel + cuadrícula): fondo calendario gris mate, círculos de día blancos.
+   * Los gradientes pastel del componente se anulan aquí cuando `data-bloomora-theme="dark"`.
+   */
+  html[data-bloomora-theme='dark'] .bloomora-goal-tracker-panel {
+    background: #2a2a2e !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+    --tw-ring-color: rgba(255, 255, 255, 0.08);
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-goal-tracker-calendar-surface {
+    background-color: #3d3d42;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    --tw-ring-color: rgba(255, 255, 255, 0.08);
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-goal-tracker-grid {
+    background-image: none !important;
+    background-color: #3d3d42;
+    box-shadow: none;
+    --tw-ring-color: rgba(255, 255, 255, 0.08);
+  }
+
+  html[data-bloomora-theme='dark']
+    .bloomora-goal-tracker-calendar-surface
+    .bloomora-goal-tracker-grid {
+    background-color: transparent;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-goal-tracker-grid .bloomora-tracker-wd-label {
+    color: rgba(232, 230, 242, 0.72);
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-goal-tracker-grid .bloomora-tracker-month-staticpill {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #f4f4f6;
+    --tw-ring-color: rgba(255, 255, 255, 0.12);
+    box-shadow: none;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-month-nav {
+    background-color: rgba(255, 255, 255, 0.08);
+    --tw-ring-color: rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-month-nav > button {
+    color: rgba(186, 230, 253, 0.92);
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-month-nav > button:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #f8fafc;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-month-nav > span {
+    color: #f4f4f6;
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  html[data-bloomora-theme='dark']
+    .bloomora-goal-tracker-grid
+    button[data-complete='false'][data-locked='true'] {
+    opacity: 0.42;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-goal-tracker-grid button[data-complete='false'] {
+    background-color: #ffffff !important;
+    color: #1a1a1f !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.85),
+      0 1px 2px rgba(0, 0, 0, 0.18);
+    --tw-ring-color: rgba(0, 0, 0, 0.12);
+    --tw-ring-offset-color: #3d3d42;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-goal-tracker-grid button[data-complete='false']:hover {
+    --tw-ring-color: rgba(125, 211, 252, 0.45);
+  }
+
+  html[data-bloomora-theme='dark']
+    .bloomora-goal-tracker-grid
+    button[data-complete='false'][data-future='true']:not([data-locked='true']) {
+    opacity: 0.52;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-goal-tracker-grid button[data-complete='false'][data-today='true'] {
+    --tw-ring-color: rgba(56, 189, 248, 0.75);
+    --tw-ring-offset-color: #3d3d42;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.22);
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-goal-tracker-grid button[data-complete='true'] {
+    --tw-ring-offset-color: #3d3d42;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-goal-tracker-panel .bloomora-tracker-mood-pill {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #f4f4f6;
+    --tw-ring-color: rgba(255, 255, 255, 0.12);
+  }
+
+  html[data-bloomora-theme='dark']
+    .bloomora-goal-tracker-panel
+    .bloomora-tracker-mood-pill.text-bloomora-violet {
+    color: #7dd3fc !important;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-goal-tracker-panel .bloomora-tracker-progress-track {
+    background-color: rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-goal-tracker-panel .bloomora-tracker-streak-pill {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: none;
+  }
+
+  html[data-bloomora-theme='dark']
+    .bloomora-goal-tracker-panel
+    .bloomora-tracker-streak-pill[data-vivid='true'] {
+    color: #fde68a !important;
+  }
+
+  html[data-bloomora-theme='dark']
+    .bloomora-goal-tracker-panel
+    .bloomora-tracker-streak-pill[data-vivid='false'] {
+    color: rgba(226, 232, 240, 0.82) !important;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-tracker-streak-sub {
+    color: rgba(244, 244, 246, 0.88) !important;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-goal-tracker-page .bloomora-title-edit-strip {
+    background-color: rgba(36, 36, 40, 0.95);
+    --tw-ring-color: rgba(255, 255, 255, 0.1);
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-goal-tracker-page .bloomora-title-edit-strip input {
+    background-color: rgba(26, 26, 30, 0.95);
+    color: #f4f4f6;
+    border-color: rgba(255, 255, 255, 0.12);
   }
 
   html {

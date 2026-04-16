@@ -1,22 +1,28 @@
-import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { defaultNewBlockDurationMin } from '@/data/dashboardMock'
-import { DashboardCard } from '@/components/dashboard/DashboardCard'
-import { AgendaTaskRow } from '@/features/dashboard/AgendaTaskRow'
-import { AgendaTaskSubsteps } from '@/features/dashboard/AgendaTaskSubsteps'
-import { Button } from '@/components/ui/Button'
-import { BloomoraConfirmDialog } from '@/components/ui/BloomoraConfirmDialog'
-import { ProgressBar } from '@/components/ui/ProgressBar'
-import { useBloomoraToast } from '@/contexts/BloomoraToastContext'
-import { useUserPhone } from '@/contexts/UserPhoneContext'
+import {
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { Link } from "react-router-dom";
+import { defaultNewBlockDurationMin } from "@/data/dashboardMock";
+import { DashboardCard } from "@/components/dashboard/DashboardCard";
+import { AgendaTaskRow } from "@/features/dashboard/AgendaTaskRow";
+import { AgendaTaskSubsteps } from "@/features/dashboard/AgendaTaskSubsteps";
+import { Button } from "@/components/ui/Button";
+import { BloomoraConfirmDialog } from "@/components/ui/BloomoraConfirmDialog";
+import { ProgressBar } from "@/components/ui/ProgressBar";
+import { useBloomoraToast } from "@/contexts/BloomoraToastContext";
+import { useUserPhone } from "@/contexts/UserPhoneContext";
 import {
   useAgendaMutations,
   useBloomoraAgenda,
-} from '@/hooks/useBloomoraAgenda'
-import { useAgendaBlockEndAlerts } from '@/hooks/useAgendaBlockEndAlerts'
-import { useBloomoraGoals } from '@/hooks/useBloomoraGoals'
-import { useBloomoraProfile } from '@/hooks/useBloomoraProfile'
-import { useGoalTaskTemplates } from '@/hooks/useGoalTaskTemplates'
+} from "@/hooks/useBloomoraAgenda";
+import { useAgendaBlockEndAlerts } from "@/hooks/useAgendaBlockEndAlerts";
+import { useBloomoraGoals } from "@/hooks/useBloomoraGoals";
+import { useBloomoraProfile } from "@/hooks/useBloomoraProfile";
+import { useGoalTaskTemplates } from "@/hooks/useGoalTaskTemplates";
 import {
   addLocalDays,
   formatMinutes12h,
@@ -25,11 +31,11 @@ import {
   titleCaseAgendaDate,
   toDateKeyLocal,
   toTimeInputValue,
-} from '@/utils/agendaTime'
-import { cn } from '@/utils/cn'
+} from "@/utils/agendaTime";
+import { cn } from "@/utils/cn";
 
 /** Sugerencia por defecto para el primer bloque del día (el usuario puede cambiarla). */
-const defaultEmptyDayStartMin = 7 * 60
+const defaultEmptyDayStartMin = 7 * 60;
 
 function AgendaTrashIcon({ className }: { className?: string }) {
   return (
@@ -47,50 +53,56 @@ function AgendaTrashIcon({ className }: { className?: string }) {
     >
       <path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M10 11v6M14 11v6" />
     </svg>
-  )
+  );
 }
 
 type AgendaCardProps = {
-  className?: string
-}
+  className?: string;
+};
 
 export function AgendaCard({ className }: AgendaCardProps) {
-  const { showToast } = useBloomoraToast()
-  const { cedula, phone } = useUserPhone()
-  const { data: profile } = useBloomoraProfile(phone)
+  const { showToast } = useBloomoraToast();
+  const { cedula, phone } = useUserPhone();
+  const { data: profile } = useBloomoraProfile(phone);
   const agendaBlockNotifyOn =
-    profile == null || profile.notify_agenda_block_end !== false
-  const [cursorDate, setCursorDate] = useState(() => startOfLocalDay(new Date()))
-  const dayKey = useMemo(() => toDateKeyLocal(cursorDate), [cursorDate])
-  const headerLabel = useMemo(() => titleCaseAgendaDate(cursorDate), [cursorDate])
+    profile == null || profile.notify_agenda_block_end !== false;
+  const [cursorDate, setCursorDate] = useState(() =>
+    startOfLocalDay(new Date()),
+  );
+  const dayKey = useMemo(() => toDateKeyLocal(cursorDate), [cursorDate]);
+  const headerLabel = useMemo(
+    () => titleCaseAgendaDate(cursorDate),
+    [cursorDate],
+  );
   const isViewingToday = useMemo(() => {
-    const today = startOfLocalDay(new Date())
-    return toDateKeyLocal(cursorDate) === toDateKeyLocal(today)
-  }, [cursorDate])
+    const today = startOfLocalDay(new Date());
+    return toDateKeyLocal(cursorDate) === toDateKeyLocal(today);
+  }, [cursorDate]);
 
-  const [deviceNow, setDeviceNow] = useState(() => new Date())
+  const [deviceNow, setDeviceNow] = useState(() => new Date());
   useEffect(() => {
-    if (!isViewingToday) return
-    const id = window.setInterval(() => setDeviceNow(new Date()), 1000)
-    return () => window.clearInterval(id)
-  }, [isViewingToday])
+    if (!isViewingToday) return;
+    const id = window.setInterval(() => setDeviceNow(new Date()), 1000);
+    return () => window.clearInterval(id);
+  }, [isViewingToday]);
 
   const deviceTimeLabel = useMemo(
     () =>
-      deviceNow.toLocaleTimeString('es', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
+      deviceNow.toLocaleTimeString("es", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
       }),
     [deviceNow],
-  )
+  );
 
-  const { data: tasks = [], isLoading, isError } = useBloomoraAgenda(
-    cedula,
-    dayKey,
-  )
-  const { data: goals = [] } = useBloomoraGoals(cedula)
-  const { templateIds } = useGoalTaskTemplates(cedula)
+  const {
+    data: tasks = [],
+    isLoading,
+    isError,
+  } = useBloomoraAgenda(cedula, dayKey);
+  const { data: goals = [] } = useBloomoraGoals(cedula);
+  const { templateIds } = useGoalTaskTemplates(cedula);
   const {
     toggle,
     addTask,
@@ -100,111 +112,112 @@ export function AgendaCard({ className }: AgendaCardProps) {
     toggleSubtask,
     removeSubtask,
     renameSubtask,
-  } = useAgendaMutations(cedula, dayKey)
+  } = useAgendaMutations(cedula, dayKey);
 
-  const [showCreateForm, setShowCreateForm] = useState(false)
-  const [draftTitle, setDraftTitle] = useState('')
-  const [createMode, setCreateMode] = useState<'normal' | 'goal'>('normal')
-  const [selectedGoalId, setSelectedGoalId] = useState<string>('')
-  const [draftStartTime, setDraftStartTime] = useState('')
-  const [draftEndTime, setDraftEndTime] = useState('')
-  const [createFormError, setCreateFormError] = useState<string | null>(null)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editTitle, setEditTitle] = useState('')
-  const [editStartTime, setEditStartTime] = useState('')
-  const [editEndTime, setEditEndTime] = useState('')
-  const [editFormError, setEditFormError] = useState<string | null>(null)
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [draftTitle, setDraftTitle] = useState("");
+  const [createMode, setCreateMode] = useState<"normal" | "goal">("normal");
+  const [selectedGoalId, setSelectedGoalId] = useState<string>("");
+  const [draftStartTime, setDraftStartTime] = useState("");
+  const [draftEndTime, setDraftEndTime] = useState("");
+  const [createFormError, setCreateFormError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editStartTime, setEditStartTime] = useState("");
+  const [editEndTime, setEditEndTime] = useState("");
+  const [editFormError, setEditFormError] = useState<string | null>(null);
   const [deleteIntent, setDeleteIntent] = useState<{
-    id: string
-    title: string
-  } | null>(null)
+    id: string;
+    title: string;
+  } | null>(null);
 
   const sortedTasks = useMemo(
     () => [...tasks].sort((a, b) => a.startMin - b.startMin),
     [tasks],
-  )
+  );
 
   const { blockEndPrompt, dismissBlockEndPrompt } = useAgendaBlockEndAlerts(
     dayKey,
     sortedTasks,
     {
       enabled:
-        agendaBlockNotifyOn &&
-        !isLoading &&
-        !isError &&
-        sortedTasks.length > 0,
+        agendaBlockNotifyOn && !isLoading && !isError && sortedTasks.length > 0,
     },
-  )
+  );
   const orderedGoalOptions = useMemo(() => {
-    if (!goals.length) return goals
-    const templateSet = new Set(templateIds)
-    const templates = goals.filter((g) => templateSet.has(g.id))
-    const regular = goals.filter((g) => !templateSet.has(g.id))
-    return [...templates, ...regular]
-  }, [goals, templateIds])
+    if (!goals.length) return goals;
+    const templateSet = new Set(templateIds);
+    const templates = goals.filter((g) => templateSet.has(g.id));
+    const regular = goals.filter((g) => !templateSet.has(g.id));
+    return [...templates, ...regular];
+  }, [goals, templateIds]);
   const selectedGoal = useMemo(
     () => orderedGoalOptions.find((g) => g.id === selectedGoalId) ?? null,
     [orderedGoalOptions, selectedGoalId],
-  )
+  );
 
-  const completedCount = sortedTasks.filter((t) => t.completed).length
-  const total = sortedTasks.length
-  const progressPct = total > 0 ? (completedCount / total) * 100 : 0
+  const completedCount = sortedTasks.filter((t) => t.completed).length;
+  const total = sortedTasks.length;
+  const progressPct = total > 0 ? (completedCount / total) * 100 : 0;
 
   const nextBlockStartMin = useCallback((list: typeof sortedTasks) => {
-    if (list.length === 0) return defaultEmptyDayStartMin
-    return list[list.length - 1].endMin
-  }, [])
+    if (list.length === 0) return defaultEmptyDayStartMin;
+    return list[list.length - 1].endMin;
+  }, []);
 
   const openCreateForm = useCallback(() => {
     if (sortedTasks.length === 0) {
-      setDraftStartTime(toTimeInputValue(defaultEmptyDayStartMin))
+      setDraftStartTime(toTimeInputValue(defaultEmptyDayStartMin));
       setDraftEndTime(
         toTimeInputValue(defaultEmptyDayStartMin + defaultNewBlockDurationMin),
-      )
+      );
     } else {
-      const start = nextBlockStartMin(sortedTasks)
-      setDraftStartTime(toTimeInputValue(start))
-      setDraftEndTime(toTimeInputValue(start + defaultNewBlockDurationMin))
+      const start = nextBlockStartMin(sortedTasks);
+      setDraftStartTime(toTimeInputValue(start));
+      setDraftEndTime(toTimeInputValue(start + defaultNewBlockDurationMin));
     }
-    setDraftTitle('')
-    setCreateMode('normal')
-    setSelectedGoalId(orderedGoalOptions[0]?.id ?? '')
-    setCreateFormError(null)
-    setShowCreateForm(true)
-    setEditingId(null)
-  }, [sortedTasks, nextBlockStartMin, orderedGoalOptions])
+    setDraftTitle("");
+    setCreateMode("normal");
+    setSelectedGoalId(orderedGoalOptions[0]?.id ?? "");
+    setCreateFormError(null);
+    setShowCreateForm(true);
+    setEditingId(null);
+  }, [sortedTasks, nextBlockStartMin, orderedGoalOptions]);
 
   const shiftDay = (delta: number) => {
-    setCursorDate((d) => addLocalDays(d, delta))
-    setShowCreateForm(false)
-    setEditingId(null)
-  }
+    setCursorDate((d) => addLocalDays(d, delta));
+    setShowCreateForm(false);
+    setEditingId(null);
+  };
 
   const handleSubmitCreate = (e: FormEvent) => {
-    e.preventDefault()
-    setCreateFormError(null)
+    e.preventDefault();
+    setCreateFormError(null);
     const title =
-      createMode === 'goal' ? (selectedGoal?.title?.trim() ?? '') : draftTitle.trim()
+      createMode === "goal"
+        ? (selectedGoal?.title?.trim() ?? "")
+        : draftTitle.trim();
     if (!title) {
       setCreateFormError(
-        createMode === 'goal'
-          ? 'Elige una meta para crear la tarea.'
-          : 'Escribe un título para la tarea.',
-      )
-      return
+        createMode === "goal"
+          ? "Elige una meta para crear la tarea."
+          : "Escribe un título para la tarea.",
+      );
+      return;
     }
 
-    const startMin = minutesFromTimeInput(draftStartTime)
+    const startMin = minutesFromTimeInput(draftStartTime);
     if (startMin === null) {
-      setCreateFormError('Elige una hora de inicio válida.')
-      return
+      setCreateFormError("Elige una hora de inicio válida.");
+      return;
     }
-    let endMin = minutesFromTimeInput(draftEndTime)
-    if (endMin === null) endMin = startMin + defaultNewBlockDurationMin
+    let endMin = minutesFromTimeInput(draftEndTime);
+    if (endMin === null) endMin = startMin + defaultNewBlockDurationMin;
     if (endMin <= startMin) {
-      setCreateFormError('La hora de fin debe ser después de la hora de inicio.')
-      return
+      setCreateFormError(
+        "La hora de fin debe ser después de la hora de inicio.",
+      );
+      return;
     }
 
     addTask.mutate(
@@ -212,57 +225,58 @@ export function AgendaCard({ className }: AgendaCardProps) {
         title,
         startMin,
         endMin,
-        goalId: createMode === 'goal' ? selectedGoalId : null,
+        goalId: createMode === "goal" ? selectedGoalId : null,
       },
       {
         onSuccess: () => {
           showToast(
-            createMode === 'goal'
-              ? '¡Tarea creada desde meta! Se vinculará al completarla.'
-              : '¡Tarea guardada!',
-          )
-          setShowCreateForm(false)
-          setDraftTitle('')
-          setCreateFormError(null)
+            createMode === "goal"
+              ? "¡Tarea creada desde meta! Se vinculará al completarla."
+              : "¡Tarea guardada!",
+          );
+          setShowCreateForm(false);
+          setDraftTitle("");
+          setCreateFormError(null);
         },
         onError: (err) => {
-          const msg = err instanceof Error ? err.message : 'No se pudo guardar la tarea.'
-          setCreateFormError(msg)
+          const msg =
+            err instanceof Error ? err.message : "No se pudo guardar la tarea.";
+          setCreateFormError(msg);
         },
       },
-    )
-  }
+    );
+  };
 
   const openEdit = (id: string) => {
-    const t = sortedTasks.find((x) => x.id === id)
-    if (!t) return
-    setEditingId(id)
-    setEditTitle(t.title)
-    setEditStartTime(toTimeInputValue(t.startMin))
-    setEditEndTime(toTimeInputValue(t.endMin))
-    setEditFormError(null)
-    setShowCreateForm(false)
-  }
+    const t = sortedTasks.find((x) => x.id === id);
+    if (!t) return;
+    setEditingId(id);
+    setEditTitle(t.title);
+    setEditStartTime(toTimeInputValue(t.startMin));
+    setEditEndTime(toTimeInputValue(t.endMin));
+    setEditFormError(null);
+    setShowCreateForm(false);
+  };
 
   const handleSubmitEdit = (e: FormEvent) => {
-    e.preventDefault()
-    setEditFormError(null)
-    if (!editingId) return
-    const title = editTitle.trim()
-    if (!title) return
-    const t = sortedTasks.find((x) => x.id === editingId)
-    if (!t) return
+    e.preventDefault();
+    setEditFormError(null);
+    if (!editingId) return;
+    const title = editTitle.trim();
+    if (!title) return;
+    const t = sortedTasks.find((x) => x.id === editingId);
+    if (!t) return;
 
-    const startMin = minutesFromTimeInput(editStartTime)
+    const startMin = minutesFromTimeInput(editStartTime);
     if (startMin === null) {
-      setEditFormError('Elige una hora de inicio válida.')
-      return
+      setEditFormError("Elige una hora de inicio válida.");
+      return;
     }
-    let endMin = minutesFromTimeInput(editEndTime)
-    if (endMin === null) endMin = t.endMin
+    let endMin = minutesFromTimeInput(editEndTime);
+    if (endMin === null) endMin = t.endMin;
     if (endMin <= startMin) {
-      setEditFormError('La hora de fin debe ser después de la hora de inicio.')
-      return
+      setEditFormError("La hora de fin debe ser después de la hora de inicio.");
+      return;
     }
 
     updateTask.mutate(
@@ -272,37 +286,37 @@ export function AgendaCard({ className }: AgendaCardProps) {
       },
       {
         onSuccess: () => {
-          showToast('¡Tarea actualizada!')
+          showToast("¡Tarea actualizada!");
         },
       },
-    )
-    setEditingId(null)
-  }
+    );
+    setEditingId(null);
+  };
 
   const handleDeleteEdit = () => {
-    if (!editingId) return
-    const t = sortedTasks.find((x) => x.id === editingId)
+    if (!editingId) return;
+    const t = sortedTasks.find((x) => x.id === editingId);
     setDeleteIntent({
       id: editingId,
-      title: t?.title?.trim() || 'esta tarea',
-    })
-  }
+      title: t?.title?.trim() || "esta tarea",
+    });
+  };
 
   const runDeleteTask = (id: string) => {
     removeTask.mutate(id, {
       onSuccess: () => {
-        showToast('Tarea eliminada')
-        setEditingId((prev) => (prev === id ? null : prev))
-        setEditFormError(null)
-        setDeleteIntent(null)
+        showToast("Tarea eliminada");
+        setEditingId((prev) => (prev === id ? null : prev));
+        setEditFormError(null);
+        setDeleteIntent(null);
       },
-    })
-  }
+    });
+  };
 
   return (
     <DashboardCard
       className={cn(
-        'min-h-0 bg-gradient-to-b from-bloomora-blush/90 via-bloomora-white/70 to-bloomora-rose/15 p-5 sm:p-6',
+        "h-full min-h-0 bg-gradient-to-b from-bloomora-blush/90 via-bloomora-white/70 to-bloomora-rose/15 p-5 sm:p-6",
         className,
       )}
     >
@@ -320,22 +334,24 @@ export function AgendaCard({ className }: AgendaCardProps) {
         isPending={toggle.isPending}
         onCancel={dismissBlockEndPrompt}
         onConfirm={() => {
-          if (!blockEndPrompt) return
-          const id = blockEndPrompt.taskId
+          if (!blockEndPrompt) return;
+          const id = blockEndPrompt.taskId;
           toggle.mutate(
             { id, completed: true },
             {
               onSuccess: () => {
-                showToast('¡Tarea marcada como hecha!')
-                dismissBlockEndPrompt()
+                showToast("¡Tarea marcada como hecha!");
+                dismissBlockEndPrompt();
               },
               onError: (err) => {
                 showToast(
-                  err instanceof Error ? err.message : 'No se pudo actualizar la tarea.',
-                )
+                  err instanceof Error
+                    ? err.message
+                    : "No se pudo actualizar la tarea.",
+                );
               },
             },
-          )
+          );
         }}
       />
       <BloomoraConfirmDialog
@@ -352,8 +368,8 @@ export function AgendaCard({ className }: AgendaCardProps) {
         isPending={removeTask.isPending}
         onCancel={() => setDeleteIntent(null)}
         onConfirm={() => {
-          if (!deleteIntent) return
-          runDeleteTask(deleteIntent.id)
+          if (!deleteIntent) return;
+          runDeleteTask(deleteIntent.id);
         }}
       />
       <div className="mb-4 flex shrink-0 flex-wrap items-end justify-between gap-3 sm:mb-5">
@@ -405,7 +421,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
           </p>
           {!agendaBlockNotifyOn && profile != null ? (
             <p className="text-[0.65rem] text-bloomora-text-muted sm:text-xs">
-              Avisos de fin de bloque desactivados en{' '}
+              Avisos de fin de bloque desactivados en{" "}
               <Link
                 to="/app/profile"
                 className="font-semibold text-bloomora-violet underline-offset-2 hover:underline"
@@ -416,14 +432,15 @@ export function AgendaCard({ className }: AgendaCardProps) {
             </p>
           ) : null}
           {agendaBlockNotifyOn &&
-          typeof Notification !== 'undefined' &&
-          Notification.permission === 'default' ? (
+          typeof Notification !== "undefined" &&
+          Notification.permission === "default" ? (
             <button
               type="button"
               className="text-[0.65rem] font-semibold text-bloomora-violet underline-offset-2 hover:underline sm:text-xs"
               onClick={() => void Notification.requestPermission()}
             >
-              Activar notificaciones del navegador para avisos al terminar un bloque
+              Activar notificaciones del navegador para avisos al terminar un
+              bloque
             </button>
           ) : null}
         </div>
@@ -433,23 +450,24 @@ export function AgendaCard({ className }: AgendaCardProps) {
         <div className="shrink-0 space-y-1 text-center text-sm text-red-600">
           <p>No se pudieron cargar las tareas.</p>
           <p className="text-xs font-normal text-bloomora-text-muted">
-            Comprueba en Supabase{' '}
+            Comprueba en Supabase{" "}
             <code className="rounded bg-bloomora-lavender-50 px-1 text-bloomora-deep">
               daily_plans
             </code>
-            ,{' '}
+            ,{" "}
             <code className="rounded bg-bloomora-lavender-50 px-1 text-bloomora-deep">
               tasks
             </code>
-            ,{' '}
+            ,{" "}
             <code className="rounded bg-bloomora-lavender-50 px-1 text-bloomora-deep">
               task_blocks
             </code>
-            ,{' '}
+            ,{" "}
             <code className="rounded bg-bloomora-lavender-50 px-1 text-bloomora-deep">
               subtasks
-            </code>{' '}
-            y políticas RLS para tu usuario. Si faltan listas o marcas del tracker, ejecuta{' '}
+            </code>{" "}
+            y políticas RLS para tu usuario. Si faltan listas o marcas del
+            tracker, ejecuta{" "}
             <code className="rounded bg-bloomora-lavender-50 px-1 text-bloomora-deep">
               20260416_bloomora_goal_marks_lists_goals_ui.sql
             </code>
@@ -458,7 +476,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
         </div>
       ) : null}
 
-      <div className="flex min-w-0 flex-col">
+      <div className="agenda-task-scroll flex min-h-0 min-w-0 flex-1 flex-col">
         {isLoading ? (
           <p className="py-8 text-center text-sm text-bloomora-text-muted">
             Cargando…
@@ -477,12 +495,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
         ) : null}
 
         {!isLoading && sortedTasks.length > 0 ? (
-          <div
-            className={cn(
-              'agenda-task-scroll shrink-0 rounded-xl pr-1 ring-1 ring-bloomora-line/25',
-              'h-[min(12.5rem,34dvh)] sm:h-[min(13.5rem,32dvh)] lg:h-[13.5rem] xl:h-[14.5rem]',
-            )}
-          >
+          <div className="shrink-0 rounded-xl pr-1 ring-1 ring-bloomora-line/25">
             <ul className="divide-y divide-bloomora-line/30">
               {sortedTasks.map((task) => (
                 <li key={task.id} className="flex flex-col">
@@ -501,7 +514,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
                     onDelete={() =>
                       setDeleteIntent({
                         id: task.id,
-                        title: task.title.trim() || 'esta tarea',
+                        title: task.title.trim() || "esta tarea",
                       })
                     }
                   />
@@ -531,12 +544,12 @@ export function AgendaCard({ className }: AgendaCardProps) {
                       addSubtask.mutate(
                         { taskId: task.id, title },
                         {
-                          onSuccess: () => showToast('Paso añadido'),
+                          onSuccess: () => showToast("Paso añadido"),
                           onError: (err) =>
                             showToast(
                               err instanceof Error
                                 ? err.message
-                                : 'No se pudo añadir el paso.',
+                                : "No se pudo añadir el paso.",
                             ),
                         },
                       )
@@ -548,27 +561,27 @@ export function AgendaCard({ className }: AgendaCardProps) {
                       removeSubtask.mutate(
                         { subtaskId },
                         {
-                          onSuccess: () => showToast('Paso quitado'),
+                          onSuccess: () => showToast("Paso quitado"),
                           onError: (err) =>
                             showToast(
                               err instanceof Error
                                 ? err.message
-                                : 'No se pudo quitar el paso.',
+                                : "No se pudo quitar el paso.",
                             ),
                         },
                       )
                     }
                     onRename={async (subtaskId, title) => {
                       try {
-                        await renameSubtask.mutateAsync({ subtaskId, title })
-                        showToast('Paso actualizado')
+                        await renameSubtask.mutateAsync({ subtaskId, title });
+                        showToast("Paso actualizado");
                       } catch (err) {
                         showToast(
                           err instanceof Error
                             ? err.message
-                            : 'No se pudo guardar el paso.',
-                        )
-                        throw err
+                            : "No se pudo guardar el paso.",
+                        );
+                        throw err;
                       }
                     }}
                   />
@@ -586,8 +599,8 @@ export function AgendaCard({ className }: AgendaCardProps) {
             <p className="text-xs font-semibold text-bloomora-deep">
               {sortedTasks.length > 0 ? (
                 <>
-                  Nueva tarea · ajusta{' '}
-                  <span className="text-bloomora-violet">inicio</span> y{' '}
+                  Nueva tarea · ajusta{" "}
+                  <span className="text-bloomora-violet">inicio</span> y{" "}
                   <span className="text-bloomora-violet">fin</span> (por defecto
                   continúa después de la última).
                 </>
@@ -601,28 +614,28 @@ export function AgendaCard({ className }: AgendaCardProps) {
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={() => setCreateMode('normal')}
+                onClick={() => setCreateMode("normal")}
                 className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 transition ${
-                  createMode === 'normal'
-                    ? 'bg-bloomora-violet text-white ring-bloomora-violet'
-                    : 'bg-white/85 text-bloomora-violet ring-bloomora-line/40 hover:bg-bloomora-blush/45'
+                  createMode === "normal"
+                    ? "bg-bloomora-violet text-white ring-bloomora-violet"
+                    : "bg-white/85 text-bloomora-violet ring-bloomora-line/40 hover:bg-bloomora-blush/45"
                 }`}
               >
                 Entrada normal
               </button>
               <button
                 type="button"
-                onClick={() => setCreateMode('goal')}
+                onClick={() => setCreateMode("goal")}
                 className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 transition ${
-                  createMode === 'goal'
-                    ? 'bg-bloomora-violet text-white ring-bloomora-violet'
-                    : 'bg-white/85 text-bloomora-violet ring-bloomora-line/40 hover:bg-bloomora-blush/45'
+                  createMode === "goal"
+                    ? "bg-bloomora-violet text-white ring-bloomora-violet"
+                    : "bg-white/85 text-bloomora-violet ring-bloomora-line/40 hover:bg-bloomora-blush/45"
                 }`}
               >
                 Desde metas
               </button>
             </div>
-            {createMode === 'goal' ? (
+            {createMode === "goal" ? (
               <label className="block text-xs font-medium text-bloomora-text-muted">
                 Meta vinculada
                 <select
@@ -635,7 +648,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
                   ) : null}
                   {orderedGoalOptions.map((g) => (
                     <option key={g.id} value={g.id}>
-                      {templateIds.includes(g.id) ? '⭐ ' : ''}
+                      {templateIds.includes(g.id) ? "⭐ " : ""}
                       {g.title}
                     </option>
                   ))}
@@ -646,10 +659,14 @@ export function AgendaCard({ className }: AgendaCardProps) {
               Título
               <input
                 onChange={(e) => setDraftTitle(e.target.value)}
-                value={createMode === 'goal' ? selectedGoal?.title ?? '' : draftTitle}
+                value={
+                  createMode === "goal"
+                    ? (selectedGoal?.title ?? "")
+                    : draftTitle
+                }
                 className="mt-1.5 w-full rounded-xl border border-bloomora-line/60 bg-bloomora-white px-3 py-2.5 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/30 focus:ring-2"
                 placeholder="Ej. Caminar 20 minutos"
-                disabled={createMode === 'goal'}
+                disabled={createMode === "goal"}
                 autoFocus
               />
             </label>
@@ -684,8 +701,8 @@ export function AgendaCard({ className }: AgendaCardProps) {
                 size="sm"
                 disabled={
                   addTask.isPending ||
-                  (createMode === 'normal' && !draftTitle.trim()) ||
-                  (createMode === 'goal' && !selectedGoalId)
+                  (createMode === "normal" && !draftTitle.trim()) ||
+                  (createMode === "goal" && !selectedGoalId)
                 }
               >
                 Guardar
@@ -695,8 +712,8 @@ export function AgendaCard({ className }: AgendaCardProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  setShowCreateForm(false)
-                  setCreateFormError(null)
+                  setShowCreateForm(false);
+                  setCreateFormError(null);
                 }}
               >
                 Cancelar
@@ -760,8 +777,8 @@ export function AgendaCard({ className }: AgendaCardProps) {
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    setEditingId(null)
-                    setEditFormError(null)
+                    setEditingId(null);
+                    setEditFormError(null);
                   }}
                 >
                   Cancelar
@@ -791,5 +808,5 @@ export function AgendaCard({ className }: AgendaCardProps) {
         />
       </div>
     </DashboardCard>
-  )
+  );
 }

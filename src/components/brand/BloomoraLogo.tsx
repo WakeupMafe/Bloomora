@@ -48,7 +48,7 @@ export function BloomoraLogo({
       {showWordmark ? (
         <span
           className={cn(
-            'font-semibold tracking-[0.03em] text-[#e89bb8]',
+            'bloomora-logo-wordmark font-semibold tracking-[0.03em] text-bloomora-rose-deep',
             wordmarkSizes[size],
           )}
         >

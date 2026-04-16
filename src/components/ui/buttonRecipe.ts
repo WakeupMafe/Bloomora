@@ -5,7 +5,7 @@ export type ButtonSize = 'sm' | 'md' | 'lg'
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    'bg-[linear-gradient(90deg,#ff9aab_0%,#ffc2d1_100%)] text-white font-semibold shadow-[0_12px_32px_-8px_rgba(255,154,171,0.5)] hover:brightness-[1.08] hover:saturate-[1.06] hover:shadow-[0_14px_40px_-8px_rgba(255,140,160,0.58)]',
+    'bg-[linear-gradient(90deg,var(--bloomora-btn-from)_0%,var(--bloomora-btn-to)_100%)] text-white font-semibold shadow-[0_12px_32px_-8px_var(--bloomora-btn-shadow)] hover:brightness-[1.08] hover:saturate-[1.06] hover:shadow-[0_14px_40px_-8px_var(--bloomora-btn-shadow-hover)]',
   secondary:
     'bg-bloomora-white/80 text-bloomora-deep shadow-bloomora-card ring-1 ring-bloomora-line hover:bg-bloomora-white hover:ring-bloomora-lilac/50 hover:shadow-[0_10px_32px_-14px_rgba(124,107,181,0.24)] hover:text-bloomora-deep',
   ghost:

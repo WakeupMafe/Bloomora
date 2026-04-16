@@ -63,7 +63,7 @@ export function GoalTrackerPanel({
   return (
     <article
       className={cn(
-        'relative overflow-visible rounded-[22px] p-5 pb-20 shadow-[0_8px_28px_rgba(91,74,140,0.08)] ring-1 ring-bloomora-line/30 sm:rounded-[26px] sm:p-7 sm:pb-24',
+        'bloomora-goal-tracker-panel relative overflow-visible rounded-[22px] p-5 pb-20 shadow-[0_8px_28px_rgba(91,74,140,0.08)] ring-1 ring-bloomora-line/30 sm:rounded-[26px] sm:p-7 sm:pb-24',
         'bg-[linear-gradient(168deg,#FFF9FC_0%,#FDECF5_32%,#f5ecfc_58%,#D6F0FF_100%)]',
       )}
     >
@@ -108,8 +108,9 @@ export function GoalTrackerPanel({
             </span>
             {streak > 0 ? (
               <span
+                data-vivid={vivid ? 'true' : 'false'}
                 className={cn(
-                  'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold',
+                  'bloomora-tracker-streak-pill inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold',
                   vivid
                     ? 'bg-white/70 text-orange-600 shadow-sm'
                     : 'bg-white/40 text-bloomora-text-muted',
@@ -117,7 +118,7 @@ export function GoalTrackerPanel({
               >
                 🔥 {streak} {streak === 1 ? 'día seguido' : 'días seguidos'}
                 {streakSubtitle ? (
-                  <span className="font-semibold text-bloomora-deep/80">
+                  <span className="bloomora-tracker-streak-sub font-semibold text-bloomora-deep/80">
                     — {streakSubtitle}
                   </span>
                 ) : null}
@@ -126,7 +127,7 @@ export function GoalTrackerPanel({
           </div>
           <div
             className={cn(
-              'h-2.5 overflow-hidden rounded-full bg-white/55 shadow-inner',
+              'bloomora-tracker-progress-track h-2.5 overflow-hidden rounded-full bg-white/55 shadow-inner',
               vivid && 'ring-1 ring-white/80',
             )}
           >
@@ -142,18 +143,20 @@ export function GoalTrackerPanel({
           </div>
         </div>
 
-        <GoalTrackerGrid
-          variant="plain"
-          year={year}
-          monthIndex0={monthIndex0}
-          accent={accent}
-          trackerColorId={trackerColorId}
-          completedDays={completedDays}
-          onToggleDay={onToggleDay}
-          readOnly={readOnly}
-          monthNavigation={monthNavigation}
-          minAllowedDate={goalStartDate}
-        />
+        <div className="bloomora-goal-tracker-calendar-surface rounded-[18px] sm:rounded-[20px]">
+          <GoalTrackerGrid
+            variant="plain"
+            year={year}
+            monthIndex0={monthIndex0}
+            accent={accent}
+            trackerColorId={trackerColorId}
+            completedDays={completedDays}
+            onToggleDay={onToggleDay}
+            readOnly={readOnly}
+            monthNavigation={monthNavigation}
+            minAllowedDate={goalStartDate}
+          />
+        </div>
         <p className="px-1 text-sm font-medium text-bloomora-violet/90">
           ✨ {encouragement}
         </p>
@@ -170,7 +173,7 @@ export function GoalTrackerPanel({
       >
         <div
           className={cn(
-            'mb-1 rounded-full bg-white/75 px-2.5 py-1 text-[11px] font-semibold text-bloomora-deep shadow-sm ring-1 ring-bloomora-line/25 backdrop-blur-sm sm:text-xs',
+            'bloomora-tracker-mood-pill mb-1 rounded-full bg-white/75 px-2.5 py-1 text-[11px] font-semibold text-bloomora-deep shadow-sm ring-1 ring-bloomora-line/25 backdrop-blur-sm sm:text-xs',
             mood === 'celebrate' && 'text-bloomora-violet',
           )}
           aria-hidden

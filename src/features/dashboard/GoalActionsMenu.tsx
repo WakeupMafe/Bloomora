@@ -78,7 +78,7 @@ export function GoalActionsMenu({
           role="menu"
           aria-labelledby={triggerId}
           className={cn(
-            'min-w-[11.5rem] overflow-hidden rounded-xl bg-[#fffafc]/[0.98] py-1 shadow-[0_14px_40px_rgba(91,74,140,0.18)] ring-1 ring-bloomora-line/40 backdrop-blur-sm',
+            'min-w-[11.5rem] overflow-hidden rounded-xl bg-bloomora-blush/[0.98] py-1 shadow-[0_14px_40px_rgba(91,74,140,0.18)] ring-1 ring-bloomora-line/40 backdrop-blur-sm',
             isNarrow
               ? 'fixed rounded-[18px] p-1'
               : 'fixed rounded-xl p-1',

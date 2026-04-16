@@ -1,7 +1,6 @@
 /**
- * Temas de la app: mismos ids que en Editar perfil + legado `bloomora_pastel` → pink.
- * Los valores se escriben en `document.documentElement` como `--color-bloomora-*`
- * (Tailwind v4 @theme) para que bg-*, text-*, ring-*, etc. reaccionen en runtime.
+ * Temas de la app: ids en Editar perfil + legado `bloomora_pastel` → pink.
+ * `--color-bloomora-*` para Tailwind; `--bloomora-btn-*` / `--bloomora-list-*` para gradientes fijos.
  */
 
 export const APP_THEME_IDS = [
@@ -11,6 +10,7 @@ export const APP_THEME_IDS = [
   'periwinkle',
   'sky',
   'mint',
+  'dark',
 ] as const
 
 export type AppThemeId = (typeof APP_THEME_IDS)[number]
@@ -42,6 +42,44 @@ const CSS_PREFIX = '--color-bloomora-'
 
 export const BLOOMORA_THEME_CSS_VAR_NAMES = KEYS.map(
   (k) => `${CSS_PREFIX}${k}`,
+) as readonly string[]
+
+/** Cromado compartido (botón primario + bloques tipo Listas) en temas claros. */
+const LIGHT_CHROME: Record<string, string> = {
+  '--bloomora-btn-from': '#ff9aab',
+  '--bloomora-btn-to': '#ffc2d1',
+  '--bloomora-btn-shadow': 'rgba(255, 154, 171, 0.5)',
+  '--bloomora-btn-shadow-hover': 'rgba(255, 140, 160, 0.58)',
+  '--bloomora-list-cta-from': '#ff9eb3',
+  '--bloomora-list-cta-via': '#e8b4ff',
+  '--bloomora-list-cta-to': '#9b86f0',
+  '--bloomora-list-border-from': '#ffb8d0',
+  '--bloomora-list-border-via': '#dcc8ff',
+  '--bloomora-list-border-to': '#a89cf0',
+  '--bloomora-list-add-from': '#ff8fab',
+  '--bloomora-list-add-to': '#f4a8d0',
+  '--bloomora-list-panel-glow': 'rgba(236, 139, 184, 0.35)',
+}
+
+/** Botones y listas en oscuro: solo azul cielo / cyan suave (sin azul rey). */
+const DARK_CHROME: Record<string, string> = {
+  '--bloomora-btn-from': '#0ea5e9',
+  '--bloomora-btn-to': '#bae6fd',
+  '--bloomora-btn-shadow': 'rgba(14, 165, 233, 0.38)',
+  '--bloomora-btn-shadow-hover': 'rgba(125, 211, 252, 0.48)',
+  '--bloomora-list-cta-from': '#0ea5e9',
+  '--bloomora-list-cta-via': '#38bdf8',
+  '--bloomora-list-cta-to': '#bae6fd',
+  '--bloomora-list-border-from': '#38bdf8',
+  '--bloomora-list-border-via': '#a5f3fc',
+  '--bloomora-list-border-to': '#22d3ee',
+  '--bloomora-list-add-from': '#0ea5e9',
+  '--bloomora-list-add-to': '#7dd3fc',
+  '--bloomora-list-panel-glow': 'rgba(56, 189, 248, 0.42)',
+}
+
+export const BLOOMORA_EXTRA_CSS_VAR_NAMES = Object.keys(
+  LIGHT_CHROME,
 ) as readonly string[]
 
 /** Valores por defecto (coinciden con `globals.css` @theme). */
@@ -159,6 +197,29 @@ const mint: Palette = {
   line: 'rgba(6, 78, 59, 0.12)',
 }
 
+/**
+ * Modo oscuro mate: gris plano ~#121212 (página); tarjetas #181818 / #242424;
+ * sin “lavanda” en el fondo; acentos y rosa del sistema → azules.
+ */
+const dark: Palette = {
+  snow: '#121212',
+  mist: '#141414',
+  'lavender-50': '#181818',
+  'lavender-100': '#242424',
+  lilac: '#7dd3fc',
+  violet: '#bae6fd',
+  deep: '#f0eef6',
+  rose: '#38bdf8',
+  'rose-deep': '#22d3ee',
+  blush: '#121212',
+  sky: '#a5f3fc',
+  'sky-deep': '#67e8f9',
+  text: '#ebe9f2',
+  'text-muted': '#9b94b0',
+  white: '#1e1e1e',
+  line: 'rgba(230, 228, 245, 0.12)',
+}
+
 export const THEME_PALETTES: Record<AppThemeId, Palette> = {
   pink,
   lavender,
@@ -166,6 +227,17 @@ export const THEME_PALETTES: Record<AppThemeId, Palette> = {
   periwinkle,
   sky,
   mint,
+  dark,
+}
+
+const THEME_CHROME: Record<AppThemeId, Record<string, string>> = {
+  pink: LIGHT_CHROME,
+  lavender: LIGHT_CHROME,
+  violet: LIGHT_CHROME,
+  periwinkle: LIGHT_CHROME,
+  sky: LIGHT_CHROME,
+  mint: LIGHT_CHROME,
+  dark: DARK_CHROME,
 }
 
 export function resolveAppThemeId(db: string | null | undefined): AppThemeId {
@@ -180,6 +252,15 @@ export function applyBloomoraThemeCssVars(themeId: AppThemeId): void {
   for (const key of KEYS) {
     root.style.setProperty(`${CSS_PREFIX}${key}`, palette[key])
   }
+  const chrome = THEME_CHROME[themeId]
+  for (const name of BLOOMORA_EXTRA_CSS_VAR_NAMES) {
+    root.style.setProperty(name, chrome[name] ?? '')
+  }
+  if (themeId === 'dark') {
+    root.setAttribute('data-bloomora-theme', 'dark')
+  } else {
+    root.removeAttribute('data-bloomora-theme')
+  }
 }
 
 export function clearBloomoraThemeCssVars(): void {
@@ -187,4 +268,8 @@ export function clearBloomoraThemeCssVars(): void {
   for (const name of BLOOMORA_THEME_CSS_VAR_NAMES) {
     root.style.removeProperty(name)
   }
+  for (const name of BLOOMORA_EXTRA_CSS_VAR_NAMES) {
+    root.style.removeProperty(name)
+  }
+  root.removeAttribute('data-bloomora-theme')
 }

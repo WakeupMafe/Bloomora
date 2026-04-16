@@ -88,7 +88,7 @@ export function GoalTrackerGrid({
   return (
     <div
       className={cn(
-        'w-full',
+        'bloomora-goal-tracker-grid w-full',
         variant === 'card' &&
           cn(
             'rounded-[20px] p-3 shadow-[0_6px_22px_rgba(91,74,140,0.06)] ring-1 ring-bloomora-line/20 sm:rounded-[22px] sm:p-4',
@@ -109,7 +109,7 @@ export function GoalTrackerGrid({
             />
           ) : (
             <div className="flex justify-center">
-              <span className="rounded-full bg-white/70 px-4 py-1.5 text-sm font-semibold capitalize tracking-tight text-bloomora-deep shadow-sm ring-1 ring-bloomora-line/15">
+              <span className="bloomora-tracker-month-staticpill rounded-full bg-white/70 px-4 py-1.5 text-sm font-semibold capitalize tracking-tight text-bloomora-deep shadow-sm ring-1 ring-bloomora-line/15">
                 {monthLabelEs(year, monthIndex0)}
               </span>
             </div>
@@ -129,7 +129,7 @@ export function GoalTrackerGrid({
         {WD_LABELS.map((label) => (
           <div
             key={label}
-            className="flex min-h-6 items-center justify-center text-[10px] font-bold uppercase tracking-wide text-bloomora-text-muted/75 sm:min-h-7 sm:text-[11px]"
+            className="bloomora-tracker-wd-label flex min-h-6 items-center justify-center text-[10px] font-bold uppercase tracking-wide text-bloomora-text-muted/75 sm:min-h-7 sm:text-[11px]"
           >
             {label}
           </div>
@@ -167,6 +167,10 @@ export function GoalTrackerGrid({
                 key={key}
                 type="button"
                 disabled={!interactive}
+                data-complete={complete ? 'true' : 'false'}
+                data-today={today ? 'true' : 'false'}
+                data-locked={beforeGoalStart && !complete ? 'true' : 'false'}
+                data-future={future ? 'true' : 'false'}
                 onClick={() => onToggleDay?.(day)}
                 style={complete ? getCompletedCellStyle(swatch) : undefined}
                 className={cn(
@@ -177,18 +181,18 @@ export function GoalTrackerGrid({
                     'scale-[1.02] hover:scale-[1.05] hover:brightness-[1.03] active:scale-95',
                   !complete &&
                     cn(
-                      'bg-[#FFEFF8]/90 text-bloomora-deep/65 shadow-inner shadow-white/60 ring-1 ring-bloomora-rose/25',
+                      'bg-bloomora-blush/90 text-bloomora-deep/65 shadow-inner shadow-white/10 ring-1 ring-bloomora-rose/25',
                       beforeGoalStart && 'opacity-45',
                       future && 'opacity-75',
                       interactive &&
-                        'hover:scale-105 hover:bg-[#ffdceb] hover:text-bloomora-deep hover:shadow-md hover:ring-bloomora-rose/35 active:scale-95',
+                        'hover:scale-105 hover:bg-bloomora-rose/20 hover:text-bloomora-deep hover:shadow-md hover:ring-bloomora-rose/35 active:scale-95',
                     ),
                   today &&
                     !complete &&
-                    'ring-2 ring-bloomora-rose ring-offset-2 ring-offset-[#fff8fc] shadow-[0_0_0_3px_rgba(244,184,208,0.25)]',
+                    'ring-2 ring-bloomora-rose ring-offset-2 ring-offset-bloomora-snow shadow-[0_0_0_3px_rgba(244,184,208,0.25)]',
                   today &&
                     complete &&
-                    'ring-2 ring-white/90 ring-offset-2 ring-offset-[#fff5fb]',
+                    'ring-2 ring-white/90 ring-offset-2 ring-offset-bloomora-blush',
                   readOnly && 'cursor-default opacity-90',
                 )}
                 aria-label={

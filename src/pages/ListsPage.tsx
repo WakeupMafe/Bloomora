@@ -104,7 +104,7 @@ export function ListsPage() {
       <h1 className="app-fluid-title font-bold text-bloomora-deep">Tus listas</h1>
 
       <div className="flex min-w-0 flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] lg:items-start lg:gap-8">
-        <aside className="min-w-0 space-y-3 rounded-[clamp(1rem,0.85rem+0.8vw,1.35rem)] bg-white/92 p-4 shadow-[0_6px_24px_-10px_rgba(124,107,181,0.12)] ring-1 ring-bloomora-line/40 sm:p-5">
+        <aside className="min-w-0 space-y-3 rounded-[clamp(1rem,0.85rem+0.8vw,1.35rem)] bg-bloomora-lavender-50/95 p-4 shadow-[0_6px_24px_-10px_rgba(124,107,181,0.12)] ring-1 ring-bloomora-line/40 sm:p-5">
           <p className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-bloomora-text-muted">
             Tus listas
           </p>
@@ -129,8 +129,8 @@ export function ListsPage() {
                       'flex max-w-[min(85vw,16rem)] items-center gap-2 rounded-2xl px-3 py-3 text-left text-sm font-semibold transition touch-manipulation',
                       'min-h-[2.75rem] whitespace-nowrap lg:max-w-none lg:w-full lg:whitespace-normal',
                       selectedId === l.id
-                        ? 'bg-gradient-to-r from-bloomora-lavender-50 to-white text-bloomora-deep shadow-sm ring-2 ring-bloomora-lilac/40'
-                        : 'bg-white/70 text-bloomora-deep ring-1 ring-bloomora-line/35 hover:bg-white hover:ring-bloomora-lilac/25',
+                        ? 'bg-bloomora-lavender-100 text-bloomora-deep shadow-sm ring-2 ring-bloomora-lilac/45'
+                        : 'bg-bloomora-white/80 text-bloomora-deep ring-1 ring-bloomora-line/35 hover:bg-bloomora-lavender-100/90 hover:ring-bloomora-lilac/25',
                     )}
                   >
                     <span className="min-w-0 truncate lg:whitespace-normal">{l.title}</span>
@@ -147,7 +147,7 @@ export function ListsPage() {
               value={newListTitle}
               onChange={(e) => setNewListTitle(e.target.value)}
               placeholder="Nueva lista…"
-              className="w-full rounded-xl border border-bloomora-line/50 bg-white/95 px-3 py-2.5 text-sm font-semibold outline-none ring-bloomora-lilac/20 focus:ring-2"
+              className="bloomora-form-input w-full rounded-xl border border-bloomora-line/50 px-3 py-2.5 text-sm font-semibold outline-none ring-bloomora-lilac/20 focus:ring-2"
             />
             <Button
               type="submit"
@@ -160,7 +160,7 @@ export function ListsPage() {
           </form>
         </aside>
 
-        <section className="min-w-0 rounded-[clamp(1.1rem,0.95rem+0.9vw,1.5rem)] bg-white/92 p-4 shadow-[0_8px_32px_-12px_rgba(124,107,181,0.14)] ring-1 ring-bloomora-line/40 sm:p-6">
+        <section className="min-w-0 rounded-[clamp(1.1rem,0.95rem+0.9vw,1.5rem)] bg-bloomora-lavender-50/95 p-4 shadow-[0_8px_32px_-12px_rgba(124,107,181,0.14)] ring-1 ring-bloomora-line/40 sm:p-6">
           {!selected ? (
             <p className="text-sm text-bloomora-text-muted">
               Crea o elige una lista.
@@ -176,7 +176,7 @@ export function ListsPage() {
                   <input
                     value={listTitleEdit}
                     onChange={(e) => setListTitleEdit(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-bloomora-line/50 bg-white/95 px-3 py-2.5 text-[clamp(0.95rem,0.88rem+0.4vw,1.05rem)] font-bold text-bloomora-deep outline-none ring-bloomora-lilac/20 focus:ring-2"
+                    className="bloomora-form-input mt-1 w-full rounded-xl border border-bloomora-line/50 px-3 py-2.5 text-[clamp(0.95rem,0.88rem+0.4vw,1.05rem)] font-bold text-bloomora-deep outline-none ring-bloomora-lilac/20 focus:ring-2"
                   />
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -254,7 +254,7 @@ export function ListsPage() {
                   value={newItem}
                   onChange={(e) => setNewItem(e.target.value)}
                   placeholder="Algo más para la lista…"
-                  className="min-h-12 min-w-0 flex-1 rounded-2xl border border-bloomora-line/50 bg-white/95 px-4 py-3 text-[clamp(0.9rem,0.85rem+0.35vw,1rem)] font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/25 focus:ring-2 touch-manipulation"
+                  className="bloomora-form-input min-h-12 min-w-0 flex-1 rounded-2xl border border-bloomora-line/50 px-4 py-3 text-[clamp(0.9rem,0.85rem+0.35vw,1rem)] font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/25 focus:ring-2 touch-manipulation"
                 />
                 <Button
                   type="submit"
@@ -294,9 +294,8 @@ function ListItemRow({
   return (
     <li
       className={cn(
-        'overflow-hidden rounded-2xl border border-bloomora-line/30',
-        'bg-gradient-to-br from-white via-[#fffafc] to-bloomora-lavender-50/35',
-        'p-3 shadow-[0_4px_18px_-6px_rgba(124,107,181,0.12)] ring-1 ring-white/70',
+        'bloomora-list-item-surface overflow-hidden rounded-2xl border border-bloomora-line/30',
+        'p-3 shadow-[0_4px_18px_-6px_rgba(124,107,181,0.12)] ring-1 ring-bloomora-line/25',
         'sm:p-4',
       )}
     >
@@ -313,7 +312,7 @@ function ListItemRow({
             <input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              className="min-h-11 min-w-0 flex-1 rounded-xl border border-bloomora-line/50 bg-white/95 px-3 py-2 text-sm font-semibold outline-none ring-bloomora-lilac/25 focus:ring-2"
+              className="bloomora-form-input min-h-11 min-w-0 flex-1 rounded-xl border border-bloomora-line/50 px-3 py-2 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/25 focus:ring-2"
               autoFocus
             />
           </div>
@@ -347,7 +346,7 @@ function ListItemRow({
                 'mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 text-sm font-bold transition touch-manipulation',
                 item.done
                   ? 'border-bloomora-rose-deep bg-bloomora-rose text-white shadow-sm'
-                  : 'border-bloomora-rose/40 bg-white text-transparent hover:border-bloomora-rose/70',
+                  : 'border-bloomora-rose/40 bg-bloomora-white text-transparent hover:border-bloomora-rose/70',
               )}
             >
               {item.done ? '✓' : ''}
@@ -357,7 +356,7 @@ function ListItemRow({
                 className={cn(
                   'text-[clamp(0.9rem,0.84rem+0.35vw,1rem)] font-semibold leading-snug text-bloomora-deep',
                   item.done &&
-                    'text-bloomora-text-muted line-through decoration-pink-200/80',
+                    'text-bloomora-text-muted line-through decoration-bloomora-rose/55',
                 )}
               >
                 {item.title}
@@ -365,14 +364,14 @@ function ListItemRow({
               <div className="mt-2.5 flex flex-wrap gap-2">
                 <button
                   type="button"
-                  className="rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-bloomora-violet ring-1 ring-bloomora-line/40 transition hover:bg-bloomora-lavender-50 touch-manipulation"
+                  className="rounded-full bg-bloomora-lavender-100/90 px-3 py-1.5 text-xs font-semibold text-bloomora-violet ring-1 ring-bloomora-line/40 transition hover:bg-bloomora-lavender-50 touch-manipulation"
                   onClick={() => setEditing(true)}
                 >
                   Editar
                 </button>
                 <button
                   type="button"
-                  className="rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-red-600/90 ring-1 ring-red-100 transition hover:bg-red-50/80 touch-manipulation"
+                  className="rounded-full bg-bloomora-lavender-100/90 px-3 py-1.5 text-xs font-semibold text-red-600/90 ring-1 ring-red-500/15 transition hover:bg-red-500/10 touch-manipulation"
                   onClick={onDelete}
                 >
                   Quitar

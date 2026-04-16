@@ -20,8 +20,7 @@ drop policy if exists "categories_anon_all" on public.categories;
 
 create policy "categories_anon_all"
 on public.categories
-for all
-using (true)
+for all   
 with check (true);
 
 -- ---------- daily_plans ----------

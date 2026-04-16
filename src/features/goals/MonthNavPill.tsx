@@ -25,7 +25,7 @@ export function MonthNavPill({
     <div className={cn('flex justify-center', className)}>
       <div
         className={cn(
-          'inline-flex max-w-full items-stretch overflow-hidden rounded-full bg-white/75 shadow-sm ring-1 ring-bloomora-line/20 backdrop-blur-[2px]',
+          'bloomora-month-nav inline-flex max-w-full items-stretch overflow-hidden rounded-full bg-white/75 shadow-sm ring-1 ring-bloomora-line/20 backdrop-blur-[2px]',
           compact ? 'text-xs' : 'text-sm',
         )}
       >

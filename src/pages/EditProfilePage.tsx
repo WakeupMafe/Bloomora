@@ -24,7 +24,17 @@ const THEME_SWATCHES = [
   { id: 'periwinkle', className: 'bg-[#a5b4fc] ring-[#c7d2fe]' },
   { id: 'sky', className: 'bg-[#7dd3fc] ring-[#bae6fd]' },
   { id: 'mint', className: 'bg-[#86efac] ring-[#bbf7d0]' },
-] as const
+  {
+    id: 'dark',
+    label: 'Oscuro mate, acentos azules',
+    className:
+      'bg-[linear-gradient(145deg,#2d2b33_0%,#1f1d24_55%,#3a5288_100%)] ring-slate-500/60',
+  },
+] as const satisfies readonly {
+  id: AppThemeId
+  className: string
+  label?: string
+}[]
 
 type AvatarOptionId = 'bunny' | 'conejoBoy' | 'conejoLofi' | 'conejitaGirl'
 
@@ -142,8 +152,11 @@ export function EditProfilePage() {
   }
 
   return (
-    <div className="relative isolate min-h-dvh">
-      <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
+    <div className="relative isolate min-h-dvh bg-bloomora-snow">
+      <div
+        className="bloomora-page-glows pointer-events-none absolute inset-0 -z-10"
+        aria-hidden
+      >
         <div className="absolute inset-0 bg-gradient-to-b from-bloomora-lavender-50/40 via-bloomora-snow to-bloomora-mist/80" />
         <div className="absolute -right-20 top-0 h-64 w-64 rounded-full bg-bloomora-rose/15 blur-3xl" />
         <div className="absolute -left-16 top-1/3 h-56 w-56 rounded-full bg-bloomora-lilac/12 blur-3xl" />
@@ -154,8 +167,7 @@ export function EditProfilePage() {
 
         <article
           className={cn(
-            'app-principal-card overflow-hidden shadow-[0_10px_40px_-12px_rgba(91,74,140,0.15)] ring-1 ring-bloomora-line/25',
-            'bg-[linear-gradient(165deg,#ffffff_0%,#fdf8ff_38%,#f5f0fc_100%)]',
+            'bloomora-elevated-panel app-principal-card overflow-hidden ring-1 ring-bloomora-line/25',
           )}
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -184,7 +196,7 @@ export function EditProfilePage() {
                 <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-8">
                   <div className="mx-auto shrink-0 sm:mx-0">
                     <div className="relative">
-                      <div className="h-32 w-32 overflow-hidden rounded-full bg-bloomora-lavender-50 ring-4 ring-white shadow-[0_8px_28px_rgba(124,107,181,0.2)] sm:h-36 sm:w-36">
+                      <div className="h-32 w-32 overflow-hidden rounded-full bg-bloomora-lavender-50 ring-4 ring-bloomora-lavender-100 shadow-[0_8px_28px_rgba(124,107,181,0.2)] sm:h-36 sm:w-36">
                         <img
                           src={circleSrc}
                           alt=""
@@ -207,7 +219,7 @@ export function EditProfilePage() {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         autoComplete="name"
-                        className="w-full rounded-full border border-bloomora-line/50 bg-white/95 px-4 py-2.5 text-sm font-medium text-bloomora-deep shadow-inner shadow-white/60 ring-1 ring-bloomora-line/10 transition placeholder:text-bloomora-text-muted/60 focus:border-bloomora-lilac/45 focus:outline-none focus:ring-2 focus:ring-bloomora-lilac/35 sm:py-3 sm:text-[0.9375rem]"
+                        className="bloomora-form-input w-full rounded-full border border-bloomora-line/50 px-4 py-2.5 text-sm font-medium text-bloomora-deep ring-1 ring-bloomora-line/10 transition placeholder:text-bloomora-text-muted/60 focus:border-bloomora-lilac/45 focus:outline-none focus:ring-2 focus:ring-bloomora-lilac/35 sm:py-3 sm:text-[0.9375rem]"
                       />
                     </div>
                     <div>
@@ -224,7 +236,7 @@ export function EditProfilePage() {
                         value={cedula}
                         onChange={(e) => setCedula(e.target.value)}
                         autoComplete="off"
-                        className="w-full rounded-full border border-bloomora-line/50 bg-white/95 px-4 py-2.5 text-sm font-medium text-bloomora-deep shadow-inner shadow-white/60 ring-1 ring-bloomora-line/10 transition placeholder:text-bloomora-text-muted/60 focus:border-bloomora-lilac/45 focus:outline-none focus:ring-2 focus:ring-bloomora-lilac/35 sm:py-3 sm:text-[0.9375rem]"
+                        className="bloomora-form-input w-full rounded-full border border-bloomora-line/50 px-4 py-2.5 text-sm font-medium text-bloomora-deep ring-1 ring-bloomora-line/10 transition placeholder:text-bloomora-text-muted/60 focus:border-bloomora-lilac/45 focus:outline-none focus:ring-2 focus:ring-bloomora-lilac/35 sm:py-3 sm:text-[0.9375rem]"
                       />
                     </div>
                     <div>
@@ -240,7 +252,7 @@ export function EditProfilePage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         autoComplete="email"
-                        className="w-full rounded-full border border-bloomora-line/50 bg-white/95 px-4 py-2.5 text-sm font-medium text-bloomora-deep shadow-inner shadow-white/60 ring-1 ring-bloomora-line/10 transition placeholder:text-bloomora-text-muted/60 focus:border-bloomora-lilac/45 focus:outline-none focus:ring-2 focus:ring-bloomora-lilac/35 sm:py-3 sm:text-[0.9375rem]"
+                        className="bloomora-form-input w-full rounded-full border border-bloomora-line/50 px-4 py-2.5 text-sm font-medium text-bloomora-deep ring-1 ring-bloomora-line/10 transition placeholder:text-bloomora-text-muted/60 focus:border-bloomora-lilac/45 focus:outline-none focus:ring-2 focus:ring-bloomora-lilac/35 sm:py-3 sm:text-[0.9375rem]"
                       />
                     </div>
 
@@ -306,9 +318,10 @@ export function EditProfilePage() {
                           type="button"
                           role="radio"
                           aria-checked={selected}
+                          aria-label={'label' in t && t.label ? t.label : `Tema ${t.id}`}
                           onClick={() => setThemeId(t.id)}
                           className={cn(
-                            'relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full shadow-sm ring-2 ring-offset-2 ring-offset-[#fdf8ff] transition hover:scale-105 active:scale-95 sm:h-12 sm:w-12',
+                            'relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full shadow-sm ring-2 ring-offset-2 ring-offset-bloomora-blush transition hover:scale-105 active:scale-95 sm:h-12 sm:w-12',
                             t.className,
                             selected
                               ? 'ring-bloomora-violet/70'
@@ -317,7 +330,7 @@ export function EditProfilePage() {
                         >
                           {selected ? (
                             <span
-                              className="flex h-5 w-5 items-center justify-center rounded-full bg-white/95 text-xs font-bold text-bloomora-violet shadow-sm"
+                              className="flex h-5 w-5 items-center justify-center rounded-full bg-bloomora-lavender-100 text-xs font-bold text-bloomora-violet shadow-sm ring-1 ring-bloomora-line/20"
                               aria-hidden
                             >
                               ✓
@@ -345,7 +358,7 @@ export function EditProfilePage() {
                           aria-pressed={selected}
                           onClick={() => setAvatarId(opt.id)}
                           className={cn(
-                            'relative aspect-square w-[3.25rem] overflow-hidden rounded-2xl ring-2 ring-offset-2 ring-offset-[#fdf8ff] transition hover:scale-[1.03] active:scale-95 sm:w-14',
+                            'relative aspect-square w-[3.25rem] overflow-hidden rounded-2xl ring-2 ring-offset-2 ring-offset-bloomora-blush transition hover:scale-[1.03] active:scale-95 sm:w-14',
                             selected
                               ? 'ring-bloomora-violet/70 shadow-md'
                               : 'ring-bloomora-line/25 hover:ring-bloomora-lilac/40',
@@ -385,7 +398,7 @@ export function EditProfilePage() {
                   Cuando termine un bloque del día de hoy, Bloomora puede vibrar, reproducir un sonido breve,
                   mostrarte un mensaje y, si el navegador lo permite, enviar una notificación.
                 </p>
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white/75 px-4 py-3.5 ring-1 ring-bloomora-line/35">
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-bloomora-lavender-100/85 px-4 py-3.5 ring-1 ring-bloomora-line/35">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-bloomora-deep">
                       Avisos al terminar un bloque

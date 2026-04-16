@@ -1,29 +1,29 @@
-import { useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { BloomoraLogo } from '@/components/brand/BloomoraLogo'
-import { useUserPhone } from '@/contexts/UserPhoneContext'
-import { useBloomoraProfile } from '@/hooks/useBloomoraProfile'
+import { useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { BloomoraLogo } from "@/components/brand/BloomoraLogo";
+import { useUserPhone } from "@/contexts/UserPhoneContext";
+import { useBloomoraProfile } from "@/hooks/useBloomoraProfile";
 import {
   formatProfileGreeting,
   profileAvatarSrc,
   profileFirstName,
-} from '@/lib/profileAvatarSrc'
-import { mockProfileFirstName } from '@/data/dashboardMock'
-import { usePopoverDismiss } from '@/hooks/usePopoverDismiss'
-import { cn } from '@/utils/cn'
+} from "@/lib/profileAvatarSrc";
+import { mockProfileFirstName } from "@/data/dashboardMock";
+import { usePopoverDismiss } from "@/hooks/usePopoverDismiss";
+import { cn } from "@/utils/cn";
 
 function formatDateRibbon(d: Date) {
-  const day = d.getDate()
-  const month = d.toLocaleDateString('es-CO', { month: 'long' })
-  const cap = month.charAt(0).toUpperCase() + month.slice(1)
-  const year = d.getFullYear()
-  return `${day} - ${cap} - ${year}`
+  const day = d.getDate();
+  const month = d.toLocaleDateString("es-CO", { month: "long" });
+  const cap = month.charAt(0).toUpperCase() + month.slice(1);
+  const year = d.getFullYear();
+  return `${day} - ${cap} - ${year}`;
 }
 
 type DashboardAppHeaderProps = {
-  firstName?: string
-  avatarSrc?: string
-}
+  firstName?: string;
+  avatarSrc?: string;
+};
 
 /**
  * Barra superior del dashboard: marca, saludo + fecha centrados, menú de perfil.
@@ -32,28 +32,27 @@ export function DashboardAppHeader({
   firstName: firstNameProp,
   avatarSrc: avatarSrcProp,
 }: DashboardAppHeaderProps) {
-  const { phone, logoutPhone } = useUserPhone()
-  const { data: profile } = useBloomoraProfile(phone)
+  const { phone, logoutPhone } = useUserPhone();
+  const { data: profile } = useBloomoraProfile(phone);
 
   const displayName =
-    firstNameProp != null && String(firstNameProp).trim() !== ''
+    firstNameProp != null && String(firstNameProp).trim() !== ""
       ? formatProfileGreeting(String(firstNameProp), mockProfileFirstName)
-      : profileFirstName(profile ?? undefined, mockProfileFirstName)
-  const avatarUrl =
-    avatarSrcProp ?? profileAvatarSrc(profile ?? undefined)
+      : profileFirstName(profile ?? undefined, mockProfileFirstName);
+  const avatarUrl = avatarSrcProp ?? profileAvatarSrc(profile ?? undefined);
 
-  const [menuOpen, setMenuOpen] = useState(false)
-  const triggerRef = useRef<HTMLButtonElement>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
-  const ribbon = useMemo(() => formatDateRibbon(new Date()), [])
+  const [menuOpen, setMenuOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const ribbon = useMemo(() => formatDateRibbon(new Date()), []);
 
-  usePopoverDismiss(menuOpen, triggerRef, menuRef, () => setMenuOpen(false))
+  usePopoverDismiss(menuOpen, triggerRef, menuRef, () => setMenuOpen(false));
 
   return (
     <header
       className={cn(
-        'mb-5 grid min-w-0 grid-cols-[auto_1fr_auto] items-center gap-2.5 rounded-[22px] px-4 py-3.5 shadow-[0_6px_24px_-8px_rgba(91,74,140,0.12)] ring-1 ring-bloomora-line/20 sm:mb-7 sm:gap-4 sm:px-5 sm:py-4',
-        'bg-gradient-to-r from-[#fdfaff] via-white to-[#f5f0fc]',
+        "mb-5 grid min-w-0 grid-cols-[auto_1fr_auto] items-center gap-2.5 rounded-[22px] px-4 py-3.5 shadow-[0_6px_24px_-8px_rgba(91,74,140,0.12)] ring-1 ring-bloomora-line/20 sm:mb-7 sm:gap-4 sm:px-5 sm:py-4",
+        "bg-gradient-to-r from-bloomora-blush via-bloomora-white to-bloomora-mist",
       )}
     >
       <div className="col-start-1 row-start-1 shrink-0">
@@ -67,14 +66,14 @@ export function DashboardAppHeader({
         </h1>
         <div className="flex w-full max-w-md items-center justify-center gap-2 sm:gap-3">
           <span
-            className="h-px min-w-[1.25rem] flex-1 max-w-[5rem] bg-bloomora-lilac/30 sm:max-w-none"
+            className="h-px min-w-[1.25rem] flex-1 max-w-[5rem] bg-bloomora-text-muted/35 sm:max-w-none"
             aria-hidden
           />
           <p className="shrink-0 text-xs font-medium text-bloomora-text-muted sm:text-sm md:text-base">
             {ribbon}
           </p>
           <span
-            className="h-px min-w-[1.25rem] flex-1 max-w-[5rem] bg-bloomora-lilac/30 sm:max-w-none"
+            className="h-px min-w-[1.25rem] flex-1 max-w-[5rem] bg-bloomora-text-muted/35 sm:max-w-none"
             aria-hidden
           />
         </div>
@@ -89,7 +88,7 @@ export function DashboardAppHeader({
           aria-label={`Menú de cuenta de ${displayName}`}
           id="dashboard-profile-trigger"
           onClick={() => setMenuOpen((o) => !o)}
-          className="flex items-center gap-1.5 rounded-full border border-bloomora-line/25 bg-white/95 py-1 pl-1 pr-2 shadow-sm transition hover:border-bloomora-lilac/35 hover:bg-white min-[390px]:gap-2 sm:gap-2.5 sm:py-1.5 sm:pl-1.5 sm:pr-3"
+          className="flex items-center gap-1.5 rounded-full border border-bloomora-line/30 bg-bloomora-lavender-50/95 py-1 pl-1 pr-2 shadow-sm transition hover:border-bloomora-lilac/40 hover:bg-bloomora-lavender-100 min-[390px]:gap-2 sm:gap-2.5 sm:py-1.5 sm:pl-1.5 sm:pr-3"
         >
           <span className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full ring-2 ring-bloomora-lavender-50 sm:h-9 sm:w-9">
             <img
@@ -105,8 +104,8 @@ export function DashboardAppHeader({
           </span>
           <svg
             className={cn(
-              'h-3.5 w-3.5 shrink-0 text-bloomora-violet/80 transition-transform duration-200 sm:h-4 sm:w-4',
-              menuOpen && 'rotate-180',
+              "h-3.5 w-3.5 shrink-0 text-bloomora-violet/80 transition-transform duration-200 sm:h-4 sm:w-4",
+              menuOpen && "rotate-180",
             )}
             viewBox="0 0 20 20"
             fill="currentColor"
@@ -126,7 +125,7 @@ export function DashboardAppHeader({
             id="dashboard-profile-menu"
             role="menu"
             aria-labelledby="dashboard-profile-trigger"
-            className="absolute right-0 z-50 mt-2 min-w-[11.5rem] overflow-hidden rounded-xl border border-bloomora-line/20 bg-[#fffafc]/[0.98] py-1 shadow-[0_14px_40px_rgba(91,74,140,0.16)] backdrop-blur-sm"
+            className="absolute right-0 z-50 mt-2 min-w-[11.5rem] overflow-hidden rounded-xl border border-bloomora-line/20 bg-bloomora-blush/[0.98] py-1 shadow-[0_14px_40px_rgba(91,74,140,0.16)] backdrop-blur-sm"
           >
             <Link
               to="/app/profile"
@@ -141,9 +140,9 @@ export function DashboardAppHeader({
               role="menuitem"
               className="block w-full px-3 py-2.5 text-left text-sm font-medium text-bloomora-deep transition hover:bg-bloomora-mist/90"
               onClick={() => {
-                setMenuOpen(false)
-                logoutPhone()
-                window.location.assign('/entrar')
+                setMenuOpen(false);
+                logoutPhone();
+                window.location.assign("/entrar");
               }}
             >
               Cerrar sesión
@@ -160,5 +159,5 @@ export function DashboardAppHeader({
         ) : null}
       </div>
     </header>
-  )
+  );
 }

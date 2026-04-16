@@ -21,7 +21,7 @@ export function BackButton({
     variant: 'outline',
     size: 'sm',
     className: cn(
-      'gap-1.5 border-bloomora-line/55 bg-white/75 text-bloomora-violet shadow-sm hover:bg-bloomora-white hover:text-bloomora-deep',
+      'gap-1.5 border-bloomora-line/55 bg-bloomora-white/88 text-bloomora-violet shadow-sm hover:bg-bloomora-lavender-100 hover:text-bloomora-deep',
       className,
     ),
   })
