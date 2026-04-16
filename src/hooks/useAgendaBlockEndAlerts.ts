@@ -6,6 +6,7 @@ import {
   startOfLocalDay,
   toDateKeyLocal,
 } from '@/utils/agendaTime'
+import { playAgendaBlockSparkleSound } from '@/utils/agendaBlockSound'
 
 function storageKeyForDay(dayKey: string) {
   return `bloomora:agenda-block-ended:${dayKey}`
@@ -36,32 +37,6 @@ function vibrateBlockEnd() {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       navigator.vibrate([160, 70, 160, 70, 200])
     }
-  } catch {
-    /* ignore */
-  }
-}
-
-/** Tono corto (no requiere archivo); puede fallar en iOS hasta haber gesto de usuario. */
-function playBlockEndChime() {
-  try {
-    const Ctx =
-      window.AudioContext ??
-      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-    if (!Ctx) return
-    const ctx = new Ctx()
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
-    osc.connect(gain)
-    gain.connect(ctx.destination)
-    osc.type = 'sine'
-    osc.frequency.setValueAtTime(523.25, ctx.currentTime)
-    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12)
-    gain.gain.setValueAtTime(0.0001, ctx.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + 0.02)
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.28)
-    osc.start(ctx.currentTime)
-    osc.stop(ctx.currentTime + 0.3)
-    osc.onended = () => void ctx.close()
   } catch {
     /* ignore */
   }
@@ -159,7 +134,7 @@ export function useAgendaBlockEndAlerts(
     if (crossed.length === 0) return
 
     vibrateBlockEnd()
-    playBlockEndChime()
+    void playAgendaBlockSparkleSound()
 
     for (const t of crossed) {
       const key = `${t.id}:${t.endMin}`
@@ -187,7 +162,7 @@ export function useAgendaBlockEndAlerts(
   useEffect(() => {
     if (!opts.enabled) return
     scan()
-    const id = window.setInterval(scan, 12_000)
+    const id = window.setInterval(scan, 5_000)
     return () => window.clearInterval(id)
   }, [opts.enabled, scan])
 

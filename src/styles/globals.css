@@ -130,6 +130,156 @@
     background-image: none;
   }
 
+  /* Modales (confirmación, cuenta atrás, etc.): gris mate, borde azul baby, texto blanco */
+  html[data-bloomora-theme='dark'] [data-bloomora-modal-backdrop] {
+    background-color: rgba(0, 0, 0, 0.58) !important;
+    backdrop-filter: blur(3px);
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-modal-panel {
+    background-color: #3a3a42 !important;
+    background-image: none !important;
+    border: 1px solid #8ecbf5;
+    --tw-ring-shadow: 0 0 #0000;
+    --tw-ring-offset-shadow: 0 0 #0000;
+    box-shadow: 0 24px 56px rgba(0, 0, 0, 0.48);
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-modal-panel .bloomora-modal-kicker {
+    color: rgba(255, 255, 255, 0.72) !important;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-modal-panel .bloomora-modal-title {
+    color: #ffffff !important;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-modal-panel .bloomora-modal-desc {
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-modal-panel .bloomora-modal-highlight {
+    background-color: rgba(0, 0, 0, 0.28) !important;
+    border: 1px solid rgba(142, 203, 245, 0.45);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    --tw-ring-shadow: 0 0 #0000;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-modal-panel .bloomora-modal-time {
+    color: #ffffff !important;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-modal-panel .bloomora-modal-time--done {
+    color: #bae6fd !important;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-modal-panel .bloomora-modal-status {
+    color: rgba(255, 255, 255, 0.8) !important;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-modal-panel .text-bloomora-text-muted {
+    color: rgba(255, 255, 255, 0.78) !important;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-modal-panel .text-bloomora-violet {
+    color: #a5d8ff !important;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-modal-panel .text-bloomora-deep {
+    color: #ffffff !important;
+  }
+
+  /* Nueva meta: panel profundo, inputs tipo píldora, acento cyan (referencia UI oscura) */
+  html[data-bloomora-theme='dark'] .bloomora-new-goal-page .bloomora-new-goal-card {
+    background: linear-gradient(165deg, #1e1f26 0%, #1a1b1e 45%, #16171c 100%) !important;
+    box-shadow:
+      0 28px 72px rgba(0, 0, 0, 0.58),
+      0 0 0 1px rgba(56, 189, 248, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.045);
+    --tw-ring-shadow: 0 0 #0000;
+    --tw-ring-offset-shadow: 0 0 #0000;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-new-goal-page .bloomora-new-goal-card label,
+  html[data-bloomora-theme='dark'] .bloomora-new-goal-page .bloomora-new-goal-card legend {
+    color: rgba(203, 198, 220, 0.88) !important;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-new-goal-page .bloomora-new-goal-input,
+  html[data-bloomora-theme='dark'] .bloomora-new-goal-page .bloomora-new-goal-select {
+    background-color: #242428 !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #f4f4f6 !important;
+    box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.35);
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-new-goal-page .bloomora-new-goal-input::placeholder,
+  html[data-bloomora-theme='dark'] .bloomora-new-goal-page .bloomora-new-goal-select::placeholder {
+    color: rgba(155, 148, 176, 0.72);
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-new-goal-page .bloomora-new-goal-input:focus,
+  html[data-bloomora-theme='dark'] .bloomora-new-goal-page .bloomora-new-goal-select:focus {
+    --tw-ring-color: rgba(56, 189, 248, 0.45);
+    border-color: rgba(125, 211, 252, 0.45) !important;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-new-goal-page .bloomora-new-goal-type-btn {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    background: rgba(36, 37, 42, 0.92) !important;
+    border-radius: 1.25rem;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-new-goal-page .bloomora-new-goal-type-btn:hover {
+    background: rgba(44, 45, 52, 0.96) !important;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-new-goal-page .bloomora-new-goal-type-btn[aria-pressed='true'] {
+    border-color: rgba(125, 211, 252, 0.55) !important;
+    background: rgba(14, 165, 233, 0.14) !important;
+    box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.22);
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-new-goal-page .bloomora-new-goal-type-btn .bloomora-new-goal-type-title {
+    color: #f4f4f6 !important;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-new-goal-page .bloomora-new-goal-type-btn .bloomora-new-goal-type-desc {
+    color: rgba(180, 174, 200, 0.88) !important;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-new-goal-page .bloomora-new-goal-preview {
+    background: rgba(0, 0, 0, 0.38) !important;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    --tw-ring-shadow: 0 0 #0000;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-new-goal-page .bloomora-new-goal-preview .text-bloomora-deep {
+    color: #ffffff !important;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-new-goal-page .bloomora-new-goal-preview .text-bloomora-text-muted {
+    color: rgba(200, 194, 222, 0.82) !important;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-new-goal-page .bloomora-new-goal-cancel {
+    border-radius: 9999px !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    background: rgba(32, 33, 38, 0.92) !important;
+    color: rgba(248, 246, 255, 0.92) !important;
+    box-shadow: none;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-new-goal-page .bloomora-new-goal-cancel:hover {
+    background: rgba(44, 45, 52, 0.98) !important;
+    border-color: rgba(125, 211, 252, 0.35) !important;
+    color: #ffffff !important;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-new-goal-page .bloomora-new-goal-hint {
+    color: rgba(160, 154, 182, 0.92) !important;
+  }
+
   /*
    * Tracker de metas (panel + cuadrícula): fondo calendario gris mate, círculos de día blancos.
    * Los gradientes pastel del componente se anulan aquí cuando `data-bloomora-theme="dark"`.

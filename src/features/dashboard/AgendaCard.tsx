@@ -10,6 +10,7 @@ import { defaultNewBlockDurationMin } from "@/data/dashboardMock";
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
 import { AgendaTaskRow } from "@/features/dashboard/AgendaTaskRow";
 import { AgendaTaskSubsteps } from "@/features/dashboard/AgendaTaskSubsteps";
+import { useTaskBlockCountdown } from "@/contexts/TaskBlockCountdownContext";
 import { Button } from "@/components/ui/Button";
 import { BloomoraConfirmDialog } from "@/components/ui/BloomoraConfirmDialog";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -25,6 +26,7 @@ import { useBloomoraProfile } from "@/hooks/useBloomoraProfile";
 import { useGoalTaskTemplates } from "@/hooks/useGoalTaskTemplates";
 import {
   addLocalDays,
+  blockDurationSeconds,
   formatMinutes12h,
   minutesFromTimeInput,
   startOfLocalDay,
@@ -61,6 +63,7 @@ type AgendaCardProps = {
 };
 
 export function AgendaCard({ className }: AgendaCardProps) {
+  const { openBlockCountdown } = useTaskBlockCountdown();
   const { showToast } = useBloomoraToast();
   const { cedula, phone } = useUserPhone();
   const { data: profile } = useBloomoraProfile(phone);
@@ -130,7 +133,6 @@ export function AgendaCard({ className }: AgendaCardProps) {
     id: string;
     title: string;
   } | null>(null);
-
   const sortedTasks = useMemo(
     () => [...tasks].sort((a, b) => a.startMin - b.startMin),
     [tasks],
@@ -517,6 +519,15 @@ export function AgendaCard({ className }: AgendaCardProps) {
                         title: task.title.trim() || "esta tarea",
                       })
                     }
+                    onOpenBlockCountdown={() =>
+                      openBlockCountdown({
+                        title: task.title.trim() || "Tarea",
+                        totalSeconds: blockDurationSeconds(
+                          task.startMin,
+                          task.endMin,
+                        ),
+                      })
+                    }
                   />
                   <AgendaTaskSubsteps
                     taskId={task.id}
@@ -807,6 +818,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
           label={`${completedCount} de ${total} completadas`}
         />
       </div>
+
     </DashboardCard>
   );
 }

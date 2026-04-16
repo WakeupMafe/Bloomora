@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom'
+import { TaskBlockCountdownProvider } from '@/contexts/TaskBlockCountdownContext'
 import { RequirePhone } from '@/layouts/RequirePhone'
 
 /**
@@ -7,9 +8,11 @@ import { RequirePhone } from '@/layouts/RequirePhone'
 export function AppLayout() {
   return (
     <div className="min-h-dvh bg-bloomora-snow">
-      <RequirePhone>
-        <Outlet />
-      </RequirePhone>
+      <TaskBlockCountdownProvider>
+        <RequirePhone>
+          <Outlet />
+        </RequirePhone>
+      </TaskBlockCountdownProvider>
     </div>
   )
 }

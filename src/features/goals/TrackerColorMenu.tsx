@@ -136,6 +136,7 @@ export function TrackerColorMenu({
           <button
             type="button"
             data-backdrop
+            data-bloomora-modal-backdrop
             className="fixed inset-0 border-0 bg-bloomora-deep/20 p-0 backdrop-blur-[2px] transition-[background-color] duration-200 ease-out hover:bg-bloomora-deep/26 active:bg-bloomora-deep/30"
             style={{ zIndex: Z_BACKDROP }}
             aria-label="Cerrar selector de color"
@@ -150,7 +151,7 @@ export function TrackerColorMenu({
           aria-modal={isNarrow ? true : undefined}
           aria-label="Paleta de colores del calendario"
           className={cn(
-            'flex flex-col overflow-hidden bg-bloomora-blush/[0.98] shadow-[0_16px_48px_rgba(91,74,140,0.18)] ring-1 ring-bloomora-line/35 backdrop-blur-md',
+            'bloomora-modal-panel flex flex-col overflow-hidden bg-bloomora-blush/[0.98] shadow-[0_16px_48px_rgba(91,74,140,0.18)] ring-1 ring-bloomora-line/35 backdrop-blur-md',
             isNarrow
               ? 'fixed rounded-[22px] p-3 sm:p-4'
               : 'fixed rounded-2xl p-3 sm:p-4',

@@ -56,6 +56,7 @@ export function BloomoraConfirmDialog({
       <button
         type="button"
         data-backdrop
+        data-bloomora-modal-backdrop
         className="fixed inset-0 border-0 bg-bloomora-deep/20 p-0 backdrop-blur-[2px] transition-[background-color] duration-200 ease-out hover:bg-bloomora-deep/26 active:bg-bloomora-deep/30"
         style={{ zIndex: Z_BACKDROP }}
         aria-label="Cerrar"
@@ -67,7 +68,7 @@ export function BloomoraConfirmDialog({
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}
         className={cn(
-          'fixed flex flex-col gap-4 overflow-hidden bg-bloomora-blush/[0.98] shadow-[0_16px_48px_rgba(91,74,140,0.22)] ring-1 ring-bloomora-line/40 backdrop-blur-md',
+          'bloomora-modal-panel fixed flex flex-col gap-4 overflow-hidden bg-bloomora-blush/[0.98] shadow-[0_16px_48px_rgba(91,74,140,0.22)] ring-1 ring-bloomora-line/40 backdrop-blur-md',
           isNarrow
             ? 'rounded-[22px] p-5'
             : 'left-1/2 top-1/2 max-w-[min(100vw-2rem,22rem)] -translate-x-1/2 -translate-y-1/2 rounded-2xl p-6',
@@ -86,14 +87,14 @@ export function BloomoraConfirmDialog({
       >
         <h2
           id={titleId}
-          className="text-base font-bold leading-snug tracking-tight text-bloomora-deep sm:text-lg"
+          className="bloomora-modal-title text-base font-bold leading-snug tracking-tight text-bloomora-deep sm:text-lg"
         >
           {title}
         </h2>
         {description ? (
           <p
             id={descId}
-            className="text-sm leading-relaxed text-bloomora-text-muted"
+            className="bloomora-modal-desc text-sm leading-relaxed text-bloomora-text-muted"
           >
             {description}
           </p>

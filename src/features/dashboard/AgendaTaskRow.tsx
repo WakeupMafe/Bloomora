@@ -1,5 +1,33 @@
 import { cn } from "@/utils/cn";
 
+function ClockIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="9"
+        stroke="currentColor"
+        strokeWidth="1.75"
+      />
+      <path
+        d="M12 7v5l3 2"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 type AgendaTaskRowProps = {
   title: string;
   startLabel: string;
@@ -8,6 +36,8 @@ type AgendaTaskRowProps = {
   onToggle: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  /** Abre el modal de cuenta atrás del bloque (duración = fin − inicio). */
+  onOpenBlockCountdown?: () => void;
 };
 
 export function AgendaTaskRow({
@@ -18,6 +48,7 @@ export function AgendaTaskRow({
   onToggle,
   onEdit,
   onDelete,
+  onOpenBlockCountdown,
 }: AgendaTaskRowProps) {
   return (
     <div
@@ -90,13 +121,23 @@ export function AgendaTaskRow({
           </span>
           {endLabel}
         </p>
-        {onEdit || onDelete ? (
+        {onOpenBlockCountdown || onEdit || onDelete ? (
           <div
             className={cn(
               "flex shrink-0 flex-wrap items-center justify-end gap-1.5",
               "opacity-90 md:opacity-0 md:group-hover:opacity-100",
             )}
           >
+            {onOpenBlockCountdown ? (
+              <button
+                type="button"
+                aria-label={`Contador regresivo del bloque: ${title}`}
+                onClick={onOpenBlockCountdown}
+                className="rounded-lg p-1.5 text-bloomora-violet ring-1 ring-bloomora-line/40 transition hover:bg-bloomora-lavender-50/90 md:p-1"
+              >
+                <ClockIcon className="size-[1.125rem] md:size-4" />
+              </button>
+            ) : null}
             {onEdit ? (
               <button
                 type="button"

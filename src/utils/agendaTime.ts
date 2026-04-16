@@ -49,6 +49,16 @@ export function addLocalDays(d: Date, delta: number): Date {
   return startOfLocalDay(x)
 }
 
+/**
+ * Duración del bloque agenda en segundos (inicio → fin en minutos desde medianoche).
+ * Si el fin no es posterior al inicio, se asume bloque que cruza medianoche.
+ */
+export function blockDurationSeconds(startMin: number, endMin: number): number {
+  let spanMin = endMin - startMin
+  if (spanMin <= 0) spanMin += 24 * 60
+  return Math.max(60, spanMin * 60)
+}
+
 export function titleCaseAgendaDate(d: Date): string {
   const raw = d.toLocaleDateString('es-CO', {
     weekday: 'long',

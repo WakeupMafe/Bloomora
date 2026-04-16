@@ -20,11 +20,17 @@ const TYPE_OPTIONS: {
   description: string
   emoji: string
 }[] = [
-  { id: 'habit_daily', title: 'Habito diario', description: 'Lo marcas por dia', emoji: '🔁' },
+  { id: 'habit_daily', title: 'Hábito diario', description: 'Lo marcarás por día', emoji: '🔁' },
   { id: 'weekly_frequency', title: 'Veces por semana', description: 'Ej. 3 veces por semana', emoji: '📅' },
-  { id: 'target_quantity', title: 'Meta con objetivo', description: 'Ej. 100 paginas o 1.000.000', emoji: '🎯' },
+  { id: 'target_quantity', title: 'Meta con objetivo', description: 'Ej. leer 10 páginas o 1.000.000 pasos', emoji: '🎯' },
   { id: 'time_accumulated', title: 'Tiempo acumulado', description: 'Ej. 20 horas de estudio', emoji: '⏱️' },
 ]
+
+const inputClassName =
+  'bloomora-form-input bloomora-new-goal-input mt-1.5 w-full min-h-11 rounded-pill border border-bloomora-line/50 px-4 py-2.5 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/25 focus:ring-2'
+
+const selectClassName =
+  'bloomora-form-input bloomora-new-goal-select mt-1.5 w-full min-h-11 rounded-pill border border-bloomora-line/50 bg-bloomora-white px-4 py-2.5 text-sm font-semibold text-bloomora-deep'
 
 const ICON_OPTIONS = ['🌸', '🔥', '💪', '📚', '💧', '🧠'] as const
 
@@ -114,10 +120,10 @@ export function NewGoalPage() {
   }
 
   return (
-    <div className="app-shell-padding app-content-fluid mx-auto flex min-h-dvh flex-col gap-6 bg-bloomora-snow pb-16">
+    <div className="bloomora-new-goal-page app-shell-padding app-content-fluid mx-auto flex min-h-dvh flex-col gap-6 bg-bloomora-snow pb-16">
       <header className="flex items-center justify-between gap-4">
         <BloomoraLogo size="sm" />
-        <BackButton to="/app" label="Cancelar" />
+        <BackButton to="/app" label="Cancelar" className="bloomora-new-goal-cancel" />
       </header>
 
       <div>
@@ -129,7 +135,7 @@ export function NewGoalPage() {
 
       <form
         onSubmit={handleSubmit}
-        className="app-principal-card flex flex-col bg-white/90 shadow-bloomora-card ring-1 ring-bloomora-line/50"
+        className="bloomora-new-goal-card app-principal-card flex flex-col bg-bloomora-white/95 shadow-bloomora-card ring-1 ring-bloomora-line/50"
       >
         <label className="text-xs font-semibold text-bloomora-text-muted">
           Nombre de tu meta
@@ -137,33 +143,36 @@ export function NewGoalPage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
-            className="mt-1.5 w-full rounded-xl border border-bloomora-line/50 px-3 py-2.5 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/25 focus:ring-2"
+            className={inputClassName}
             placeholder="Ej: Tomar agua 💧"
           />
         </label>
 
-        <fieldset>
+        <fieldset className="m-0 min-w-0 border-0 p-0">
           <legend className="text-xs font-semibold text-bloomora-text-muted">
-            ¿Que tipo de meta es?
+            ¿Qué tipo de meta es?
           </legend>
-          <div className="mt-2 grid grid-cols-1 gap-2">
+          <div className="mt-2 grid grid-cols-1 gap-2.5">
             {TYPE_OPTIONS.map((opt) => {
               const selected = goalType === opt.id
               return (
                 <button
                   key={opt.id}
                   type="button"
+                  aria-pressed={selected}
                   onClick={() => setGoalType(opt.id)}
-                  className={`rounded-xl border px-3 py-2 text-left transition ${
+                  className={`bloomora-new-goal-type-btn border px-4 py-3 text-left transition ${
                     selected
                       ? 'border-bloomora-lilac/70 bg-bloomora-lavender-50/75'
-                      : 'border-bloomora-line/45 bg-white/80 hover:bg-bloomora-blush/45'
+                      : 'border-bloomora-line/45 bg-bloomora-white/85 hover:bg-bloomora-blush/45'
                   }`}
                 >
-                  <p className="text-sm font-semibold text-bloomora-deep">
+                  <p className="bloomora-new-goal-type-title text-sm font-semibold text-bloomora-deep">
                     {opt.emoji} {opt.title}
                   </p>
-                  <p className="text-xs text-bloomora-text-muted">{opt.description}</p>
+                  <p className="bloomora-new-goal-type-desc text-xs text-bloomora-text-muted">
+                    {opt.description}
+                  </p>
                 </button>
               )
             })}
@@ -172,13 +181,13 @@ export function NewGoalPage() {
 
         {goalType === 'habit_daily' ? (
           <label className="text-xs font-semibold text-bloomora-text-muted">
-            ¿Durante cuantos dias?
+            ¿Durante cuántos días?
             <input
               type="number"
               min={1}
               value={durationDays}
               onChange={(e) => setDurationDays(e.target.value)}
-              className="mt-1.5 w-full rounded-xl border border-bloomora-line/50 px-3 py-2.5 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/25 focus:ring-2"
+              className={inputClassName}
             />
           </label>
         ) : null}
@@ -192,7 +201,7 @@ export function NewGoalPage() {
               max={7}
               value={timesPerWeek}
               onChange={(e) => setTimesPerWeek(e.target.value)}
-              className="mt-1.5 w-full rounded-xl border border-bloomora-line/50 px-3 py-2.5 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/25 focus:ring-2"
+              className={inputClassName}
             />
           </label>
         ) : null}
@@ -207,7 +216,7 @@ export function NewGoalPage() {
                   min={1}
                   value={targetTotal}
                   onChange={(e) => setTargetTotal(e.target.value)}
-                  className="mt-1.5 w-full rounded-xl border border-bloomora-line/50 px-3 py-2.5 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/25 focus:ring-2"
+                  className={inputClassName}
                 />
               </label>
               <label className="text-xs font-semibold text-bloomora-text-muted">
@@ -215,8 +224,8 @@ export function NewGoalPage() {
                 <input
                   value={targetUnit}
                   onChange={(e) => setTargetUnit(e.target.value)}
-                  className="mt-1.5 w-full rounded-xl border border-bloomora-line/50 px-3 py-2.5 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/25 focus:ring-2"
-                  placeholder="paginas / $ / kg"
+                  className={inputClassName}
+                  placeholder="páginas / $ / kg"
                 />
               </label>
             </>
@@ -224,13 +233,13 @@ export function NewGoalPage() {
 
           {goalType === 'time_accumulated' ? (
             <label className="text-xs font-semibold text-bloomora-text-muted sm:col-span-2">
-              ¿Cuantas horas quieres acumular?
+              ¿Cuántas horas quieres acumular?
               <input
                 type="number"
                 min={1}
                 value={targetHours}
                 onChange={(e) => setTargetHours(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-bloomora-line/50 px-3 py-2.5 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/25 focus:ring-2"
+                className={inputClassName}
               />
             </label>
           ) : null}
@@ -240,7 +249,7 @@ export function NewGoalPage() {
             <select
               value={accent}
               onChange={(e) => setAccent(e.target.value as MockGoalRow['accent'])}
-              className="mt-1.5 w-full rounded-xl border border-bloomora-line/50 bg-white px-3 py-2.5 text-sm font-semibold text-bloomora-deep"
+              className={selectClassName}
             >
               <option value="lavender">Lila</option>
               <option value="green">Verde</option>
@@ -252,7 +261,7 @@ export function NewGoalPage() {
             <select
               value={icon}
               onChange={(e) => setIcon(e.target.value as (typeof ICON_OPTIONS)[number])}
-              className="mt-1.5 w-full rounded-xl border border-bloomora-line/50 bg-white px-3 py-2.5 text-sm font-semibold text-bloomora-deep"
+              className={selectClassName}
             >
               {ICON_OPTIONS.map((emoji) => (
                 <option key={emoji} value={emoji}>
@@ -264,22 +273,24 @@ export function NewGoalPage() {
         </div>
 
         <label className="text-xs font-semibold text-bloomora-text-muted">
-          Motivacion (opcional)
+          Motivación (opcional)
           <input
             value={motivation}
             onChange={(e) => setMotivation(e.target.value)}
-            className="mt-1.5 w-full rounded-xl border border-bloomora-line/50 px-3 py-2.5 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/25 focus:ring-2"
-            placeholder="¿Por que quieres lograr esto?"
+            className={inputClassName}
+            placeholder="¿Por qué quieres lograr esto?"
           />
         </label>
 
-        <section className="rounded-xl bg-bloomora-blush/45 p-3 ring-1 ring-bloomora-line/35">
-          <p className="text-xs font-semibold text-bloomora-text-muted">Asi se vera tu meta 👇</p>
+        <section className="bloomora-new-goal-preview rounded-2xl bg-bloomora-blush/45 p-4 ring-1 ring-bloomora-line/35">
+          <p className="text-xs font-semibold text-bloomora-text-muted">
+            Así se verá tu meta ✨
+          </p>
           <p className="mt-1 text-lg font-bold text-bloomora-deep">
             {icon} {cleanTitle || 'Tu meta'}
           </p>
           <p className="text-sm text-bloomora-text-muted">
-            {goalType === 'habit_daily' && `0 / ${Math.max(1, Number(durationDays) || 30)} dias`}
+            {goalType === 'habit_daily' && `0 / ${Math.max(1, Number(durationDays) || 30)} días`}
             {goalType === 'weekly_frequency' && `0 / ${Math.max(1, Number(timesPerWeek) || 3)} veces por semana`}
             {goalType === 'target_quantity' &&
               `0 / ${Math.max(1, Number(targetTotal) || 100)} ${targetUnit.trim() || 'unidad'}`}
@@ -290,11 +301,13 @@ export function NewGoalPage() {
           ) : null}
         </section>
 
-        <Button type="submit" disabled={!canSubmit || insertMut.isPending}>
+        <Button type="submit" size="lg" fullWidth disabled={!canSubmit || insertMut.isPending}>
           {insertMut.isPending ? 'Guardando…' : 'Crear meta'}
         </Button>
         {!canSubmit && disabledReason ? (
-          <p className="text-xs font-medium text-bloomora-text-muted">{disabledReason}</p>
+          <p className="bloomora-new-goal-hint text-center text-xs font-medium text-bloomora-text-muted">
+            {disabledReason}
+          </p>
         ) : null}
       </form>
     </div>
