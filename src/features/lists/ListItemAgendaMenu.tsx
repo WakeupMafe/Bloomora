@@ -196,11 +196,10 @@ export function ListItemAgendaMenu({
               ? {
                   position: 'fixed',
                   zIndex: Z_MENU,
-                  left: 'max(12px, env(safe-area-inset-left))',
-                  right: 'max(12px, env(safe-area-inset-right))',
-                  bottom: 'max(12px, env(safe-area-inset-bottom))',
-                  width: 'auto',
-                  maxWidth: 'min(100vw - 24px, 18rem)',
+                  left: '50%',
+                  top: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: 'min(100vw - 24px, 18rem)',
                 }
               : coords
                 ? {

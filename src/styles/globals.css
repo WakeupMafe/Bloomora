@@ -188,6 +188,39 @@
     color: #ffffff !important;
   }
 
+  /* Resumen de pasos (x/y) con color por avance */
+  .bloomora-substeps-ratio {
+    letter-spacing: 0.01em;
+  }
+
+  .bloomora-substeps-ratio--pending {
+    color: #fda4af;
+  }
+
+  .bloomora-substeps-ratio--progress {
+    color: #93c5fd;
+  }
+
+  .bloomora-substeps-ratio--done {
+    color: #9ca3af;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-substeps-ratio--pending {
+    color: #ffffff;
+    font-weight: 800;
+    text-shadow:
+      0 0 8px rgba(255, 255, 255, 0.65),
+      0 0 14px rgba(255, 255, 255, 0.35);
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-substeps-ratio--progress {
+    color: #fb923c;
+  }
+
+  html[data-bloomora-theme='dark'] .bloomora-substeps-ratio--done {
+    color: #8ecbf5;
+  }
+
   /* Chip minimizado del contador (móvil): más grande y con estilo por tema */
   .bloomora-mobile-countdown-chip {
     background-color: color-mix(

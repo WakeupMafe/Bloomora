@@ -38,8 +38,13 @@ export function AgendaTaskSubsteps({
   const summary = useMemo(() => {
     const done = safeSubtasks.filter((s) => s.completed).length
     const total = safeSubtasks.length
-    if (total === 0) return ''
-    return `${done} de ${total} listos`
+    if (total === 0) return null
+    const tone =
+      done === 0 ? 'pending' : done >= total ? 'done' : 'progress'
+    return {
+      label: `${done}/${total}`,
+      tone,
+    } as const
   }, [safeSubtasks])
 
   useEffect(() => {
@@ -112,8 +117,15 @@ export function AgendaTaskSubsteps({
             Pasos
           </span>
           {summary ? (
-            <span className="truncate text-[0.6875rem] font-medium text-bloomora-text-muted">
-              · {summary}
+            <span
+              className={cn(
+                'bloomora-substeps-ratio truncate text-[0.6875rem] font-semibold',
+                summary.tone === 'pending' && 'bloomora-substeps-ratio--pending',
+                summary.tone === 'progress' && 'bloomora-substeps-ratio--progress',
+                summary.tone === 'done' && 'bloomora-substeps-ratio--done',
+              )}
+            >
+              {summary.label}
             </span>
           ) : null}
         </span>

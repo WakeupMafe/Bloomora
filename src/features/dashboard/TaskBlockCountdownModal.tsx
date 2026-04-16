@@ -103,6 +103,8 @@ export function TaskBlockCountdownModal({
   const dialogRef = useRef<HTMLDivElement>(null);
   const dragSessionRef = useRef<DragSession | null>(null);
   const endBellPlayedRef = useRef(false);
+  /** Marca absoluta (epoch ms) en que termina el bloque. */
+  const endAtMsRef = useRef<number | null>(null);
 
   const [remaining, setRemaining] = useState(totalSeconds);
   const [paused, setPaused] = useState(false);
@@ -114,8 +116,20 @@ export function TaskBlockCountdownModal({
   } | null>(null);
   const [minimizedMobile, setMinimizedMobile] = useState(true);
 
+  const getRemainingFromClock = useCallback(() => {
+    const endAt = endAtMsRef.current;
+    if (endAt == null) return 0;
+    return Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+  }, []);
+
+  const syncRemainingFromClock = useCallback(() => {
+    const next = getRemainingFromClock();
+    setRemaining((prev) => (prev === next ? prev : next));
+  }, [getRemainingFromClock]);
+
   useEffect(() => {
     if (!open) return;
+    endAtMsRef.current = Date.now() + totalSeconds * 1000;
     setRemaining(totalSeconds);
     setPaused(false);
     setDragDelta({ x: 0, y: 0 });
@@ -137,11 +151,27 @@ export function TaskBlockCountdownModal({
 
   useEffect(() => {
     if (!open || paused) return;
-    const id = window.setInterval(() => {
-      setRemaining((r) => Math.max(0, r - 1));
-    }, 1000);
+    syncRemainingFromClock();
+    const id = window.setInterval(syncRemainingFromClock, 250);
     return () => window.clearInterval(id);
-  }, [open, paused]);
+  }, [open, paused, syncRemainingFromClock]);
+
+  /**
+   * Al volver de background/screen-off, resincroniza inmediatamente el reloj
+   * para evitar “pausas aparentes” por throttling de timers del navegador.
+   */
+  useEffect(() => {
+    if (!open || paused) return;
+    const onWake = () => syncRemainingFromClock();
+    document.addEventListener("visibilitychange", onWake);
+    window.addEventListener("focus", onWake);
+    window.addEventListener("pageshow", onWake);
+    return () => {
+      document.removeEventListener("visibilitychange", onWake);
+      window.removeEventListener("focus", onWake);
+      window.removeEventListener("pageshow", onWake);
+    };
+  }, [open, paused, syncRemainingFromClock]);
 
   const reclampDesktop = useCallback(() => {
     if (isNarrow) return;
@@ -256,6 +286,23 @@ export function TaskBlockCountdownModal({
   if (!open || typeof document === "undefined") return null;
 
   const done = remaining <= 0;
+
+  const togglePause = () => {
+    if (paused) {
+      endAtMsRef.current = Date.now() + remaining * 1000;
+      setPaused(false);
+      return;
+    }
+    const snap = getRemainingFromClock();
+    setRemaining(snap);
+    setPaused(true);
+  };
+
+  const resetCountdown = () => {
+    endAtMsRef.current = Date.now() + totalSeconds * 1000;
+    setRemaining(totalSeconds);
+    setPaused(false);
+  };
 
   const desktopStyle: CSSProperties = {
     zIndex: Z_FLOATING_PANEL,
@@ -439,7 +486,7 @@ export function TaskBlockCountdownModal({
               variant="ghost"
               size="sm"
               disabled={done}
-              onClick={() => setPaused((p) => !p)}
+              onClick={togglePause}
               className="sm:min-w-[7rem]"
             >
               {paused ? "Reanudar" : "Pausar"}
@@ -448,10 +495,7 @@ export function TaskBlockCountdownModal({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => {
-                setRemaining(totalSeconds);
-                setPaused(false);
-              }}
+              onClick={resetCountdown}
               className="sm:min-w-[7rem]"
             >
               Reiniciar
