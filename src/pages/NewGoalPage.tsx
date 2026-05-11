@@ -124,6 +124,11 @@ export function NewGoalPage() {
           showToast('¡Meta guardada!')
           navigate('/app')
         },
+        onError: (err) => {
+          const msg =
+            err instanceof Error ? err.message : 'No se pudo guardar la meta.'
+          showToast(msg, { duration: 6000 })
+        },
       },
     )
   }

@@ -199,13 +199,16 @@ export async function insertGoal(
       progress_label: fields.progress_label ?? null,
       percent_display: pct,
       tracker_color_id: trackerId,
-      prioridad: 'Media',
       auto_match_enabled: true,
     })
     .select('id')
-    .single()
   if (error) throw error
-  return (data as { id: number }).id
+  const rows = data as { id: number }[] | null
+  const id = rows?.[0]?.id
+  if (id == null) {
+    throw new Error('No se pudo crear la meta: respuesta vacía del servidor.')
+  }
+  return id
 }
 
 export async function updateGoalFields(

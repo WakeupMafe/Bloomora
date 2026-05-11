@@ -22,12 +22,15 @@ export function useBloomoraGoals(cedula: string | null) {
   return useQuery({
     queryKey: ['goals', cedula],
     enabled: !!cedula,
+    staleTime: 120_000,
     queryFn: async (): Promise<MockGoalRow[]> => {
       const sb = requireSupabase()
       const c = cedula!
-      await requireExistingProfileByCedula(sb, c)
-      const goals = await listGoals(sb, c)
-      const marks = await fetchMarksByUser(sb, c)
+      const [, goals, marks] = await Promise.all([
+        requireExistingProfileByCedula(sb, c),
+        listGoals(sb, c),
+        fetchMarksByUser(sb, c),
+      ])
       const grouped = groupMarksByGoal(marks)
       return goals.map((g) =>
         dbGoalToUi(g, grouped[String(g.id)] ?? {}),
