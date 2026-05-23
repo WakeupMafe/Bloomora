@@ -75,6 +75,18 @@ export async function listFlashcardsEnglishPreview(
   return (data ?? []) as FlashcardEnglishPreviewRow[]
 }
 
+export async function listFlashcardsEnglishCategories(
+  sb: SupabaseClient,
+  userCedula: string,
+): Promise<(string | null)[]> {
+  const { data, error } = await sb
+    .from('flashcards_english')
+    .select('category')
+    .eq('user_cedula', userCedula)
+  if (error) throwRepoError(error)
+  return (data ?? []).map((r) => (r as { category: string | null }).category)
+}
+
 export async function countFlashcardsEnglish(
   sb: SupabaseClient,
   userCedula: string,

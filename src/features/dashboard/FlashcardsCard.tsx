@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom'
 import { DashboardCard } from '@/components/dashboard/DashboardCard'
+import { getCategoryTheme } from '@/features/flashcards/flashcardCategoryTheme'
+import { itemCountLabel } from '@/features/flashcards/groupFlashcardsByCategory'
 import { useUserPhone } from '@/contexts/UserPhoneContext'
 import { useBloomoraEnglishFlashcardsDashboard } from '@/hooks/useBloomoraEnglishFlashcards'
-import { BloomoraImage } from '@/components/ui/BloomoraImage'
-import { primaryEnglishDisplay } from '@/features/flashcards/verbFormsCodec'
 import { cn } from '@/utils/cn'
 
 function BookIcon({ className }: { className?: string }) {
@@ -29,10 +29,10 @@ function BookIcon({ className }: { className?: string }) {
 
 export function FlashcardsCard() {
   const { cedula } = useUserPhone()
-  const { data, isLoading } = useBloomoraEnglishFlashcardsDashboard(cedula, 3)
+  const { data, isLoading } = useBloomoraEnglishFlashcardsDashboard(cedula)
 
   const count = data?.count ?? 0
-  const preview = data?.preview ?? []
+  const categories = data?.categories ?? []
   const countLabel =
     count === 0
       ? 'Sin palabras'
@@ -71,26 +71,34 @@ export function FlashcardsCard() {
         Vocabulario en inglés con imagen y tarjetas que puedes voltear.
       </p>
 
-      {!isLoading && preview.length > 0 ? (
-        <ul className="mt-4 flex flex-wrap gap-2" aria-label="Vista previa">
-          {preview.map((c) => (
-            <li key={c.id}>
-              <Link
-                to="/app/flashcards"
-                className="inline-flex max-w-[14rem] items-center gap-2 rounded-full border border-bloomora-line/40 bg-bloomora-white/95 py-1.5 pl-1.5 pr-3 text-sm font-semibold text-bloomora-deep shadow-sm ring-1 ring-bloomora-line/25 transition hover:bg-bloomora-lavender-50/95"
-              >
-                <BloomoraImage
-                  src={c.imageUrl}
-                  alt=""
-                  size="thumb"
-                  className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-bloomora-line/25"
-                />
-                <span className="min-w-0 truncate">
-                  {primaryEnglishDisplay(c.englishWord, c.category)}
-                </span>
-              </Link>
-            </li>
-          ))}
+      {!isLoading && categories.length > 0 ? (
+        <ul
+          className="mt-4 flex flex-col gap-2"
+          aria-label="Categorías con contenido"
+        >
+          {categories.map((cat) => {
+            const theme = getCategoryTheme(cat.key)
+            return (
+              <li key={cat.key}>
+                <Link
+                  to="/app/flashcards"
+                  className="flex items-center justify-between gap-3 rounded-xl border border-bloomora-line/35 bg-bloomora-white/95 px-3.5 py-2.5 shadow-sm ring-1 ring-bloomora-line/20 transition hover:border-bloomora-lilac/40 hover:bg-bloomora-lavender-50/90"
+                >
+                  <span
+                    className={cn(
+                      'inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold tracking-wide',
+                      theme.badgeClass,
+                    )}
+                  >
+                    {cat.label}
+                  </span>
+                  <span className="shrink-0 text-sm font-semibold text-bloomora-text-muted">
+                    ({itemCountLabel(cat.count)})
+                  </span>
+                </Link>
+              </li>
+            )
+          })}
         </ul>
       ) : !isLoading ? (
         <p className="mt-4 text-sm text-bloomora-text-muted">

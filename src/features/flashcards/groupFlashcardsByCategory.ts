@@ -13,6 +13,56 @@ export type CategoryPack = {
   cards: EnglishFlashcard[]
 }
 
+export type CategorySummary = {
+  key: string
+  label: string
+  count: number
+}
+
+export function itemCountLabel(n: number): string {
+  if (n === 1) return '1 ítem'
+  return `${n} ítems`
+}
+
+/** Resumen por categoría (solo las que tienen al menos una tarjeta). */
+export function buildCategorySummaries(
+  categories: (string | null | undefined)[],
+): CategorySummary[] {
+  const map = new Map<string, number>()
+
+  for (const raw of categories) {
+    const key = raw?.trim() || UNCATEGORIZED_PACK_KEY
+    map.set(key, (map.get(key) ?? 0) + 1)
+  }
+
+  const summaries: CategorySummary[] = []
+
+  for (const opt of FLASHCARD_CATEGORY_OPTIONS) {
+    const count = map.get(opt.value)
+    if (count) {
+      summaries.push({ key: opt.value, label: opt.label, count })
+      map.delete(opt.value)
+    }
+  }
+
+  for (const [key, count] of map) {
+    if (!count) continue
+    summaries.push({
+      key,
+      label: key === UNCATEGORIZED_PACK_KEY ? 'Sin categoría' : key,
+      count,
+    })
+  }
+
+  summaries.sort((a, b) => {
+    const catA = a.key === UNCATEGORIZED_PACK_KEY ? null : a.key
+    const catB = b.key === UNCATEGORIZED_PACK_KEY ? null : b.key
+    return packSortIndex(a.key, catA) - packSortIndex(b.key, catB)
+  })
+
+  return summaries
+}
+
 const CATEGORY_ORDER = FLASHCARD_CATEGORY_OPTIONS.map((o) => o.value)
 
 function packSortIndex(key: string, category: string | null): number {

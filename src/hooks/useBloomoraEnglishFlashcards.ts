@@ -4,12 +4,16 @@ import {
   deleteFlashcardEnglish,
   insertFlashcardEnglish,
   listFlashcardsEnglish,
-  listFlashcardsEnglishPreview,
+  listFlashcardsEnglishCategories,
   updateFlashcardEnglish,
   type FlashcardEnglishRow,
 } from '@/services/supabase/flashcardsEnglishRepo'
 import { requireExistingProfileByCedula } from '@/services/supabase/profilesRepo'
 import { requireSupabase } from '@/services/supabase/typedClient'
+import {
+  buildCategorySummaries,
+  type CategorySummary,
+} from '@/features/flashcards/groupFlashcardsByCategory'
 import { resolveVerbForms } from '@/features/flashcards/verbFormsCodec'
 import type { EnglishFlashcard, EnglishFlashcardInput } from '@/types/englishFlashcard'
 
@@ -48,39 +52,26 @@ export function useBloomoraEnglishFlashcards(cedula: string | null) {
   })
 }
 
-export type EnglishFlashcardPreview = Pick<
-  EnglishFlashcard,
-  'id' | 'englishWord' | 'category' | 'imageUrl'
->
-
 export type EnglishFlashcardsDashboardData = {
   count: number
-  preview: EnglishFlashcardPreview[]
+  categories: CategorySummary[]
 }
 
-export function useBloomoraEnglishFlashcardsDashboard(
-  cedula: string | null,
-  previewLimit = 3,
-) {
+export function useBloomoraEnglishFlashcardsDashboard(cedula: string | null) {
   return useQuery({
-    queryKey: [QUERY_KEY, 'dashboard', cedula, previewLimit],
+    queryKey: [QUERY_KEY, 'dashboard', cedula],
     enabled: !!cedula,
     staleTime: FLASHCARDS_STALE_MS,
     queryFn: async (): Promise<EnglishFlashcardsDashboardData> => {
       const sb = requireSupabase()
       await requireExistingProfileByCedula(sb, cedula!)
-      const [rows, count] = await Promise.all([
-        listFlashcardsEnglishPreview(sb, cedula!, previewLimit),
+      const [categoryRows, count] = await Promise.all([
+        listFlashcardsEnglishCategories(sb, cedula!),
         countFlashcardsEnglish(sb, cedula!),
       ])
       return {
         count,
-        preview: rows.map((r) => ({
-          id: String(r.id),
-          englishWord: r.english_word,
-          category: r.category,
-          imageUrl: r.image_url,
-        })),
+        categories: buildCategorySummaries(categoryRows),
       }
     },
   })
