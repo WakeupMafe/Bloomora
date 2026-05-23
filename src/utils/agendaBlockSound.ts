@@ -8,6 +8,8 @@
  */
 
 let sharedCtx: AudioContext | null = null
+/** Sin esto, crear o reanudar AudioContext dispara la advertencia de autoplay (Chrome). */
+let audioAllowedByGesture = false
 
 function getAudioContextClass(): typeof AudioContext | null {
   if (typeof window === 'undefined') return null
@@ -22,6 +24,7 @@ function getAudioContextClass(): typeof AudioContext | null {
 async function ensureContext(): Promise<AudioContext | null> {
   const Ctx = getAudioContextClass()
   if (!Ctx) return null
+  if (!audioAllowedByGesture) return null
   if (!sharedCtx || sharedCtx.state === 'closed') {
     sharedCtx = new Ctx()
   }
@@ -29,6 +32,14 @@ async function ensureContext(): Promise<AudioContext | null> {
     await sharedCtx.resume().catch(() => {})
   }
   return sharedCtx
+}
+
+/** Solo después de un gesto: crea/reanuda el contexto (para focus/visibility sin warning). */
+async function resumeContextIfPossible(): Promise<void> {
+  if (!audioAllowedByGesture || !sharedCtx || sharedCtx.state === 'closed') return
+  if (sharedCtx.state === 'suspended') {
+    await sharedCtx.resume().catch(() => {})
+  }
 }
 
 /** Cascada pentatónica aguda + eco muy corto para sensación «brillitos». */
@@ -137,6 +148,7 @@ export function registerAgendaBlockSoundUnlock(): void {
   unlockRegistered = true
 
   const unlockOnce = () => {
+    audioAllowedByGesture = true
     void ensureContext()
   }
 
@@ -145,7 +157,7 @@ export function registerAgendaBlockSoundUnlock(): void {
   document.addEventListener('touchend', unlockOnce, { capture: true, passive: true, once: true })
 
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) void ensureContext()
+    if (!document.hidden) void resumeContextIfPossible()
   })
-  window.addEventListener('focus', () => void ensureContext())
+  window.addEventListener('focus', () => void resumeContextIfPossible())
 }

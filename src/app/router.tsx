@@ -5,6 +5,7 @@ import { DayHomePage } from '@/pages/DayHomePage'
 import { EditProfilePage } from '@/pages/EditProfilePage'
 import { GoalsOverviewPage } from '@/pages/GoalsOverviewPage'
 import { GoalTrackerPage } from '@/pages/GoalTrackerPage'
+import { EnglishFlashcardsPage } from '@/pages/EnglishFlashcardsPage'
 import { ListsPage } from '@/pages/ListsPage'
 import { NewGoalPage } from '@/pages/NewGoalPage'
 import { PhoneGatePage } from '@/pages/PhoneGatePage'
@@ -35,6 +36,7 @@ export const appRouter = createBrowserRouter([
           { path: 'shopping', element: <PlaceholderFlowPage /> },
           { path: 'lists/new', element: <PlaceholderFlowPage /> },
           { path: 'lists', element: <ListsPage /> },
+          { path: 'flashcards', element: <EnglishFlashcardsPage /> },
         ],
       },
       { path: 'home', element: <Navigate to="/app" replace /> },

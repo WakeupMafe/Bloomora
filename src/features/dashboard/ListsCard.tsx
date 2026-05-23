@@ -31,6 +31,13 @@ function ListBulletIcon({ className }: { className?: string }) {
 }
 
 function GridNavIcon({ className }: { className?: string }) {
+  /* Rects en lugar del path tipo Heroicons (arcos «011-1»): evita parseos ambiguos del atributo d en algunos navegadores. */
+  const cell = {
+    stroke: 'currentColor' as const,
+    strokeWidth: 1.75,
+    fill: 'none' as const,
+    rx: 1,
+  }
   return (
     <svg
       className={className}
@@ -40,11 +47,10 @@ function GridNavIcon({ className }: { className?: string }) {
       fill="none"
       aria-hidden
     >
-      <path
-        d="M4 5a1 1 0 011-1h4a1 1 0 011v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10 0a1 1 0 011-1h4a1 1 0 011v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"
-        stroke="currentColor"
-        strokeWidth="1.75"
-      />
+      <rect x="4" y="5" width="7" height="7" {...cell} />
+      <rect x="13" y="5" width="7" height="7" {...cell} />
+      <rect x="4" y="14" width="7" height="7" {...cell} />
+      <rect x="13" y="14" width="7" height="7" {...cell} />
     </svg>
   )
 }

@@ -70,7 +70,7 @@ function TrashIcon({ className }: { className?: string }) {
       strokeLinejoin="round"
       aria-hidden
     >
-      <path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M10 11v6M14 11v6" />
+      <path d="M3 6h18M8 6V4a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1 v2M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M10 11v6M14 11v6" />
     </svg>
   )
 }

@@ -1,6 +1,7 @@
 import { AgendaCard } from "@/features/dashboard/AgendaCard";
 import { DashboardAppHeader } from "@/features/dashboard/DashboardAppHeader";
 import { GoalProgressCard } from "@/features/dashboard/GoalProgressCard";
+import { FlashcardsCard } from "@/features/dashboard/FlashcardsCard";
 import { ListsCard } from "@/features/dashboard/ListsCard";
 
 /**
@@ -26,7 +27,8 @@ export function DayHomePage() {
           <GoalProgressCard className="h-full min-h-0 min-w-0 w-full max-w-full max-h-[600px] lg:max-h-[550px]" />
         </div>
 
-        <div className="mt-6 min-w-0 sm:mt-8 lg:mt-10">
+        <div className="mt-6 grid min-w-0 grid-cols-1 gap-6 sm:mt-8 lg:mt-10 lg:grid-cols-2 lg:gap-8">
+          <FlashcardsCard />
           <ListsCard />
         </div>
       </main>

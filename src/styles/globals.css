@@ -114,6 +114,48 @@
     box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.35);
   }
 
+  /* English Flashcards · explicación Grammar (Ctrl+B negrilla rosa) */
+  .flashcard-pink-bold {
+    font-weight: 700;
+    color: #ec4899;
+  }
+
+  .flashcard-rich-editor:empty::before {
+    content: attr(data-placeholder);
+    color: color-mix(in srgb, var(--color-bloomora-text-muted) 65%, transparent);
+    pointer-events: none;
+  }
+
+  .flashcard-rich-editor div,
+  .flashcard-rich-content div {
+    min-height: 1.4em;
+  }
+
+  .flashcard-rich-content .flashcard-pink-bold {
+    font-weight: 700;
+    color: #ec4899;
+  }
+
+  .flashcard-rich-editor ol.flashcard-numbered-list,
+  .flashcard-rich-content ol.flashcard-numbered-list {
+    margin: 0.65rem 0 0.65rem 1.35rem;
+    padding-left: 1.35rem;
+    list-style-type: decimal;
+  }
+
+  .flashcard-rich-editor ol.flashcard-numbered-list li,
+  .flashcard-rich-content ol.flashcard-numbered-list li {
+    margin: 0.4rem 0;
+    padding-left: 0.2rem;
+    line-height: 1.55;
+  }
+
+  .flashcard-rich-editor ol.flashcard-numbered-list li::marker,
+  .flashcard-rich-content ol.flashcard-numbered-list li::marker {
+    color: #7c6bb5;
+    font-weight: 700;
+  }
+
   /* Fila de ítem en listas: gradiente suave en claro; plano en oscuro. */
   .bloomora-list-item-surface {
     background-color: var(--color-bloomora-white);
