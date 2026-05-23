@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
 import { DashboardCard } from '@/components/dashboard/DashboardCard'
 import { useUserPhone } from '@/contexts/UserPhoneContext'
-import { useBloomoraEnglishFlashcards } from '@/hooks/useBloomoraEnglishFlashcards'
+import { useBloomoraEnglishFlashcardsDashboard } from '@/hooks/useBloomoraEnglishFlashcards'
+import { BloomoraImage } from '@/components/ui/BloomoraImage'
 import { primaryEnglishDisplay } from '@/features/flashcards/verbFormsCodec'
 import { cn } from '@/utils/cn'
 
@@ -28,17 +29,16 @@ function BookIcon({ className }: { className?: string }) {
 
 export function FlashcardsCard() {
   const { cedula } = useUserPhone()
-  const { data: cards = [], isLoading } = useBloomoraEnglishFlashcards(cedula)
+  const { data, isLoading } = useBloomoraEnglishFlashcardsDashboard(cedula, 3)
 
-  const count = cards.length
+  const count = data?.count ?? 0
+  const preview = data?.preview ?? []
   const countLabel =
     count === 0
       ? 'Sin palabras'
       : count === 1
         ? '1 palabra'
         : `${count} palabras`
-
-  const preview = cards.slice(0, 3)
 
   return (
     <DashboardCard className="overflow-hidden rounded-[clamp(1.25rem,1.05rem+1vw,1.75rem)] bg-gradient-to-br from-bloomora-white via-bloomora-lavender-50/40 to-bloomora-blush/60 p-5 shadow-[0_12px_40px_-18px_rgba(124,107,181,0.18)] ring-1 ring-bloomora-line/30 sm:p-6">
@@ -79,9 +79,10 @@ export function FlashcardsCard() {
                 to="/app/flashcards"
                 className="inline-flex max-w-[14rem] items-center gap-2 rounded-full border border-bloomora-line/40 bg-bloomora-white/95 py-1.5 pl-1.5 pr-3 text-sm font-semibold text-bloomora-deep shadow-sm ring-1 ring-bloomora-line/25 transition hover:bg-bloomora-lavender-50/95"
               >
-                <img
+                <BloomoraImage
                   src={c.imageUrl}
                   alt=""
+                  size="thumb"
                   className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-bloomora-line/25"
                 />
                 <span className="min-w-0 truncate">

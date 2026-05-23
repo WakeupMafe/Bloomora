@@ -1,17 +1,82 @@
+import { lazy, Suspense, type ComponentType } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { PageSpinner } from '@/components/ui/PageSpinner'
 import { AppLayout } from '@/layouts/AppLayout'
 import { RootLayout } from '@/layouts/RootLayout'
 import { DayHomePage } from '@/pages/DayHomePage'
-import { EditProfilePage } from '@/pages/EditProfilePage'
-import { GoalsOverviewPage } from '@/pages/GoalsOverviewPage'
-import { GoalTrackerPage } from '@/pages/GoalTrackerPage'
-import { EnglishFlashcardsPage } from '@/pages/EnglishFlashcardsPage'
-import { ListsPage } from '@/pages/ListsPage'
-import { NewGoalPage } from '@/pages/NewGoalPage'
 import { PhoneGatePage } from '@/pages/PhoneGatePage'
 import { QuickEntryPage } from '@/pages/QuickEntryPage'
-import { PlaceholderFlowPage } from '@/pages/PlaceholderFlowPage'
 import { WelcomePage } from '@/pages/WelcomePage'
+
+function lazyPage(
+  factory: () => Promise<{ default: ComponentType }>,
+  label?: string,
+) {
+  const Page = lazy(factory)
+  return (
+    <Suspense fallback={<PageSpinner label={label} />}>
+      <Page />
+    </Suspense>
+  )
+}
+
+const EditProfilePage = () =>
+  lazyPage(
+    () =>
+      import('@/pages/EditProfilePage').then((m) => ({
+        default: m.EditProfilePage,
+      })),
+    'Cargando perfil…',
+  )
+
+const GoalsOverviewPage = () =>
+  lazyPage(
+    () =>
+      import('@/pages/GoalsOverviewPage').then((m) => ({
+        default: m.GoalsOverviewPage,
+      })),
+    'Cargando metas…',
+  )
+
+const GoalTrackerPage = () =>
+  lazyPage(
+    () =>
+      import('@/pages/GoalTrackerPage').then((m) => ({
+        default: m.GoalTrackerPage,
+      })),
+    'Cargando tracker…',
+  )
+
+const EnglishFlashcardsPage = () =>
+  lazyPage(
+    () =>
+      import('@/pages/EnglishFlashcardsPage').then((m) => ({
+        default: m.EnglishFlashcardsPage,
+      })),
+    'Cargando flashcards…',
+  )
+
+const ListsPage = () =>
+  lazyPage(
+    () =>
+      import('@/pages/ListsPage').then((m) => ({ default: m.ListsPage })),
+    'Cargando listas…',
+  )
+
+const NewGoalPage = () =>
+  lazyPage(
+    () =>
+      import('@/pages/NewGoalPage').then((m) => ({ default: m.NewGoalPage })),
+    'Cargando…',
+  )
+
+const PlaceholderFlowPage = () =>
+  lazyPage(
+    () =>
+      import('@/pages/PlaceholderFlowPage').then((m) => ({
+        default: m.PlaceholderFlowPage,
+      })),
+  )
 
 export const appRouter = createBrowserRouter([
   {

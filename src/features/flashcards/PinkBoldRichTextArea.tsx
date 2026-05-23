@@ -4,6 +4,7 @@ import {
   ensureEditorBlockStructure,
   handleEditorLineBreak,
   handleNumberedListEnter,
+  handlePlainDoubleEnterNoAutoList,
   handleSemicolonToArrow,
   normalizeEditorHtml,
   prepareFlashcardRichHtml,
@@ -121,6 +122,11 @@ export function PinkBoldRichTextArea({
             return
           }
 
+          if (handlePlainDoubleEnterNoAutoList(root, e)) {
+            emitChange({ formatLists: false })
+            return
+          }
+
           if (handleEditorLineBreak(root, e)) {
             emitChange({ formatLists: false })
             return
@@ -138,8 +144,14 @@ export function PinkBoldRichTextArea({
         <kbd className="rounded bg-bloomora-lavender-50 px-1 font-semibold">;</kbd> ={' '}
         <span className="font-semibold">→</span>.{' '}
         <kbd className="rounded bg-bloomora-lavender-50 px-1 font-semibold">Enter</kbd> = salto de
-        línea donde está el cursor.{' '}
-        <span className="font-semibold">1. 2. 3.</span> = lista numerada.{' '}
+        línea.{' '}
+        <span className="font-semibold">1. 2. 3.</span> en la misma sección = lista (mín. 2 ítems
+        seguidos). Para salir:{' '}
+        <kbd className="rounded bg-bloomora-lavender-50 px-1 font-semibold">Enter</kbd> en ítem
+        vacío,{' '}
+        <span className="font-semibold">dos espacios + Enter</span> al final de un ítem, o{' '}
+        <kbd className="rounded bg-bloomora-lavender-50 px-1 font-semibold">Enter</kbd> dos veces
+        en una línea vacía.{' '}
         <kbd className="rounded bg-bloomora-lavender-50 px-1 font-semibold">Ctrl+B</kbd> ={' '}
         <span className="font-bold text-[#ec4899]">negrilla rosa</span>.
       </p>

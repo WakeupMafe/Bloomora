@@ -4,6 +4,7 @@ import { BloomoraLogo } from '@/components/brand/BloomoraLogo'
 import { BackButton } from '@/components/navigation/BackButton'
 import { Button } from '@/components/ui/Button'
 import ConejoBoy from '@/assets/ConejoBoy.png'
+import { BloomoraImage } from '@/components/ui/BloomoraImage'
 import type { MockGoalRow } from '@/data/dashboardMock'
 import { GoalPriorityPicker } from '@/features/goals/GoalPriorityPicker'
 import { GoalTrackerGrid } from '@/features/goals/GoalTrackerGrid'
@@ -128,9 +129,10 @@ export function GoalsOverviewPage() {
         ) : null}
         {!isLoading && goals.length === 0 ? (
           <section className="mx-auto w-full max-w-2xl rounded-[26px] bg-gradient-to-br from-rose-50/95 via-pink-50/90 to-violet-50/90 p-6 text-center shadow-bloomora-card ring-1 ring-bloomora-line/45 sm:p-8">
-            <img
+            <BloomoraImage
               src={ConejoBoy}
               alt="Conejito Bloomora"
+              size="full"
               className="mx-auto mb-4 h-28 w-28 rounded-full object-cover ring-2 ring-white/75 shadow-[0_10px_30px_rgba(124,107,181,0.2)] sm:h-32 sm:w-32"
             />
             <h2 className="text-xl font-bold text-bloomora-deep">

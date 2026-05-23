@@ -48,7 +48,7 @@ export function WelcomePage() {
 
       <header className="welcome-header">
         <div className="welcome-header-brand">
-          <BloomoraLogo size="sm" />
+          <BloomoraLogo size="sm" priority />
           <Link
             to="/phone"
             className="welcome-register"
@@ -92,7 +92,7 @@ export function WelcomePage() {
           </div>
 
           <div className="welcome-mascot-wrap">
-            <MascotAvatar className="welcome-mascot" />
+            <MascotAvatar className="welcome-mascot" priority />
           </div>
         </div>
       </main>

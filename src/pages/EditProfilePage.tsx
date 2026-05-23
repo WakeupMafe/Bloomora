@@ -5,6 +5,7 @@ import conejoBoy from '@/assets/ConejoBoy.png'
 import conejitaGirl from '@/assets/ConejitaGirl.png'
 import conejoLofi from '@/assets/ConejoLofi.png'
 import { BackButton } from '@/components/navigation/BackButton'
+import { BloomoraImage } from '@/components/ui/BloomoraImage'
 import { Button } from '@/components/ui/Button'
 import { DashboardAppHeader } from '@/features/dashboard/DashboardAppHeader'
 import { useBloomoraToast } from '@/contexts/BloomoraToastContext'
@@ -197,9 +198,10 @@ export function EditProfilePage() {
                   <div className="mx-auto shrink-0 sm:mx-0">
                     <div className="relative">
                       <div className="h-32 w-32 overflow-hidden rounded-full bg-bloomora-lavender-50 ring-4 ring-bloomora-lavender-100 shadow-[0_8px_28px_rgba(124,107,181,0.2)] sm:h-36 sm:w-36">
-                        <img
+                        <BloomoraImage
                           src={circleSrc}
                           alt=""
+                          size="thumb"
                           className="h-full w-full object-cover object-center"
                         />
                       </div>
@@ -364,9 +366,10 @@ export function EditProfilePage() {
                               : 'ring-bloomora-line/25 hover:ring-bloomora-lilac/40',
                           )}
                         >
-                          <img
-                            src={opt.image}
+                          <BloomoraImage
+                            src={opt.image ?? ''}
                             alt=""
+                            size="thumb"
                             className="h-full w-full object-cover object-center"
                           />
                           {selected ? (

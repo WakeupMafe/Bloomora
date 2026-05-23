@@ -24,6 +24,7 @@ import {
 } from '@/features/flashcards/englishFlashcardFormUtils'
 import { PinkBoldRichTextArea } from '@/features/flashcards/PinkBoldRichTextArea'
 import { VerbFormsFields } from '@/features/flashcards/VerbFormsFields'
+import { BloomoraImage } from '@/components/ui/BloomoraImage'
 import { cn } from '@/utils/cn'
 
 type EnglishFlashcardFormProps = {
@@ -116,15 +117,16 @@ export function EnglishFlashcardForm({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
           <div
             className={cn(
-              'relative h-32 w-full shrink-0 overflow-hidden rounded-2xl bg-bloomora-lavender-50/70 ring-1 ring-bloomora-line/35 sm:h-28 sm:w-40',
-              !hasImage && 'flex items-center justify-center',
+              'relative flex h-32 w-full shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-bloomora-lavender-50/70 ring-1 ring-bloomora-line/35 sm:h-28 sm:w-40',
+              !hasImage && 'justify-center',
             )}
           >
             {form.imagePreview ? (
-              <img
+              <BloomoraImage
                 src={form.imagePreview}
                 alt=""
-                className="h-full w-full object-cover"
+                size="full"
+                className="mx-auto max-h-full max-w-full object-contain p-1"
               />
             ) : (
               <span className="px-3 text-center text-xs font-medium text-bloomora-text-muted">

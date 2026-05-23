@@ -10,4 +10,22 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+          if (
+            id.includes('react-dom') ||
+            id.includes('react-router') ||
+            /[/\\]react[/\\]/.test(id)
+          ) {
+            return 'react-vendor'
+          }
+          if (id.includes('@tanstack/react-query')) return 'query-vendor'
+          if (id.includes('@supabase')) return 'supabase-vendor'
+        },
+      },
+    },
+  },
 })

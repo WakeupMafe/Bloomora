@@ -3,6 +3,7 @@ export const FLASHCARD_CATEGORY_OPTIONS = [
   { value: 'Adjectives', label: 'Adjectives' },
   { value: 'Adverb', label: 'Adverb' },
   { value: 'Noun', label: 'Noun' },
+  { value: 'Preposition', label: 'Preposition' },
   { value: 'Verbs', label: 'Verbs' },
   { value: 'Idioms', label: 'Idioms' },
   { value: 'Phrasal verb', label: 'Phrasal verb' },

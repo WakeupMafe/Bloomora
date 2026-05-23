@@ -54,6 +54,39 @@ export async function listFlashcardsEnglish(
   return (data ?? []) as FlashcardEnglishRow[]
 }
 
+export type FlashcardEnglishPreviewRow = Pick<
+  FlashcardEnglishRow,
+  'id' | 'english_word' | 'category' | 'image_url'
+>
+
+/** Vista ligera para el dashboard (evita traer todas las columnas/filas). */
+export async function listFlashcardsEnglishPreview(
+  sb: SupabaseClient,
+  userCedula: string,
+  limit: number,
+): Promise<FlashcardEnglishPreviewRow[]> {
+  const { data, error } = await sb
+    .from('flashcards_english')
+    .select('id, english_word, category, image_url')
+    .eq('user_cedula', userCedula)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) throwRepoError(error)
+  return (data ?? []) as FlashcardEnglishPreviewRow[]
+}
+
+export async function countFlashcardsEnglish(
+  sb: SupabaseClient,
+  userCedula: string,
+): Promise<number> {
+  const { count, error } = await sb
+    .from('flashcards_english')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_cedula', userCedula)
+  if (error) throwRepoError(error)
+  return count ?? 0
+}
+
 export async function insertFlashcardEnglish(
   sb: SupabaseClient,
   userCedula: string,

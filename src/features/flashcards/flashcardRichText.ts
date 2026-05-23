@@ -1,5 +1,8 @@
 const PINK_BOLD_CLASS = 'flashcard-pink-bold'
 export const NUMBERED_LIST_CLASS = 'flashcard-numbered-list'
+export const NO_AUTO_LIST_ATTR = 'data-no-auto-list'
+
+const PARAGRAPH_BREAK_RE = /(?:<br\s*\/?>\s*){2,}/gi
 
 type NumberedSegment =
   | { type: 'text'; html: string }
@@ -10,6 +13,23 @@ export type EditorCaretBookmark = { start: number; end: number }
 function hasNumberedEnumeration(source: string): boolean {
   const matches = source.match(/\d+\.\s*\S/g)
   return (matches?.length ?? 0) >= 2
+}
+
+function splitHtmlParagraphs(html: string): string[] {
+  const chunks = html.split(PARAGRAPH_BREAK_RE).map((c) => c.trim()).filter(Boolean)
+  return chunks.length > 0 ? chunks : [html]
+}
+
+function formatNumberedParagraph(html: string): string {
+  const trimmed = html.trim()
+  if (!trimmed || !hasNumberedEnumeration(trimmed)) return html
+  return segmentsToListHtml(parseNumberedSegments(trimmed))
+}
+
+function formatNumberedListsInChunk(html: string): string {
+  const paragraphs = splitHtmlParagraphs(html)
+  if (paragraphs.length <= 1) return formatNumberedParagraph(html)
+  return paragraphs.map(formatNumberedParagraph).join('<br><br>')
 }
 
 function parseNumberedSegments(html: string): NumberedSegment[] {
@@ -146,9 +166,10 @@ export function formatNumberedListsInHtmlString(html: string): string {
   for (const block of blocks) {
     const el = block as HTMLElement
     if (el.querySelector(`ol.${NUMBERED_LIST_CLASS}`)) continue
+    if (el.getAttribute(NO_AUTO_LIST_ATTR) === 'true') continue
     const inner = el.innerHTML
     if (!hasNumberedEnumeration(inner)) continue
-    el.innerHTML = segmentsToListHtml(parseNumberedSegments(inner))
+    el.innerHTML = formatNumberedListsInChunk(inner)
   }
 
   return wrap.innerHTML
@@ -166,10 +187,11 @@ export function applyNumberedListsInEditor(root: HTMLElement): boolean {
   for (const block of blocks) {
     const el = block as HTMLElement
     if (el.tagName === 'OL') continue
+    if (el.getAttribute(NO_AUTO_LIST_ATTR) === 'true') continue
     if (el.querySelector(`ol.${NUMBERED_LIST_CLASS}`)) continue
     const inner = el.innerHTML
     if (!hasNumberedEnumeration(inner)) continue
-    const next = segmentsToListHtml(parseNumberedSegments(inner))
+    const next = formatNumberedListsInChunk(inner)
     if (next !== inner) {
       el.innerHTML = next
       changed = true
@@ -229,6 +251,9 @@ export function sanitizeFlashcardHtml(dirty: string): string {
       if (ALLOWED_BLOCK.has(tag)) {
         el.removeAttribute('style')
         el.removeAttribute('class')
+        if (el.getAttribute(NO_AUTO_LIST_ATTR) !== 'true') {
+          el.removeAttribute(NO_AUTO_LIST_ATTR)
+        }
         cleanNode(el)
         continue
       }
@@ -326,6 +351,120 @@ export function togglePinkBoldOnSelection(root: HTMLElement): void {
   applyPinkBoldToSelection(root)
 }
 
+function getEditableBlock(
+  root: HTMLElement,
+): HTMLElement | null {
+  const sel = window.getSelection()
+  if (!sel?.anchorNode) return null
+  const node =
+    sel.anchorNode.nodeType === Node.ELEMENT_NODE
+      ? (sel.anchorNode as HTMLElement)
+      : sel.anchorNode.parentElement
+  const block = node?.closest('div, p')
+  if (!block || !root.contains(block)) return null
+  return block as HTMLElement
+}
+
+function isListItemEmpty(li: HTMLLIElement): boolean {
+  const clone = li.cloneNode(true) as HTMLLIElement
+  clone.querySelectorAll('br').forEach((br) => br.remove())
+  return (clone.textContent ?? '').replace(/\u00a0/g, ' ').trim() === ''
+}
+
+function listItemEndsWithDoubleSpace(li: HTMLLIElement): boolean {
+  return /\s{2}$/.test(li.textContent ?? '')
+}
+
+function trimListItemTrailingDoubleSpaces(li: HTMLLIElement): void {
+  const last = li.lastChild
+  if (last?.nodeType === Node.TEXT_NODE) {
+    const text = last as Text
+    text.data = text.data.replace(/\s{2}$/, '')
+    if (!text.data) last.remove()
+    return
+  }
+  const t = li.textContent ?? ''
+  if (/\s{2}$/.test(t)) {
+    li.textContent = t.replace(/\s{2}$/, '')
+  }
+}
+
+function placeCaretAtStart(el: HTMLElement): void {
+  const sel = window.getSelection()
+  if (!sel) return
+  const range = document.createRange()
+  range.selectNodeContents(el)
+  range.collapse(true)
+  sel.removeAllRanges()
+  sel.addRange(range)
+}
+
+/** Sale de la lista numerada a un párrafo sin auto-numeración. */
+export function exitNumberedList(
+  root: HTMLElement,
+  fromLi: HTMLLIElement,
+): boolean {
+  const ol = fromLi.closest(`ol.${NUMBERED_LIST_CLASS}`)
+  if (!ol || !root.contains(ol)) return false
+
+  if (isListItemEmpty(fromLi)) {
+    fromLi.remove()
+  } else if (listItemEndsWithDoubleSpace(fromLi)) {
+    trimListItemTrailingDoubleSpaces(fromLi)
+  }
+
+  const block = document.createElement('div')
+  block.setAttribute(NO_AUTO_LIST_ATTR, 'true')
+  block.appendChild(document.createElement('br'))
+  ol.after(block)
+
+  if (!ol.querySelector('li')) ol.remove()
+
+  placeCaretAtStart(block)
+  return true
+}
+
+function isCaretOnEmptyLine(block: HTMLElement): boolean {
+  const sel = window.getSelection()
+  if (!sel?.rangeCount || !sel.anchorNode) return false
+  if (!block.contains(sel.anchorNode)) return false
+
+  const probe = document.createRange()
+  probe.selectNodeContents(block)
+  probe.setEnd(sel.anchorNode, sel.anchorOffset)
+  const div = document.createElement('div')
+  div.appendChild(probe.cloneContents())
+  const before = (div.textContent ?? '').replace(/\u00a0/g, ' ')
+  if (before.trim() !== '') return false
+
+  return block.querySelector('br') !== null
+}
+
+/**
+ * Fuera de lista: segundo Enter en línea vacía → párrafo sin auto-numeración.
+ * (Enter una vez deja el salto; Enter otra vez en la línea vacía activa esto.)
+ */
+export function handlePlainDoubleEnterNoAutoList(
+  root: HTMLElement,
+  e: { key: string; preventDefault(): void },
+): boolean {
+  if (e.key !== 'Enter') return false
+  if (getListItemFromSelection(root)) return false
+
+  const block = getEditableBlock(root)
+  if (!block || block.getAttribute(NO_AUTO_LIST_ATTR) === 'true') return false
+  if (!isCaretOnEmptyLine(block)) return false
+
+  e.preventDefault()
+
+  const newBlock = document.createElement('div')
+  newBlock.setAttribute(NO_AUTO_LIST_ATTR, 'true')
+  newBlock.appendChild(document.createElement('br'))
+  block.after(newBlock)
+  placeCaretAtStart(newBlock)
+  return true
+}
+
 function getListItemFromSelection(root: HTMLElement): HTMLLIElement | null {
   const sel = window.getSelection()
   if (!sel?.anchorNode) return null
@@ -339,7 +478,7 @@ function getListItemFromSelection(root: HTMLElement): HTMLLIElement | null {
   return li
 }
 
-/** Enter en lista numerada: nuevo &lt;li&gt; con el cursor en la posición correcta. */
+/** Enter en lista numerada: nuevo &lt;li&gt; o salir (línea vacía / dos espacios + Enter). */
 export function handleNumberedListEnter(
   root: HTMLElement,
   e: { key: string; preventDefault(): void },
@@ -347,6 +486,12 @@ export function handleNumberedListEnter(
   if (e.key !== 'Enter') return false
   const li = getListItemFromSelection(root)
   if (!li) return false
+
+  if (isListItemEmpty(li) || listItemEndsWithDoubleSpace(li)) {
+    e.preventDefault()
+    exitNumberedList(root, li)
+    return true
+  }
 
   e.preventDefault()
   const sel = window.getSelection()

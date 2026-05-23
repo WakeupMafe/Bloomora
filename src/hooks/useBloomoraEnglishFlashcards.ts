@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  countFlashcardsEnglish,
   deleteFlashcardEnglish,
   insertFlashcardEnglish,
   listFlashcardsEnglish,
+  listFlashcardsEnglishPreview,
   updateFlashcardEnglish,
   type FlashcardEnglishRow,
 } from '@/services/supabase/flashcardsEnglishRepo'
@@ -12,6 +14,7 @@ import { resolveVerbForms } from '@/features/flashcards/verbFormsCodec'
 import type { EnglishFlashcard, EnglishFlashcardInput } from '@/types/englishFlashcard'
 
 const QUERY_KEY = 'flashcards-english'
+const FLASHCARDS_STALE_MS = 5 * 60_000
 
 function rowToFlashcard(r: FlashcardEnglishRow): EnglishFlashcard {
   const category = r.category
@@ -35,6 +38,7 @@ export function useBloomoraEnglishFlashcards(cedula: string | null) {
   return useQuery({
     queryKey: [QUERY_KEY, cedula],
     enabled: !!cedula,
+    staleTime: FLASHCARDS_STALE_MS,
     queryFn: async (): Promise<EnglishFlashcard[]> => {
       const sb = requireSupabase()
       await requireExistingProfileByCedula(sb, cedula!)
@@ -44,11 +48,50 @@ export function useBloomoraEnglishFlashcards(cedula: string | null) {
   })
 }
 
+export type EnglishFlashcardPreview = Pick<
+  EnglishFlashcard,
+  'id' | 'englishWord' | 'category' | 'imageUrl'
+>
+
+export type EnglishFlashcardsDashboardData = {
+  count: number
+  preview: EnglishFlashcardPreview[]
+}
+
+export function useBloomoraEnglishFlashcardsDashboard(
+  cedula: string | null,
+  previewLimit = 3,
+) {
+  return useQuery({
+    queryKey: [QUERY_KEY, 'dashboard', cedula, previewLimit],
+    enabled: !!cedula,
+    staleTime: FLASHCARDS_STALE_MS,
+    queryFn: async (): Promise<EnglishFlashcardsDashboardData> => {
+      const sb = requireSupabase()
+      await requireExistingProfileByCedula(sb, cedula!)
+      const [rows, count] = await Promise.all([
+        listFlashcardsEnglishPreview(sb, cedula!, previewLimit),
+        countFlashcardsEnglish(sb, cedula!),
+      ])
+      return {
+        count,
+        preview: rows.map((r) => ({
+          id: String(r.id),
+          englishWord: r.english_word,
+          category: r.category,
+          imageUrl: r.image_url,
+        })),
+      }
+    },
+  })
+}
+
 export function useEnglishFlashcardMutations(cedula: string | null) {
   const qc = useQueryClient()
 
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: [QUERY_KEY, cedula] })
+    void qc.invalidateQueries({ queryKey: [QUERY_KEY, 'dashboard', cedula] })
   }
 
   const insertMut = useMutation({

@@ -41,6 +41,16 @@ const THEMES: Record<FlashcardCategory, FlashcardCategoryTheme> = {
     footerPillClass: 'bg-[#e0f2fe] text-[#0369a1] ring-[#bae6fd]/70',
     editBtnClass: 'bg-[#e0f2fe] text-[#0284c7] hover:bg-[#bae6fd]/80',
   },
+  Preposition: {
+    badge: 'PREPOSITION',
+    badgeClass:
+      'bg-[#d1fae5] text-[#047857] ring-1 ring-[#a7f3d0]/80',
+    accentText: 'text-[#065f46]',
+    speakerClass: 'text-[#059669] hover:bg-[#d1fae5]',
+    verbBoxClass: 'bg-[#ecfdf5] ring-[#a7f3d0]/60',
+    footerPillClass: 'bg-[#d1fae5] text-[#047857] ring-[#a7f3d0]/70',
+    editBtnClass: 'bg-[#d1fae5] text-[#059669] hover:bg-[#a7f3d0]/80',
+  },
   Verbs: {
     badge: 'VERB',
     badgeClass:

@@ -1,9 +1,11 @@
 import tulipanLogo from '@/assets/TulipanLogo.png'
+import { BloomoraImage } from '@/components/ui/BloomoraImage'
 import { cn } from '@/utils/cn'
 
 type BloomoraLogoProps = {
   className?: string
   size?: 'sm' | 'md' | 'lg'
+  priority?: boolean
   /**
    * El PNG es el tulipán de marca. Por defecto se muestra la palabra “Bloomora” al lado.
    * Si más adelante usas un PNG que ya incluye el texto, pon `false`.
@@ -27,6 +29,7 @@ export function BloomoraLogo({
   className,
   size = 'md',
   showWordmark = true,
+  priority = false,
 }: BloomoraLogoProps) {
   return (
     <div
@@ -35,15 +38,16 @@ export function BloomoraLogo({
         className,
       )}
     >
-      <img
+      <BloomoraImage
         src={tulipanLogo}
         alt={showWordmark ? '' : 'Bloomora'}
         aria-hidden={showWordmark || undefined}
+        size="full"
+        priority={priority}
         className={cn(
           'w-auto shrink-0 object-contain object-center',
           heights[size],
         )}
-        decoding="async"
       />
       {showWordmark ? (
         <span

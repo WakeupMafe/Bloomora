@@ -1,8 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { BloomoraConfirmDialog } from '@/components/ui/BloomoraConfirmDialog'
 import { EnglishFlashcardToolbar } from '@/features/flashcards/EnglishFlashcardToolbar'
 import { FlashcardCategoryPack } from '@/features/flashcards/FlashcardCategoryPack'
-import { buildCategoryPacks } from '@/features/flashcards/groupFlashcardsByCategory'
+import { FlashcardDeckReview } from '@/features/flashcards/FlashcardDeckReview'
+import {
+  buildCategoryPacks,
+  type CategoryPack,
+} from '@/features/flashcards/groupFlashcardsByCategory'
 import { englishSearchText } from '@/features/flashcards/verbFormsCodec'
 import type { EnglishFlashcard } from '@/types/englishFlashcard'
 
@@ -35,16 +39,18 @@ export function EnglishFlashcardList({
 }: EnglishFlashcardListProps) {
   const [favorites, setFavorites] = useState<Set<string>>(() => new Set())
   const [expandedPacks, setExpandedPacks] = useState<Set<string>>(() => new Set())
+  const [reviewPack, setReviewPack] = useState<CategoryPack | null>(null)
+  const deferredSearch = useDeferredValue(search)
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase()
+    const q = deferredSearch.trim().toLowerCase()
     return cards.filter((c) => {
       if (categoryFilter && (c.category ?? '') !== categoryFilter) return false
       if (!q) return true
       const en = englishSearchText(c.englishWord, c.category).toLowerCase()
       return en.includes(q) || c.spanishMeaning.toLowerCase().includes(q)
     })
-  }, [cards, search, categoryFilter])
+  }, [cards, deferredSearch, categoryFilter])
 
   const packs = useMemo(() => buildCategoryPacks(filtered), [filtered])
 
@@ -110,6 +116,7 @@ export function EnglishFlashcardList({
               pack={pack}
               expanded={expandedPacks.has(pack.key)}
               onToggle={() => togglePack(pack.key)}
+              onStartReview={() => setReviewPack(pack)}
               favorites={favorites}
               onToggleFavorite={toggleFavorite}
               onEdit={onEdit}
@@ -118,6 +125,15 @@ export function EnglishFlashcardList({
           ))}
         </ul>
       )}
+
+      {reviewPack ? (
+        <FlashcardDeckReview
+          cards={reviewPack.cards}
+          packLabel={reviewPack.label}
+          category={reviewPack.category}
+          onClose={() => setReviewPack(null)}
+        />
+      ) : null}
 
       <BloomoraConfirmDialog
         open={!!deleteTarget}

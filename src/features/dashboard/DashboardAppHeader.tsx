@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { BloomoraLogo } from "@/components/brand/BloomoraLogo";
+import { BloomoraImage } from "@/components/ui/BloomoraImage";
 import { useUserPhone } from "@/contexts/UserPhoneContext";
 import { useBloomoraProfile } from "@/hooks/useBloomoraProfile";
 import {
@@ -91,12 +92,12 @@ export function DashboardAppHeader({
           className="flex items-center gap-1.5 rounded-full border border-bloomora-line/30 bg-bloomora-lavender-50/95 py-1 pl-1 pr-2 shadow-sm transition hover:border-bloomora-lilac/40 hover:bg-bloomora-lavender-100 min-[390px]:gap-2 sm:gap-2.5 sm:py-1.5 sm:pl-1.5 sm:pr-3"
         >
           <span className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full ring-2 ring-bloomora-lavender-50 sm:h-9 sm:w-9">
-            <img
+            <BloomoraImage
               src={avatarUrl}
               alt=""
               aria-hidden
+              size="thumb"
               className="h-full w-full object-cover object-center"
-              decoding="async"
             />
           </span>
           <span className="hidden max-w-[7rem] truncate text-sm font-semibold text-bloomora-violet md:inline md:text-[0.9375rem]">

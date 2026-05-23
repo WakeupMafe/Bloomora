@@ -1,3 +1,5 @@
+import { memo } from 'react'
+import { BloomoraImage } from '@/components/ui/BloomoraImage'
 import { EnglishFlashcardCard } from '@/features/flashcards/EnglishFlashcardCard'
 import { getCategoryTheme } from '@/features/flashcards/flashcardCategoryTheme'
 import { ChevronDownIcon } from '@/features/flashcards/FlashcardIcons'
@@ -12,6 +14,7 @@ type FlashcardCategoryPackProps = {
   pack: CategoryPack
   expanded: boolean
   onToggle: () => void
+  onStartReview: () => void
   favorites: Set<string>
   onToggleFavorite: (id: string) => void
   onEdit: (card: EnglishFlashcard) => void
@@ -23,10 +26,11 @@ function wordCountLabel(n: number): string {
   return `${n} palabras`
 }
 
-export function FlashcardCategoryPack({
+export const FlashcardCategoryPack = memo(function FlashcardCategoryPack({
   pack,
   expanded,
   onToggle,
+  onStartReview,
   favorites,
   onToggleFavorite,
   onEdit,
@@ -58,13 +62,14 @@ export function FlashcardCategoryPack({
               {previews.map((card, i) => (
                 <div
                   key={card.id}
-                  className="relative size-14 overflow-hidden rounded-xl ring-2 ring-white sm:size-16"
+                  className="relative flex size-14 items-center justify-center overflow-hidden rounded-xl bg-bloomora-lavender-50/90 ring-2 ring-white sm:size-16"
                   style={{ zIndex: PREVIEW_IMAGES_MAX - i }}
                 >
-                  <img
+                  <BloomoraImage
                     src={card.imageUrl}
                     alt=""
-                    className="h-full w-full object-cover"
+                    size="thumb"
+                    className="max-h-full max-w-full object-contain p-0.5"
                   />
                 </div>
               ))}
@@ -91,6 +96,19 @@ export function FlashcardCategoryPack({
             <p className="mt-0.5 text-sm font-semibold text-bloomora-text-muted">
               {wordCountLabel(pack.cards.length)}
             </p>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onStartReview()
+              }}
+              className={cn(
+                'mt-2.5 inline-flex items-center rounded-full px-4 py-1.5 text-xs font-bold ring-1 transition hover:brightness-[1.02] active:scale-[0.99]',
+                theme.footerPillClass,
+              )}
+            >
+              Repasar…
+            </button>
             {!expanded && previewWords ? (
               <p className="mt-1.5 line-clamp-1 text-xs text-bloomora-text-muted/90">
                 {previewWords}
@@ -107,31 +125,24 @@ export function FlashcardCategoryPack({
           />
         </button>
 
-        <div
-          className={cn(
-            'grid transition-[grid-template-rows] duration-300 ease-in-out',
-            expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
-          )}
-        >
-          <div className="overflow-hidden">
-            <div className="border-t border-bloomora-line/25 bg-[#faf8ff]/50 px-4 pb-5 pt-4 sm:px-5">
-              <ul className="grid list-none gap-6 p-0 sm:grid-cols-2">
-                {pack.cards.map((card) => (
-                  <li key={card.id} className="min-w-0">
-                    <EnglishFlashcardCard
-                      card={card}
-                      isFavorite={favorites.has(card.id)}
-                      onToggleFavorite={() => onToggleFavorite(card.id)}
-                      onEdit={() => onEdit(card)}
-                      onDelete={() => onDelete(card)}
-                    />
-                  </li>
-                ))}
-              </ul>
-            </div>
+        {expanded ? (
+          <div className="border-t border-bloomora-line/25 bg-[#faf8ff]/50 px-4 pb-5 pt-4 sm:px-5">
+            <ul className="flashcard-pack-grid grid list-none gap-6 p-0 sm:grid-cols-2">
+              {pack.cards.map((card) => (
+                <li key={card.id} className="flashcard-pack-grid__item min-w-0">
+                  <EnglishFlashcardCard
+                    card={card}
+                    isFavorite={favorites.has(card.id)}
+                    onToggleFavorite={() => onToggleFavorite(card.id)}
+                    onEdit={() => onEdit(card)}
+                    onDelete={() => onDelete(card)}
+                  />
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
+        ) : null}
       </article>
     </li>
   )
-}
+})
