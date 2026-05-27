@@ -7,87 +7,112 @@ import { bloomoraPanelCardClass } from '@/components/ui/formControls'
 import { useBloomoraToast } from '@/contexts/BloomoraToastContext'
 import { useUserPhone } from '@/contexts/UserPhoneContext'
 import { NoteEditor } from '@/features/notes/NoteEditor'
+import {
+  createDraftEnglishNote,
+  englishNoteToInput,
+  isDraftNoteId,
+  mergeEnglishNotePatch,
+} from '@/features/notes/noteDraftUtils'
 import { NotesList } from '@/features/notes/NotesList'
 import {
-  createEnglishNoteLocal,
-  deleteEnglishNoteLocal,
-  listEnglishNotesLocal,
-  updateEnglishNoteLocal,
-} from '@/services/local/englishNotesLocalRepo'
-import type { EnglishNote } from '@/types/englishNote'
+  useBloomoraEnglishNotes,
+  useEnglishNoteMutations,
+} from '@/hooks/useBloomoraEnglishNotes'
+import { messageFromSupabaseError } from '@/lib/supabaseError'
+import { getSupabaseBrowserClient } from '@/services/supabase/client'
+import type { EnglishNote, EnglishNoteInput } from '@/types/englishNote'
 import { cn } from '@/utils/cn'
+
+type NotePatch = Partial<EnglishNoteInput>
 
 export function EnglishNotesPage() {
   const { cedula } = useUserPhone()
   const { showToast } = useBloomoraToast()
+  const supabaseReady = !!getSupabaseBrowserClient()
 
-  const [notes, setNotes] = useState<EnglishNote[]>([])
+  const { data: notes = [], isLoading, isError, error } = useBloomoraEnglishNotes(cedula)
+  const { insertMut, updateMut, deleteMut } = useEnglishNoteMutations(cedula)
+
+  const [draftNote, setDraftNote] = useState<EnglishNote | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
 
+  const visibleNotes = useMemo(() => {
+    if (!draftNote) return notes
+    return [draftNote, ...notes]
+  }, [notes, draftNote])
+
+  const active = useMemo(
+    () => visibleNotes.find((n) => n.id === activeId) ?? null,
+    [visibleNotes, activeId],
+  )
+
   useEffect(() => {
-    if (!cedula) {
-      setNotes([])
+    if (visibleNotes.length === 0) {
       setActiveId(null)
       return
     }
-    const loaded = listEnglishNotesLocal(cedula)
-    setNotes(loaded)
     setActiveId((curr) => {
-      if (curr && loaded.some((n) => n.id === curr)) return curr
-      return loaded[0]?.id ?? null
+      if (curr && visibleNotes.some((n) => n.id === curr)) return curr
+      return visibleNotes[0]?.id ?? null
     })
-  }, [cedula])
+  }, [notes, draftNote])
 
-  const active = useMemo(
-    () => notes.find((n) => n.id === activeId) ?? null,
-    [notes, activeId],
-  )
+  const patchNote = async (noteId: string, patch: NotePatch): Promise<boolean> => {
+    if (!cedula) return false
 
-  const refresh = (userCedula: string) => {
-    const next = listEnglishNotesLocal(userCedula)
-    setNotes(next)
-    setActiveId((curr) => curr ?? next[0]?.id ?? null)
+    if (isDraftNoteId(noteId)) {
+      if (!draftNote || draftNote.id !== noteId) return false
+      const merged = mergeEnglishNotePatch(draftNote, patch)
+      setDraftNote(merged)
+
+      const isFullSave =
+        patch.contentHtml !== undefined ||
+        patch.title !== undefined ||
+        patch.plainText !== undefined
+
+      if (!isFullSave) return true
+
+      try {
+        const id = await insertMut.mutateAsync(englishNoteToInput(merged))
+        setDraftNote(null)
+        setActiveId(String(id))
+        return true
+      } catch (err) {
+        showToast(messageFromSupabaseError(err), { duration: 8000 })
+        return false
+      }
+    }
+
+    try {
+      await updateMut.mutateAsync({ noteId, patch })
+      return true
+    } catch (err) {
+      showToast(messageFromSupabaseError(err), { duration: 8000 })
+      return false
+    }
   }
 
   const createNote = () => {
     if (!cedula) return
-    const created = createEnglishNoteLocal(cedula, {})
-    refresh(cedula)
-    setActiveId(created.id)
+    const draft = createDraftEnglishNote(cedula)
+    setDraftNote(draft)
+    setActiveId(draft.id)
   }
 
   const deleteNote = (id: string) => {
+    if (isDraftNoteId(id)) {
+      setDraftNote(null)
+      setActiveId(notes[0]?.id ?? null)
+      return
+    }
     if (!cedula) return
     if (!window.confirm('Eliminar este apunte?')) return
-    deleteEnglishNoteLocal(cedula, id)
-    const next = listEnglishNotesLocal(cedula)
-    setNotes(next)
-    setActiveId(next[0]?.id ?? null)
-  }
-
-  const patchNote = (
-    noteId: string,
-    patch: Partial<{
-      title: string
-      category: string | null
-      titleFont: 'popis' | 'arial' | 'cursive' | 'cursive2'
-      titleColor: 'coral' | 'violet' | 'babyBlue' | 'gray' | 'black'
-      pageSize: 'a4' | 'letter'
-      pageNumberEnabled: boolean
-      twoColumns: boolean
-      contentHtml: string
-      plainText: string
-      coverImageUrl: string | null
-    }>,
-  ): boolean => {
-    if (!cedula) return false
-    const updated = updateEnglishNoteLocal(cedula, noteId, patch)
-    if (!updated) {
-      showToast('No se pudo guardar. Prueba con menos imagenes o pulsa Guardar de nuevo.')
-      return false
-    }
-    setNotes(listEnglishNotesLocal(cedula))
-    return true
+    deleteMut.mutate(id, {
+      onSuccess: () => {
+        showToast('Apunte eliminado')
+      },
+      onError: (err) => showToast(messageFromSupabaseError(err), { duration: 8000 }),
+    })
   }
 
   return (
@@ -112,7 +137,7 @@ export function EnglishNotesPage() {
 
       <header className="mb-6">
         <h1 className="text-[clamp(1.4rem,1.1rem+1.2vw,2rem)] font-bold text-bloomora-deep">
-          Apuntes de ingles
+          Apuntes
         </h1>
       </header>
 
@@ -120,25 +145,43 @@ export function EnglishNotesPage() {
         <Card variant="glass" className={cn(bloomoraPanelCardClass, 'text-sm text-bloomora-text-muted')}>
           Necesitas iniciar sesion para guardar apuntes.
         </Card>
+      ) : !supabaseReady ? (
+        <Card variant="glass" className={cn(bloomoraPanelCardClass, 'text-sm text-bloomora-text-muted')}>
+          Supabase no esta configurado. Añade VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en tu archivo
+          .env.local y reinicia la app.
+        </Card>
+      ) : isError ? (
+        <Card variant="glass" className={cn(bloomoraPanelCardClass, 'text-sm text-red-600')}>
+          {messageFromSupabaseError(error)}
+          <p className="mt-2 text-bloomora-text-muted">
+            La tabla <strong className="font-semibold text-bloomora-deep">english_notes</strong> en
+            Supabase está incompleta. En SQL Editor ejecuta{' '}
+            <code className="rounded bg-bloomora-snow px-1 py-0.5 text-xs">
+              supabase/migrations/20260528_fix_english_notes.sql
+            </code>
+            , luego en Project Settings → API pulsa <strong>Reload schema</strong> y recarga
+            Bloomora.
+          </p>
+        </Card>
       ) : (
         <div className="grid gap-5">
           <NotesList
-            notes={notes}
+            notes={visibleNotes}
             activeId={activeId}
             onSelect={setActiveId}
-            onCreate={() => {
-              createNote()
-              showToast('Nuevo apunte creado')
-            }}
-            onDelete={(id) => {
-              deleteNote(id)
-              showToast('Apunte eliminado')
-            }}
+            onCreate={createNote}
+            onDelete={deleteNote}
+            isLoading={isLoading}
           />
-          <NoteEditor note={active} onPatch={patchNote} />
+          <NoteEditor
+            note={active}
+            onPatch={patchNote}
+            isNotesLoading={isLoading}
+            hasSavedNotes={notes.length > 0}
+            isDraft={active ? isDraftNoteId(active.id) : false}
+          />
         </div>
       )}
     </div>
   )
 }
-

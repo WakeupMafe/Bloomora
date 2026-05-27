@@ -59,10 +59,9 @@ function RedoIcon() {
 const iconBtnClass = '!min-h-9 !min-w-9 !px-0'
 
 const NOTE_SHORTCUTS = [
-  { keys: 'Ctrl+S', desc: 'Guardar' },
-  { keys: 'Ctrl+O', desc: 'Fuente, color y resaltado (con texto seleccionado)' },
-  { keys: 'Doble clic', desc: 'Tamaño de letra y más opciones' },
-  { keys: 'Ctrl + + / −', desc: 'Tamaño de letra ±10 px' },
+  { keys: 'Ctrl+G', desc: 'Guardar en Supabase' },
+  { keys: 'Ctrl+O', desc: 'Formato del texto (selección o al escribir)' },
+  { keys: 'Ctrl + + / −', desc: 'Tamaño de letra ±10 px (con selección)' },
 ] as const
 
 function InfoIcon() {
@@ -215,7 +214,7 @@ export function NoteToolbar(props: NoteToolbarProps) {
               variant="primary"
               size="sm"
               onClick={props.onSave}
-              title="Guardar ahora (Ctrl+S)"
+              title="Guardar en Supabase (Ctrl+G)"
             >
               Guardar
             </Button>

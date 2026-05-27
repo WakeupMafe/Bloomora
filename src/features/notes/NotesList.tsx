@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { bloomoraPanelCardClass } from '@/components/ui/formControls'
+import { isDraftNoteId } from '@/features/notes/noteDraftUtils'
 import { noteDisplayTitle } from '@/features/notes/noteEditorUtils'
 import type { EnglishNote } from '@/types/englishNote'
 import { cn } from '@/utils/cn'
@@ -11,6 +12,7 @@ type NotesListProps = {
   onSelect: (id: string) => void
   onCreate: () => void
   onDelete: (id: string) => void
+  isLoading?: boolean
 }
 
 export function NotesList({
@@ -19,15 +21,22 @@ export function NotesList({
   onSelect,
   onCreate,
   onDelete,
+  isLoading = false,
 }: NotesListProps) {
   return (
     <Card variant="glass" className={cn(bloomoraPanelCardClass, 'p-4')}>
       <div className="mb-3 flex items-center justify-between gap-2">
         <h2 className="text-sm font-bold text-bloomora-violet">Apuntes</h2>
-        <Button type="button" variant="primary" size="sm" onClick={onCreate}>
+        <Button type="button" variant="primary" size="sm" onClick={onCreate} disabled={isLoading}>
           + Nuevo
         </Button>
       </div>
+
+      {isLoading ? (
+        <p className="text-sm text-bloomora-text-muted">Cargando apuntes...</p>
+      ) : notes.length === 0 ? (
+        <p className="text-sm text-bloomora-text-muted">No hay apuntes guardados.</p>
+      ) : null}
 
       <ul className="space-y-2">
         {notes.map((n) => (
@@ -48,7 +57,9 @@ export function NotesList({
                 {noteDisplayTitle(n.title)}
               </span>
               <span className="text-xs font-normal opacity-80">
-                {new Date(n.updatedAt).toLocaleDateString('es-CO')}
+                {isDraftNoteId(n.id)
+                  ? 'Sin guardar · Ctrl+G para guardar'
+                  : new Date(n.updatedAt).toLocaleDateString('es-CO')}
               </span>
             </Button>
             <Button

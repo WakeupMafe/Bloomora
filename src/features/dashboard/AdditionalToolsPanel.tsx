@@ -198,7 +198,6 @@ export function AdditionalToolsPanel({ className }: AdditionalToolsPanelProps) {
           <ToolTile
             to="/app/english-notes"
             label="Apuntes"
-            hint="Ingles"
             icon={
               <NotesToolIcon className="size-9 text-bloomora-violet/70 sm:size-10" />
             }

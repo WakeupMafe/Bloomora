@@ -12,8 +12,12 @@ function normalizeNote(raw: EnglishNote): EnglishNote {
   }
 }
 
-function storageKey(userCedula: string): string {
+export function storageKeyForEnglishNotes(userCedula: string): string {
   return `${STORAGE_PREFIX}${userCedula}`
+}
+
+function storageKey(userCedula: string): string {
+  return storageKeyForEnglishNotes(userCedula)
 }
 
 function nowIso(): string {

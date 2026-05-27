@@ -5,17 +5,26 @@ import { useBloomoraToast } from '@/contexts/BloomoraToastContext'
 import { NotePageNumbers } from '@/features/notes/NotePageNumbers'
 import {
   NoteSelectionToolbar,
-  coordsFromNoteSelection,
   useNoteSelectionToolbar,
 } from '@/features/notes/NoteSelectionToolbar'
+import { isDraftNoteId } from '@/features/notes/noteDraftUtils'
 import { NoteToolbar } from '@/features/notes/NoteToolbar'
 import {
+  BODY_TYPING_DEFAULTS,
+  type NoteTypingDefaults,
+} from '@/features/notes/noteTypingDefaults'
+import {
+  applyBlockAlign,
   applyNoteFontToSelection,
   adjustNoteSelectionFontSize,
+  applyTypingDefaultsAtCaret,
   attachNoteImageDragHandlers,
   buildNotePrintDocumentHtml,
   enhanceNoteImages,
   insertImageInEditor,
+  insertParagraphWithTypingDefaults,
+  NOTE_FONT_SIZE_MAX_PX,
+  NOTE_FONT_SIZE_MIN_PX,
   NOTE_FONT_SIZE_STEP_PX,
   notePageSheetClass,
   printNoteDocument,
@@ -44,37 +53,85 @@ type NoteEditorProps = {
       plainText: string
       coverImageUrl: string | null
     }>,
-  ) => boolean
+  ) => Promise<boolean>
+  isNotesLoading?: boolean
+  hasSavedNotes?: boolean
+  isDraft?: boolean
 }
 
-export function NoteEditor({ note, onPatch }: NoteEditorProps) {
+export function NoteEditor({
+  note,
+  onPatch,
+  isNotesLoading = false,
+  hasSavedNotes = false,
+  isDraft = false,
+}: NoteEditorProps) {
   const { showToast } = useBloomoraToast()
   const editorRef = useRef<HTMLDivElement>(null)
   const sheetRef = useRef<HTMLElement>(null)
   const imgInputRef = useRef<HTMLInputElement>(null)
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const titleSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const queueSaveRef = useRef<() => void>(() => {})
-  const [saveLabel, setSaveLabel] = useState('Sin cambios pendientes')
+  const [saveLabel, setSaveLabel] = useState(
+    isDraft ? 'Apunte nuevo · pulsa Ctrl+G para guardar' : 'Pulsa Guardar o Ctrl+G para guardar',
+  )
   const [titleDraft, setTitleDraft] = useState('')
+  const [categoryDraft, setCategoryDraft] = useState('')
+  const [pageSizeDraft, setPageSizeDraft] = useState<EnglishNotePageSize>('letter')
+  const [pageNumberEnabledDraft, setPageNumberEnabledDraft] = useState(false)
+  const [twoColumnsDraft, setTwoColumnsDraft] = useState(false)
   const noteRef = useRef(note)
   const titleDraftRef = useRef(titleDraft)
+  const categoryDraftRef = useRef(categoryDraft)
+  const pageSizeDraftRef = useRef(pageSizeDraft)
+  const pageNumberEnabledDraftRef = useRef(pageNumberEnabledDraft)
+  const twoColumnsDraftRef = useRef(twoColumnsDraft)
   const onPatchRef = useRef(onPatch)
+  const typingDefaultsRef = useRef<NoteTypingDefaults>({ ...BODY_TYPING_DEFAULTS })
 
   noteRef.current = note
   titleDraftRef.current = titleDraft
+  categoryDraftRef.current = categoryDraft
+  pageSizeDraftRef.current = pageSizeDraft
+  pageNumberEnabledDraftRef.current = pageNumberEnabledDraft
+  twoColumnsDraftRef.current = twoColumnsDraft
   onPatchRef.current = onPatch
+
+  const markUnsaved = useCallback(() => {
+    setSaveLabel('Cambios sin guardar')
+  }, [])
 
   const {
     coords: selectionCoords,
     mode: selectionMode,
-    openAtSelection,
+    formatTarget,
+    openFormatting,
     dismiss: dismissSelectionToolbar,
+    preserveSelectionApply,
   } = useNoteSelectionToolbar(editorRef)
+
+  const applyTypingFormat = useCallback(
+    (patch: Partial<NoteTypingDefaults>) => {
+      const editor = editorRef.current
+      if (!editor) return
+      typingDefaultsRef.current = { ...typingDefaultsRef.current, ...patch }
+      applyTypingDefaultsAtCaret(editor, typingDefaultsRef.current)
+      markUnsaved()
+    },
+    [markUnsaved],
+  )
 
   useEffect(() => {
     if (!note) return
     setTitleDraft(note.title)
+    setCategoryDraft(note.category ?? '')
+    setPageSizeDraft(note.pageSize)
+    setPageNumberEnabledDraft(note.pageNumberEnabled)
+    setTwoColumnsDraft(note.twoColumns)
+    setSaveLabel(
+      isDraftNoteId(note.id)
+        ? 'Apunte nuevo · pulsa Ctrl+G para guardar'
+        : 'Pulsa Guardar o Ctrl+G para guardar',
+    )
+    typingDefaultsRef.current = { ...BODY_TYPING_DEFAULTS }
   }, [note?.id])
 
   useEffect(() => {
@@ -82,33 +139,6 @@ export function NoteEditor({ note, onPatch }: NoteEditorProps) {
     editorRef.current.innerHTML = note.contentHtml || '<p><br /></p>'
     enhanceNoteImages(editorRef.current)
   }, [note?.id])
-
-  const persistNote = useCallback(
-    (
-      patch: Partial<{
-        title: string
-        category: string | null
-        titleFont: EnglishNoteTitleFont
-        titleColor: EnglishNoteColor
-        pageSize: EnglishNotePageSize
-        pageNumberEnabled: boolean
-        twoColumns: boolean
-        contentHtml: string
-        plainText: string
-        coverImageUrl: string | null
-      }>,
-      options?: { silent?: boolean },
-    ): boolean => {
-      const current = noteRef.current
-      if (!current) return false
-      const ok = onPatchRef.current(current.id, patch)
-      if (!options?.silent) {
-        setSaveLabel(ok ? 'Guardado' : 'Error al guardar')
-      }
-      return ok
-    },
-    [showToast],
-  )
 
   const readEditorPayload = () => {
     const el = editorRef.current
@@ -122,96 +152,64 @@ export function NoteEditor({ note, onPatch }: NoteEditorProps) {
     }
   }
 
-  const saveNow = useCallback(
-    (options?: { silent?: boolean }): boolean => {
-      const current = noteRef.current
-      if (!current || !editorRef.current) return false
+  const saveNow = useCallback(async (): Promise<boolean> => {
+    const current = noteRef.current
+    if (!current || !editorRef.current) return false
 
-      if (saveTimer.current) {
-        clearTimeout(saveTimer.current)
-        saveTimer.current = null
-      }
-      if (titleSaveTimer.current) {
-        clearTimeout(titleSaveTimer.current)
-        titleSaveTimer.current = null
-      }
+    setSaveLabel('Guardando en Supabase...')
 
-      if (!options?.silent) setSaveLabel('Guardando...')
+    const payload = readEditorPayload()
+    if (!payload) return false
 
-      const payload = readEditorPayload()
-      if (!payload) return false
-
-      const ok = persistNote(
-        {
-          title: titleDraftRef.current,
-          ...payload,
-        },
-        options,
-      )
-      if (ok && !options?.silent) {
-        showToast('Apunte guardado')
-      }
-      return ok
-    },
-    [persistNote, showToast],
-  )
-
-  const queueTitleSave = (value: string) => {
-    if (!note) return
-    setSaveLabel('Cambios sin guardar')
-    if (titleSaveTimer.current) clearTimeout(titleSaveTimer.current)
-    titleSaveTimer.current = setTimeout(() => {
-      titleSaveTimer.current = null
-      persistNote({ title: value })
-    }, 400)
-  }
-
-  const queueSave = () => {
-    if (!note || !editorRef.current) return
-    setSaveLabel('Cambios sin guardar')
-    if (saveTimer.current) clearTimeout(saveTimer.current)
-    saveTimer.current = setTimeout(() => {
-      saveTimer.current = null
-      const payload = readEditorPayload()
-      if (!payload) return
-      persistNote(payload)
-    }, 500)
-  }
-
-  queueSaveRef.current = queueSave
+    const ok = await onPatchRef.current(current.id, {
+      title: titleDraftRef.current,
+      category: categoryDraftRef.current.trim() || null,
+      pageSize: pageSizeDraftRef.current,
+      pageNumberEnabled: pageNumberEnabledDraftRef.current,
+      twoColumns: twoColumnsDraftRef.current,
+      ...payload,
+    })
+    if (ok) {
+      setSaveLabel('Guardado en Supabase')
+      showToast('Apunte guardado en Supabase')
+    } else {
+      setSaveLabel('Error al guardar')
+    }
+    return ok
+  }, [showToast])
 
   useEffect(() => {
     const el = editorRef.current
     if (!el || !note) return
     enhanceNoteImages(el)
-    return attachNoteImageDragHandlers(el, () => queueSaveRef.current())
-  }, [note?.id])
+    return attachNoteImageDragHandlers(el, markUnsaved)
+  }, [note?.id, markUnsaved])
 
   useEffect(() => {
-    const flushOnLeave = () => {
-      if (saveTimer.current || titleSaveTimer.current) {
-        saveNow({ silent: true })
+    if (!note) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'g') {
+        e.preventDefault()
+        void saveNow()
       }
     }
-    window.addEventListener('pagehide', flushOnLeave)
-    window.addEventListener('beforeunload', flushOnLeave)
-    return () => {
-      window.removeEventListener('pagehide', flushOnLeave)
-      window.removeEventListener('beforeunload', flushOnLeave)
-      flushOnLeave()
-    }
-  }, [saveNow, note?.id])
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [note?.id, saveNow])
 
   const cmd = (command: string, value?: string) => {
     document.execCommand(command, false, value)
     editorRef.current?.focus()
-    queueSave()
+    markUnsaved()
   }
 
   const applySelectionFormat = (fn: () => void) => {
-    fn()
-    editorRef.current?.focus()
-    queueSave()
+    if (formatTarget === 'selection') {
+      preserveSelectionApply(fn)
+    } else {
+      fn()
+    }
+    markUnsaved()
   }
 
   const insertImageAtCursor = async (file: File | undefined) => {
@@ -222,8 +220,8 @@ export function NoteEditor({ note, onPatch }: NoteEditorProps) {
       if (!src) return
       const inserted = insertImageInEditor(editorRef.current!, src)
       if (inserted) {
-        queueSave()
-        showToast('Imagen insertada. Arrastrala con el mouse para colocarla en la hoja.')
+        markUnsaved()
+        showToast('Imagen insertada. Arrastrala y pulsa Ctrl+G para guardar.')
       }
     }
     reader.readAsDataURL(file)
@@ -245,9 +243,9 @@ export function NoteEditor({ note, onPatch }: NoteEditorProps) {
       buildNotePrintDocumentHtml({
         bodyHtml: html,
         docTitle,
-        pageSize: note.pageSize,
-        pageNumberEnabled: note.pageNumberEnabled,
-        twoColumns: note.twoColumns,
+        pageSize: pageSizeDraft,
+        pageNumberEnabled: pageNumberEnabledDraft,
+        twoColumns: twoColumnsDraft,
       }),
     )
     w.document.close()
@@ -272,27 +270,30 @@ export function NoteEditor({ note, onPatch }: NoteEditorProps) {
 
     if (ctrlZoomIn && editor) {
       e.preventDefault()
-      if (adjustNoteSelectionFontSize(editor, NOTE_FONT_SIZE_STEP_PX)) queueSave()
+      preserveSelectionApply(() => {
+        adjustNoteSelectionFontSize(editor, NOTE_FONT_SIZE_STEP_PX)
+      })
+      markUnsaved()
       return
     }
     if (ctrlZoomOut && editor) {
       e.preventDefault()
-      if (adjustNoteSelectionFontSize(editor, -NOTE_FONT_SIZE_STEP_PX)) queueSave()
+      preserveSelectionApply(() => {
+        adjustNoteSelectionFontSize(editor, -NOTE_FONT_SIZE_STEP_PX)
+      })
+      markUnsaved()
       return
     }
     if (e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'o') {
       e.preventDefault()
-      const editor = editorRef.current
-      if (!editor || !coordsFromNoteSelection(editor)) {
-        showToast('Selecciona texto en la hoja y vuelve a pulsar Ctrl+O.')
-        return
-      }
-      openAtSelection('options')
+      if (!editorRef.current) return
+      openFormatting('options')
       return
     }
-    if (e.ctrlKey && e.key.toLowerCase() === 's') {
+    if (e.key === 'Enter' && !e.shiftKey && editor) {
       e.preventDefault()
-      saveNow()
+      insertParagraphWithTypingDefaults(editor, typingDefaultsRef.current)
+      markUnsaved()
       return
     }
     if (e.ctrlKey && e.key.toLowerCase() === 'b') {
@@ -314,7 +315,11 @@ export function NoteEditor({ note, onPatch }: NoteEditorProps) {
   if (!note) {
     return (
       <Card variant="glass" className={cn(bloomoraPanelCardClass, 'p-8 text-center text-bloomora-text-muted')}>
-        Selecciona o crea un apunte.
+        {isNotesLoading
+          ? 'Cargando apuntes...'
+          : hasSavedNotes
+            ? 'Selecciona un apunte de la lista.'
+            : 'No hay apuntes guardados.'}
       </Card>
     )
   }
@@ -329,7 +334,7 @@ export function NoteEditor({ note, onPatch }: NoteEditorProps) {
             value={titleDraft}
             onChange={(e) => {
               setTitleDraft(e.target.value)
-              queueTitleSave(e.target.value)
+              markUnsaved()
             }}
             placeholder="Ej. Verbos irregulares"
             aria-label="Nombre del apunte"
@@ -342,8 +347,11 @@ export function NoteEditor({ note, onPatch }: NoteEditorProps) {
         <label className="text-xs font-semibold text-bloomora-text-muted">
           Categoria (opcional)
           <input
-            value={note.category ?? ''}
-            onChange={(e) => onPatch(note.id, { category: e.target.value || null })}
+            value={categoryDraft}
+            onChange={(e) => {
+              setCategoryDraft(e.target.value)
+              markUnsaved()
+            }}
             className={cn(bloomoraInputClass, 'mt-1 !min-h-10 rounded-xl px-3 py-2')}
           />
         </label>
@@ -367,43 +375,92 @@ export function NoteEditor({ note, onPatch }: NoteEditorProps) {
         onRedo={() => cmd('redo')}
         onExportPdf={() => openPrintWindow(true)}
         onPrint={() => openPrintWindow(false)}
-        pageSize={note.pageSize}
-        onPageSizeChange={(v) => onPatch(note.id, { pageSize: v })}
-        pageNumberEnabled={note.pageNumberEnabled}
-        onPageNumberEnabledChange={(enabled) =>
-          onPatch(note.id, { pageNumberEnabled: enabled })
-        }
-        twoColumns={note.twoColumns}
-        onTwoColumnsChange={(enabled) => onPatch(note.id, { twoColumns: enabled })}
-        onSave={() => saveNow()}
+        pageSize={pageSizeDraft}
+        onPageSizeChange={(v) => {
+          setPageSizeDraft(v)
+          markUnsaved()
+        }}
+        pageNumberEnabled={pageNumberEnabledDraft}
+        onPageNumberEnabledChange={(enabled) => {
+          setPageNumberEnabledDraft(enabled)
+          markUnsaved()
+        }}
+        twoColumns={twoColumnsDraft}
+        onTwoColumnsChange={(enabled) => {
+          setTwoColumnsDraft(enabled)
+          markUnsaved()
+        }}
+        onSave={() => void saveNow()}
       />
 
       <NoteSelectionToolbar
         coords={selectionCoords}
         mode={selectionMode}
+        formatTarget={formatTarget}
         onClose={dismissSelectionToolbar}
-        onTextColor={(hex) => {
+        onApplyTextoPreset={() => {
+          typingDefaultsRef.current = { ...BODY_TYPING_DEFAULTS }
+          if (editorRef.current) {
+            applyTypingDefaultsAtCaret(editorRef.current, typingDefaultsRef.current)
+          }
+          markUnsaved()
+          showToast('Formato Texto: Poppins, gris, alineado a la izquierda.')
+        }}
+        onTextColor={(hex, colorId) => {
+          if (formatTarget === 'typing') {
+            applyTypingFormat({ colorHex: hex, color: colorId })
+            return
+          }
           applySelectionFormat(() => document.execCommand('foreColor', false, hex))
         }}
         onHighlight={(hex) => {
           applySelectionFormat(() => document.execCommand('hiliteColor', false, hex))
         }}
         onAlignCenter={() => {
-          editorRef.current?.focus()
+          const editor = editorRef.current
+          if (!editor) return
+          if (formatTarget === 'typing') {
+            applyTypingFormat({ align: 'center' })
+            applyBlockAlign(editor, 'center')
+            return
+          }
+          editor.focus()
           cmd('justifyCenter')
         }}
         onAlignLeft={() => {
-          editorRef.current?.focus()
+          const editor = editorRef.current
+          if (!editor) return
+          if (formatTarget === 'typing') {
+            applyTypingFormat({ align: 'left' })
+            applyBlockAlign(editor, 'left')
+            return
+          }
+          editor.focus()
           cmd('justifyLeft')
         }}
         onFontChange={(font) => {
           if (!editorRef.current) return
+          if (formatTarget === 'typing') {
+            applyTypingFormat({ font })
+            return
+          }
           applySelectionFormat(() => {
             applyNoteFontToSelection(editorRef.current!, font)
           })
         }}
         onFontSizeChange={(delta) => {
           if (!editorRef.current) return
+          if (formatTarget === 'typing') {
+            const next = Math.min(
+              NOTE_FONT_SIZE_MAX_PX,
+              Math.max(
+                NOTE_FONT_SIZE_MIN_PX,
+                typingDefaultsRef.current.fontSizePx + delta,
+              ),
+            )
+            applyTypingFormat({ fontSizePx: next })
+            return
+          }
           applySelectionFormat(() => {
             adjustNoteSelectionFontSize(editorRef.current!, delta)
           })
@@ -421,13 +478,13 @@ export function NoteEditor({ note, onPatch }: NoteEditorProps) {
       <article
         ref={sheetRef}
         className={cn(
-          notePageSheetClass(note.pageSize),
+          notePageSheetClass(pageSizeDraft),
         'rounded-[22px] bg-white shadow-[0_20px_54px_-24px_rgba(91,74,140,0.35)] ring-1 ring-bloomora-line/30',
         )}
       >
         <NotePageNumbers
-          enabled={note.pageNumberEnabled}
-          pageSize={note.pageSize}
+          enabled={pageNumberEnabledDraft}
+          pageSize={pageSizeDraft}
           sheetRef={sheetRef}
           contentRef={editorRef}
         />
@@ -435,16 +492,16 @@ export function NoteEditor({ note, onPatch }: NoteEditorProps) {
           ref={editorRef}
           contentEditable
           suppressContentEditableWarning
-          onInput={queueSave}
+          onInput={markUnsaved}
           onKeyDown={handleKeyDown}
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => {
             e.preventDefault()
-            queueSave()
+            markUnsaved()
           }}
           className={cn(
             'english-note-content min-h-[200px] rounded-2xl bg-white/80 p-2 text-[15px] text-[#1f1f1f] outline-none',
-            note.twoColumns && 'english-note-content--two-columns',
+            twoColumnsDraft && 'english-note-content--two-columns',
           )}
           data-placeholder="Escribe aqui tu apunte, titulos, listas..."
         />

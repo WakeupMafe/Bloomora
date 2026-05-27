@@ -39,7 +39,7 @@ export function StudyToolsPage() {
           icon={<TomatoIcon />}
         />
         <StudyToolCard
-          title="Apuntes de ingles"
+          title="Apuntes"
           description="Editor visual en formato A4, listo para imprimir."
           to="/app/english-notes"
           icon={<NotesIcon />}

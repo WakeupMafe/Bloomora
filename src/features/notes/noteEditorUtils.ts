@@ -1,3 +1,4 @@
+import type { NoteTextAlign, NoteTypingDefaults } from '@/features/notes/noteTypingDefaults'
 import type { EnglishNoteColor, EnglishNotePageSize, EnglishNoteTitleFont } from '@/types/englishNote'
 import { ENGLISH_NOTE_COLORS } from '@/types/englishNote'
 
@@ -84,11 +85,10 @@ export function applyNoteFontSizeToSelection(
     const fragment = range.extractContents()
     span.appendChild(fragment)
     range.insertNode(span)
-    const after = document.createRange()
-    after.selectNodeContents(span)
-    after.collapse(false)
+    const selected = document.createRange()
+    selected.selectNodeContents(span)
     sel.removeAllRanges()
-    sel.addRange(after)
+    sel.addRange(selected)
     return true
   } catch {
     return false
@@ -110,6 +110,103 @@ export function adjustNoteSelectionFontSize(
   return applyNoteFontSizeToSelection(editor, current + deltaPx)
 }
 
+function getBlockInEditor(node: Node, editor: HTMLElement): HTMLElement | null {
+  let el: HTMLElement | null =
+    node.nodeType === Node.TEXT_NODE ? (node.parentElement as HTMLElement) : (node as HTMLElement)
+  while (el && el !== editor) {
+    const tag = el.tagName
+    if (tag === 'P' || tag === 'DIV' || tag === 'LI' || tag === 'H1' || tag === 'H2' || tag === 'H3') {
+      return el
+    }
+    el = el.parentElement
+  }
+  return null
+}
+
+/** Posición del cursor para la barra flotante sin texto seleccionado. */
+export function coordsFromEditorCaret(editor: HTMLElement): { top: number; left: number } | null {
+  const sel = window.getSelection()
+  if (!sel || sel.rangeCount === 0) return null
+  const range = sel.getRangeAt(0)
+  if (!editor.contains(range.commonAncestorContainer)) return null
+
+  const rect = range.getBoundingClientRect()
+  if (rect.height > 0 || rect.width > 0) {
+    return {
+      top: Math.max(8, rect.bottom + 4),
+      left: Math.max(8, rect.left),
+    }
+  }
+
+  const marker = document.createElement('span')
+  marker.textContent = '\u200b'
+  range.insertNode(marker)
+  const markerRect = marker.getBoundingClientRect()
+  marker.remove()
+  return {
+    top: Math.max(8, markerRect.bottom + 4),
+    left: Math.max(8, markerRect.left),
+  }
+}
+
+/** Estilo del texto que se escribirá a partir del cursor. */
+export function applyTypingDefaultsAtCaret(
+  editor: HTMLElement,
+  defaults: NoteTypingDefaults,
+): void {
+  editor.focus()
+  const sel = window.getSelection()
+  if (!sel || sel.rangeCount === 0) return
+  const range = sel.getRangeAt(0)
+  if (!editor.contains(range.commonAncestorContainer)) return
+
+  const block = getBlockInEditor(range.startContainer, editor)
+  if (block) {
+    block.style.textAlign = defaults.align === 'center' ? 'center' : 'left'
+  }
+
+  if (!range.collapsed) return
+
+  const span = document.createElement('span')
+  span.className = noteTitleFontClass(defaults.font)
+  span.style.fontFamily = noteTitleFontFamily(defaults.font)
+  span.style.fontSize = `${defaults.fontSizePx}px`
+  span.style.color = defaults.colorHex
+  const anchor = document.createTextNode('\u200b')
+  span.appendChild(anchor)
+  range.insertNode(span)
+
+  const caret = document.createRange()
+  caret.setStart(anchor, 1)
+  caret.collapse(true)
+  sel.removeAllRanges()
+  sel.addRange(caret)
+}
+
+/** Nueva línea con el formato por defecto (p. ej. tras Enter). */
+export function insertParagraphWithTypingDefaults(
+  editor: HTMLElement,
+  defaults: NoteTypingDefaults,
+): void {
+  editor.focus()
+  document.execCommand('insertParagraph')
+  applyTypingDefaultsAtCaret(editor, defaults)
+}
+
+export function applyBlockAlign(editor: HTMLElement, align: NoteTextAlign): void {
+  editor.focus()
+  const sel = window.getSelection()
+  if (!sel || sel.rangeCount === 0) return
+  const range = sel.getRangeAt(0)
+  if (!editor.contains(range.commonAncestorContainer)) return
+
+  const block = getBlockInEditor(range.startContainer, editor)
+  if (block) {
+    block.style.textAlign = align === 'center' ? 'center' : 'left'
+  }
+  document.execCommand(align === 'center' ? 'justifyCenter' : 'justifyLeft', false)
+}
+
 export function applyNoteFontToSelection(
   editor: HTMLElement,
   font: EnglishNoteTitleFont,
@@ -127,11 +224,10 @@ export function applyNoteFontToSelection(
     const fragment = range.extractContents()
     span.appendChild(fragment)
     range.insertNode(span)
-    const after = document.createRange()
-    after.selectNodeContents(span)
-    after.collapse(false)
+    const selected = document.createRange()
+    selected.selectNodeContents(span)
     sel.removeAllRanges()
-    sel.addRange(after)
+    sel.addRange(selected)
     return true
   } catch {
     return false
