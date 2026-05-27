@@ -70,3 +70,43 @@ export function titleCaseAgendaDate(d: Date): string {
   const m = month.charAt(0).toUpperCase() + month.slice(1)
   return `${w}, ${day} ${m}`
 }
+
+/** `YYYY-MM` según calendario local del dispositivo. */
+export function toYearMonthLocal(d: Date): string {
+  const y = d.getFullYear()
+  const mo = String(d.getMonth() + 1).padStart(2, '0')
+  return `${y}-${mo}`
+}
+
+/** Mes anterior en formato `YYYY-MM` (calendario local). */
+export function previousYearMonthLocal(d = new Date()): string {
+  const prev = new Date(d.getFullYear(), d.getMonth() - 1, 1)
+  return toYearMonthLocal(prev)
+}
+
+/** Primer y último día de un mes `YYYY-MM` (inclusive, formato `YYYY-MM-DD`). */
+export function yearMonthDateBounds(yearMonth: string): {
+  start: string
+  end: string
+} {
+  const [y, m] = yearMonth.split('-').map(Number)
+  const start = `${yearMonth}-01`
+  const lastDay = new Date(y, m, 0).getDate()
+  const end = `${yearMonth}-${String(lastDay).padStart(2, '0')}`
+  return { start, end }
+}
+
+/** Nombre del mes en español para `YYYY-MM` (ej. «abril»). */
+export function formatYearMonthLabel(yearMonth: string): string {
+  const [y, m] = yearMonth.split('-').map(Number)
+  const label = new Date(y, m - 1, 1).toLocaleDateString('es', { month: 'long' })
+  return label.charAt(0).toUpperCase() + label.slice(1)
+}
+
+/** Suma días a una clave `YYYY-MM-DD` (calendario local). */
+export function addDaysToDateKey(dateKey: string, delta: number): string {
+  const [y, mo, d] = dateKey.split('-').map(Number)
+  const next = new Date(y, mo - 1, d)
+  next.setDate(next.getDate() + delta)
+  return toDateKeyLocal(next)
+}

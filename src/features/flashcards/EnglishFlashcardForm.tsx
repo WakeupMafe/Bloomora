@@ -265,7 +265,10 @@ export function EnglishFlashcardForm({
           />
         </FlashcardFormField>
 
-        <FlashcardFormField label="Traducción del ejemplo">
+        <FlashcardFormField
+          className="sm:col-span-2"
+          label="Traducción del ejemplo"
+        >
           <input
             className={flashcardControlClass}
             value={form.exampleSpanish}

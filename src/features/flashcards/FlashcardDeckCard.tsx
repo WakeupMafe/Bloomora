@@ -204,9 +204,7 @@ export function FlashcardDeckCard({
             ) : null}
 
             {showVerbs ? (
-              <div
-                className={cn('mt-4 w-full', !isGrammar && 'max-w-sm')}
-              >
+              <div className="mt-4 w-full min-w-0">
                 <VerbFormsDisplay
                   forms={verbForms}
                   boxClassName={theme.verbBoxClass}

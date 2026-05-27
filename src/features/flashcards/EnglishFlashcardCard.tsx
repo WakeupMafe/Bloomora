@@ -63,8 +63,10 @@ export const EnglishFlashcardCard = memo(function EnglishFlashcardCard({
     window.speechSynthesis.speak(u)
   }, [card.category, card.englishWord])
 
+  const exampleBlock = card.exampleEnglish || card.exampleSpanish
+
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-[1.35rem] bg-white shadow-[0_4px_24px_-4px_rgba(91,74,140,0.12)] ring-1 ring-bloomora-line/15 transition hover:shadow-[0_8px_32px_-6px_rgba(91,74,140,0.16)]">
+    <article className="flex flex-col rounded-[1.35rem] bg-white shadow-[0_4px_24px_-4px_rgba(91,74,140,0.12)] ring-1 ring-bloomora-line/15 transition hover:shadow-[0_8px_32px_-6px_rgba(91,74,140,0.16)]">
       <FlashcardImageFrame
         src={card.imageUrl}
         size="card"
@@ -182,20 +184,34 @@ export const EnglishFlashcardCard = memo(function EnglishFlashcardCard({
           </p>
         ) : null}
 
-        {!isGrammar && card.exampleEnglish ? (
-          <p className="mt-2 max-w-md text-xs italic text-bloomora-text-muted/90">
-            &ldquo;{card.exampleEnglish}&rdquo;
-          </p>
-        ) : null}
-
-        {isGrammar && card.exampleEnglish ? (
-          <p className="mt-2 text-xs italic text-bloomora-text-muted/90">
-            &ldquo;{card.exampleEnglish}&rdquo;
-          </p>
+        {exampleBlock ? (
+          <div
+            className={cn(
+              'mt-3 w-full space-y-1.5',
+              !isGrammar && 'max-w-md',
+            )}
+          >
+            {card.exampleEnglish ? (
+              <p className="text-xs italic leading-relaxed text-bloomora-text-muted/90 sm:text-sm">
+                <span className="font-semibold not-italic text-bloomora-text-muted/70">
+                  EN:{' '}
+                </span>
+                &ldquo;{card.exampleEnglish}&rdquo;
+              </p>
+            ) : null}
+            {card.exampleSpanish ? (
+              <p className="text-xs leading-relaxed text-bloomora-deep/85 sm:text-sm">
+                <span className="font-semibold text-bloomora-violet/80">
+                  ES:{' '}
+                </span>
+                {card.exampleSpanish}
+              </p>
+            ) : null}
+          </div>
         ) : null}
 
         {showVerbs ? (
-          <div className={cn('mt-4 w-full', !isGrammar && 'max-w-sm')}>
+          <div className="mt-4 w-full min-w-0">
             <VerbFormsDisplay
               forms={verbForms}
               boxClassName={theme.verbBoxClass}

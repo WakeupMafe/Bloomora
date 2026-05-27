@@ -25,6 +25,10 @@ import { useBloomoraGoals } from "@/hooks/useBloomoraGoals";
 import { useBloomoraProfile } from "@/hooks/useBloomoraProfile";
 import { useGoalTaskTemplates } from "@/hooks/useGoalTaskTemplates";
 import {
+  useDuplicateAgendaDay,
+  nextDateKeyFrom,
+} from "@/hooks/useAgendaDayOperations";
+import {
   addLocalDays,
   blockDurationSeconds,
   formatMinutes12h,
@@ -133,6 +137,13 @@ export function AgendaCard({ className }: AgendaCardProps) {
     id: string;
     title: string;
   } | null>(null);
+  const [duplicateConfirmOpen, setDuplicateConfirmOpen] = useState(false);
+  const duplicateDay = useDuplicateAgendaDay(cedula);
+  const targetDayKey = useMemo(() => nextDateKeyFrom(dayKey), [dayKey]);
+  const targetDayLabel = useMemo(() => {
+    const [y, mo, d] = targetDayKey.split("-").map(Number);
+    return titleCaseAgendaDate(new Date(y, mo - 1, d));
+  }, [targetDayKey]);
   const sortedTasks = useMemo(
     () => [...tasks].sort((a, b) => a.startMin - b.startMin),
     [tasks],
@@ -357,6 +368,37 @@ export function AgendaCard({ className }: AgendaCardProps) {
         }}
       />
       <BloomoraConfirmDialog
+        open={duplicateConfirmOpen}
+        title="¿Duplicar este día al siguiente?"
+        description={`Se copiarán ${sortedTasks.length} tarea${sortedTasks.length === 1 ? "" : "s"} de «${headerLabel}» a «${targetDayLabel}». Lo que ya exista en el día siguiente se eliminará y las copias quedarán sin marcar como hechas.`}
+        cancelLabel="Cancelar"
+        confirmLabel="Sí, duplicar"
+        isPending={duplicateDay.isPending}
+        onCancel={() => setDuplicateConfirmOpen(false)}
+        onConfirm={() => {
+          duplicateDay.mutate(
+            { sourceDate: dayKey, targetDate: targetDayKey },
+            {
+              onSuccess: (result) => {
+                showToast(
+                  result.copiedCount > 0
+                    ? `¡${result.copiedCount} tarea${result.copiedCount === 1 ? "" : "s"} copiada${result.copiedCount === 1 ? "" : "s"} al día siguiente!`
+                    : "No había tareas que copiar en este día.",
+                );
+                setDuplicateConfirmOpen(false);
+              },
+              onError: (err) => {
+                showToast(
+                  err instanceof Error
+                    ? err.message
+                    : "No se pudo duplicar el día.",
+                );
+              },
+            },
+          );
+        }}
+      />
+      <BloomoraConfirmDialog
         open={deleteIntent != null}
         title="¿Eliminar esta tarea?"
         description={
@@ -392,7 +434,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
         </button>
       </div>
 
-      <div className="mb-5 flex shrink-0 justify-center sm:mb-6 lg:mb-4">
+      <div className="mb-5 flex shrink-0 flex-col items-center gap-2 sm:mb-6 lg:mb-4">
         <div className="inline-flex max-w-full items-center gap-1 rounded-full bg-bloomora-white/90 px-3 py-2.5 text-xs font-semibold text-bloomora-deep shadow-[0_4px_16px_rgba(124,107,181,0.08)] ring-1 ring-bloomora-line/50 sm:gap-2 sm:px-4 sm:text-sm">
           <button
             type="button"
@@ -414,6 +456,14 @@ export function AgendaCard({ className }: AgendaCardProps) {
             ›
           </button>
         </div>
+        <button
+          type="button"
+          disabled={isLoading || duplicateDay.isPending}
+          onClick={() => setDuplicateConfirmOpen(true)}
+          className="rounded-full px-3 py-1 text-[0.7rem] font-semibold text-bloomora-violet ring-1 ring-bloomora-line/40 transition hover:bg-bloomora-white/90 disabled:opacity-50 sm:text-xs"
+        >
+          Duplicar al día siguiente
+        </button>
       </div>
 
       {isViewingToday ? (

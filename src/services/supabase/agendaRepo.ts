@@ -394,6 +394,156 @@ export async function updateAgendaSubtaskTitle(
   if (error) throw error
 }
 
+export type AgendaDayTaskSnapshot = {
+  title: string
+  start_min: number
+  end_min: number
+  sort_order: number
+  goal_ids: number[]
+  subtasks: { title: string; sort_order: number }[]
+}
+
+async function fetchAgendaDaySnapshot(
+  sb: SupabaseClient,
+  userCedula: string,
+  planDate: string,
+): Promise<AgendaDayTaskSnapshot[]> {
+  const rows = await listAgendaTasks(sb, userCedula, planDate)
+  if (!rows.length) return []
+
+  const taskIds = rows.map((r) => r.id)
+  const subRows = await listSubtasksForTaskIds(sb, userCedula, taskIds)
+  const subsByTask = new Map<number, { title: string; sort_order: number }[]>()
+  for (const s of subRows) {
+    const arr = subsByTask.get(s.task_id) ?? []
+    arr.push({ title: s.title, sort_order: s.sort_order })
+    subsByTask.set(s.task_id, arr)
+  }
+
+  const { data: links, error: linksErr } = await sb
+    .from('task_goal_links')
+    .select('task_id, goal_id')
+    .eq('user_cedula', userCedula)
+    .in('task_id', taskIds)
+  if (linksErr) throw linksErr
+  const goalsByTask = new Map<number, number[]>()
+  for (const l of links ?? []) {
+    const row = l as { task_id: number; goal_id: number }
+    const arr = goalsByTask.get(row.task_id) ?? []
+    if (!arr.includes(row.goal_id)) arr.push(row.goal_id)
+    goalsByTask.set(row.task_id, arr)
+  }
+
+  return rows.map((r) => ({
+    title: r.title,
+    start_min: r.start_min,
+    end_min: r.end_min,
+    sort_order: r.sort_order,
+    goal_ids: goalsByTask.get(r.id) ?? [],
+    subtasks: subsByTask.get(r.id) ?? [],
+  }))
+}
+
+/** Elimina todas las tareas (y el plan) de un día concreto. */
+export async function clearAgendaDay(
+  sb: SupabaseClient,
+  userCedula: string,
+  planDate: string,
+) {
+  const { error } = await sb
+    .from('daily_plans')
+    .delete()
+    .eq('user_cedula', userCedula)
+    .eq('plan_date', planDate)
+  if (error) throw error
+}
+
+/**
+ * Copia la agenda de `sourceDate` a `targetDate`.
+ * Por defecto borra lo que hubiera en el día destino antes de copiar.
+ * Las tareas copiadas quedan pendientes (sin marcar completadas).
+ */
+export async function duplicateAgendaDay(
+  sb: SupabaseClient,
+  params: {
+    userCedula: string
+    sourceDate: string
+    targetDate: string
+    replaceTarget?: boolean
+  },
+): Promise<{ copiedCount: number }> {
+  const { userCedula, sourceDate, targetDate, replaceTarget = true } = params
+  if (sourceDate === targetDate) {
+    throw new Error('El día origen y destino deben ser distintos.')
+  }
+
+  const snapshot = await fetchAgendaDaySnapshot(sb, userCedula, sourceDate)
+  if (replaceTarget) {
+    await clearAgendaDay(sb, userCedula, targetDate)
+  }
+
+  for (const task of snapshot) {
+    const taskId = await insertAgendaTask(sb, {
+      user_cedula: userCedula,
+      task_date: targetDate,
+      title: task.title,
+      start_min: task.start_min,
+      end_min: task.end_min,
+      completed: false,
+      sort_order: task.sort_order,
+      goal_id: task.goal_ids[0],
+    })
+
+    for (const extraGoalId of task.goal_ids.slice(1)) {
+      const { error: linkErr } = await sb.from('task_goal_links').insert({
+        user_cedula: userCedula,
+        task_id: taskId,
+        goal_id: extraGoalId,
+        source: 'manual',
+        weight: 1,
+        is_primary: false,
+      })
+      if (linkErr) throw linkErr
+    }
+
+    for (const sub of task.subtasks) {
+      const subId = await insertAgendaSubtask(sb, userCedula, taskId, sub.title)
+      if (sub.sort_order !== 0) {
+        const { error } = await sb
+          .from('subtasks')
+          .update({ sort_order: sub.sort_order })
+          .eq('id', subId)
+          .eq('user_cedula', userCedula)
+        if (error) throw error
+      }
+    }
+  }
+
+  return { copiedCount: snapshot.length }
+}
+
+/** Elimina planes y tareas de agenda de un mes (`YYYY-MM`). No toca metas ni marcas del tracker. */
+export async function purgeAgendaMonth(
+  sb: SupabaseClient,
+  userCedula: string,
+  yearMonth: string,
+): Promise<{ deletedPlans: number }> {
+  const start = `${yearMonth}-01`
+  const [y, m] = yearMonth.split('-').map(Number)
+  const lastDay = new Date(y, m, 0).getDate()
+  const end = `${yearMonth}-${String(lastDay).padStart(2, '0')}`
+
+  const { data, error } = await sb
+    .from('daily_plans')
+    .delete()
+    .eq('user_cedula', userCedula)
+    .gte('plan_date', start)
+    .lte('plan_date', end)
+    .select('id')
+  if (error) throw error
+  return { deletedPlans: data?.length ?? 0 }
+}
+
 export async function markLinkedGoalsDoneForDay(
   sb: SupabaseClient,
   params: {

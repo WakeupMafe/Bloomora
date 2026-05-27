@@ -189,9 +189,19 @@
     transform: rotateY(180deg);
   }
 
+  .flashcard-pack-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @media (min-width: 1024px) {
+    .flashcard-pack-grid {
+      grid-template-columns: repeat(2, minmax(18rem, 1fr));
+    }
+  }
+
   .flashcard-pack-grid__item {
     content-visibility: auto;
-    contain-intrinsic-size: auto 22rem;
+    contain-intrinsic-size: auto 30rem;
   }
 
   /* Fila de ítem en listas: gradiente suave en claro; plano en oscuro. */

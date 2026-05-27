@@ -17,6 +17,10 @@ type VerbFormsDisplayProps = {
   className?: string
 }
 
+/**
+ * Formas verbales en filas (etiqueta + palabra completa).
+ * Evita partir palabras en inglés con guiones (incorrecto gramaticalmente).
+ */
 export function VerbFormsDisplay({
   forms,
   boxClassName,
@@ -32,32 +36,32 @@ export function VerbFormsDisplay({
   return (
     <div
       className={cn(
-        'grid grid-cols-3 gap-0 overflow-hidden rounded-2xl ring-1',
+        'mx-auto w-fit max-w-full rounded-2xl px-3.5 py-1 ring-1 sm:px-4',
         boxClassName,
         className,
       )}
     >
-      {items.map(({ label, value }, i) => (
-        <div
-          key={label}
-          className={cn(
-            'flex flex-col items-center px-2 py-3 text-center',
-            i > 0 && 'border-l border-white/50',
-          )}
-        >
-          <span className="text-[10px] font-bold tracking-wider text-[#a78bfa]">
-            {label}
-          </span>
-          <span
-            className={cn(
-              'mt-1 w-full truncate text-sm font-bold sm:text-base',
-              valueClassName ?? 'text-[#5b21b6]',
-            )}
+      <div className="flex flex-col divide-y divide-white/50">
+        {items.map(({ label, value }) => (
+          <div
+            key={label}
+            className="grid grid-cols-[4.75rem_minmax(0,auto)] items-baseline gap-x-2 py-2.5 sm:grid-cols-[5.25rem_minmax(0,auto)] sm:gap-x-2.5 sm:py-3"
           >
-            {value ? capitalizeFirstLetter(value) : '—'}
-          </span>
-        </div>
-      ))}
+            <span className="text-[10px] font-bold tracking-wider text-[#a78bfa]">
+              {label}
+            </span>
+            <span
+              className={cn(
+                'text-left text-xs font-bold leading-snug sm:text-sm',
+                'hyphens-none [overflow-wrap:normal] [word-break:normal]',
+                valueClassName ?? 'text-[#5b21b6]',
+              )}
+            >
+              {value ? capitalizeFirstLetter(value) : '—'}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

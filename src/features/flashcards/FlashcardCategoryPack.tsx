@@ -127,9 +127,9 @@ export const FlashcardCategoryPack = memo(function FlashcardCategoryPack({
 
         {expanded ? (
           <div className="border-t border-bloomora-line/25 bg-[#faf8ff]/50 px-4 pb-5 pt-4 sm:px-5">
-            <ul className="flashcard-pack-grid grid list-none gap-6 p-0 sm:grid-cols-2">
+            <ul className="flashcard-pack-grid grid list-none items-start gap-6 p-0 lg:grid-cols-2">
               {pack.cards.map((card) => (
-                <li key={card.id} className="flashcard-pack-grid__item min-w-0">
+                <li key={card.id} className="flashcard-pack-grid__item min-w-0 w-full">
                   <EnglishFlashcardCard
                     card={card}
                     isFavorite={favorites.has(card.id)}

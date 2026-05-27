@@ -3,11 +3,16 @@ import { DashboardAppHeader } from "@/features/dashboard/DashboardAppHeader";
 import { GoalProgressCard } from "@/features/dashboard/GoalProgressCard";
 import { FlashcardsCard } from "@/features/dashboard/FlashcardsCard";
 import { ListsCard } from "@/features/dashboard/ListsCard";
+import { useUserPhone } from "@/contexts/UserPhoneContext";
+import { useAutoPurgePreviousAgendaMonth } from "@/hooks/useAgendaDayOperations";
 
 /**
  * Inicio autenticado: tareas + metas (fila 1) y listas (fila 2, ancho completo).
  */
 export function DayHomePage() {
+  const { cedula } = useUserPhone();
+  useAutoPurgePreviousAgendaMonth(cedula);
+
   return (
     <div className="relative isolate min-h-dvh bg-bloomora-snow">
       <div

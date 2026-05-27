@@ -2,8 +2,15 @@ import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { BloomoraLogo } from "@/components/brand/BloomoraLogo";
 import { BloomoraImage } from "@/components/ui/BloomoraImage";
+import { BloomoraConfirmDialog } from "@/components/ui/BloomoraConfirmDialog";
+import { useBloomoraToast } from "@/contexts/BloomoraToastContext";
 import { useUserPhone } from "@/contexts/UserPhoneContext";
+import { usePurgePreviousAgendaMonth } from "@/hooks/useAgendaDayOperations";
 import { useBloomoraProfile } from "@/hooks/useBloomoraProfile";
+import {
+  formatYearMonthLabel,
+  previousYearMonthLocal,
+} from "@/utils/agendaTime";
 import {
   formatProfileGreeting,
   profileAvatarSrc,
@@ -33,8 +40,16 @@ export function DashboardAppHeader({
   firstName: firstNameProp,
   avatarSrc: avatarSrcProp,
 }: DashboardAppHeaderProps) {
-  const { phone, logoutPhone } = useUserPhone();
+  const { phone, cedula, logoutPhone } = useUserPhone();
   const { data: profile } = useBloomoraProfile(phone);
+  const { showToast } = useBloomoraToast();
+  const purgeMonth = usePurgePreviousAgendaMonth(cedula);
+  const [purgeConfirmOpen, setPurgeConfirmOpen] = useState(false);
+  const purgeTargetYm = useMemo(() => previousYearMonthLocal(), []);
+  const purgeTargetLabel = useMemo(
+    () => formatYearMonthLabel(purgeTargetYm),
+    [purgeTargetYm],
+  );
 
   const displayName =
     firstNameProp != null && String(firstNameProp).trim() !== ""
@@ -50,6 +65,36 @@ export function DashboardAppHeader({
   usePopoverDismiss(menuOpen, triggerRef, menuRef, () => setMenuOpen(false));
 
   return (
+    <>
+      <BloomoraConfirmDialog
+        open={purgeConfirmOpen}
+        title={`¿Eliminar tareas de ${purgeTargetLabel}?`}
+        description={`Se borrarán todas las tareas de agenda de ${purgeTargetLabel}. Tus metas y el seguimiento del tracker no se modifican.`}
+        cancelLabel="Cancelar"
+        confirmLabel="Sí, eliminar"
+        tone="danger"
+        isPending={purgeMonth.isPending}
+        onCancel={() => setPurgeConfirmOpen(false)}
+        onConfirm={() => {
+          purgeMonth.mutate(purgeTargetYm, {
+            onSuccess: (result) => {
+              showToast(
+                result.deletedPlans > 0
+                  ? `Tareas de ${purgeTargetLabel} eliminadas.`
+                  : `No había tareas guardadas en ${purgeTargetLabel}.`,
+              );
+              setPurgeConfirmOpen(false);
+            },
+            onError: (err) => {
+              showToast(
+                err instanceof Error
+                  ? err.message
+                  : "No se pudo limpiar el mes anterior.",
+              );
+            },
+          });
+        }}
+      />
     <header
       className={cn(
         "mb-5 grid min-w-0 grid-cols-[auto_1fr_auto] items-center gap-2.5 rounded-[22px] px-4 py-3.5 shadow-[0_6px_24px_-8px_rgba(91,74,140,0.12)] ring-1 ring-bloomora-line/20 sm:mb-7 sm:gap-4 sm:px-5 sm:py-4",
@@ -142,6 +187,17 @@ export function DashboardAppHeader({
               className="block w-full px-3 py-2.5 text-left text-sm font-medium text-bloomora-deep transition hover:bg-bloomora-mist/90"
               onClick={() => {
                 setMenuOpen(false);
+                setPurgeConfirmOpen(true);
+              }}
+            >
+              Limpiar tareas de {purgeTargetLabel}
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="block w-full px-3 py-2.5 text-left text-sm font-medium text-bloomora-deep transition hover:bg-bloomora-mist/90"
+              onClick={() => {
+                setMenuOpen(false);
                 logoutPhone();
                 window.location.assign("/entrar");
               }}
@@ -160,5 +216,6 @@ export function DashboardAppHeader({
         ) : null}
       </div>
     </header>
+    </>
   );
 }
