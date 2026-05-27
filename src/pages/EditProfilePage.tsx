@@ -8,6 +8,7 @@ import { BackButton } from '@/components/navigation/BackButton'
 import { BloomoraImage } from '@/components/ui/BloomoraImage'
 import { Button } from '@/components/ui/Button'
 import { DashboardAppHeader } from '@/features/dashboard/DashboardAppHeader'
+import { useBloomoraAlert } from '@/contexts/BloomoraAlertContext'
 import { useBloomoraToast } from '@/contexts/BloomoraToastContext'
 import { useUserPhone } from '@/contexts/UserPhoneContext'
 import {
@@ -85,6 +86,7 @@ function avatarIdFromProfile(preset: string | null | undefined): AvatarOptionId 
 export function EditProfilePage() {
   const navigate = useNavigate()
   const { showToast } = useBloomoraToast()
+  const { confirm } = useBloomoraAlert()
   const { phone, logoutPhone } = useUserPhone()
   const { data: profile, isLoading } = useBloomoraProfile(phone)
   const updateMut = useUpdateProfileMutation(phone)
@@ -141,15 +143,16 @@ export function EditProfilePage() {
     }
   }
 
-  const handleDeleteAccount = () => {
-    if (
-      window.confirm(
-        '¿Cerrar sesión en este dispositivo? Tus datos siguen en Supabase.',
-      )
-    ) {
-      logoutPhone()
-      navigate('/entrar')
-    }
+  const handleDeleteAccount = async () => {
+    const ok = await confirm({
+      title: '¿Cerrar sesión en este dispositivo?',
+      description: 'Tus datos siguen en Supabase.',
+      confirmLabel: 'Cerrar sesión',
+      tone: 'danger',
+    })
+    if (!ok) return
+    logoutPhone()
+    navigate('/entrar')
   }
 
   return (

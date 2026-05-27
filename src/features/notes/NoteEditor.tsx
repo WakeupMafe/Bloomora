@@ -15,11 +15,16 @@ import {
 } from '@/features/notes/noteTypingDefaults'
 import {
   applyBlockAlign,
+  applyNoteFontSizeToSelection,
   applyNoteFontToSelection,
+  applyNoteFontWeightToSelection,
+  applyNoteLineHeightToSelection,
+  applyNoteTextCaseToSelection,
   adjustNoteSelectionFontSize,
   applyTypingDefaultsAtCaret,
   attachNoteImageDragHandlers,
   buildNotePrintDocumentHtml,
+  clearNoteSelectionHighlight,
   enhanceNoteImages,
   insertImageInEditor,
   insertParagraphWithTypingDefaults,
@@ -27,8 +32,11 @@ import {
   NOTE_FONT_SIZE_MIN_PX,
   NOTE_FONT_SIZE_STEP_PX,
   notePageSheetClass,
+  noteTextAlignExecCommand,
   printNoteDocument,
 } from '@/features/notes/noteEditorUtils'
+import type { NoteTextOptionsValues } from '@/features/notes/NoteTextOptionsPanel'
+import type { NoteFontWeight, NoteTextAlign, NoteTextCase } from '@/features/notes/noteTypingDefaults'
 import type {
   EnglishNote,
   EnglishNoteColor,
@@ -85,7 +93,12 @@ export function NoteEditor({
   const pageNumberEnabledDraftRef = useRef(pageNumberEnabledDraft)
   const twoColumnsDraftRef = useRef(twoColumnsDraft)
   const onPatchRef = useRef(onPatch)
+  const [typingDefaults, setTypingDefaults] = useState<NoteTypingDefaults>({
+    ...BODY_TYPING_DEFAULTS,
+  })
+  const [highlightColor, setHighlightColor] = useState<string | null>(null)
   const typingDefaultsRef = useRef<NoteTypingDefaults>({ ...BODY_TYPING_DEFAULTS })
+  typingDefaultsRef.current = typingDefaults
 
   noteRef.current = note
   titleDraftRef.current = titleDraft
@@ -112,12 +125,37 @@ export function NoteEditor({
     (patch: Partial<NoteTypingDefaults>) => {
       const editor = editorRef.current
       if (!editor) return
-      typingDefaultsRef.current = { ...typingDefaultsRef.current, ...patch }
-      applyTypingDefaultsAtCaret(editor, typingDefaultsRef.current)
+      const next = { ...typingDefaultsRef.current, ...patch }
+      typingDefaultsRef.current = next
+      setTypingDefaults(next)
+      applyTypingDefaultsAtCaret(editor, next)
       markUnsaved()
     },
     [markUnsaved],
   )
+
+  const applySelectionFormat = useCallback(
+    (fn: () => void) => {
+      if (formatTarget === 'selection') {
+        preserveSelectionApply(fn)
+      } else {
+        fn()
+      }
+      markUnsaved()
+    },
+    [formatTarget, preserveSelectionApply, markUnsaved],
+  )
+
+  const optionValues: NoteTextOptionsValues = {
+    font: typingDefaults.font,
+    fontSizePx: typingDefaults.fontSizePx,
+    colorId: typingDefaults.color,
+    align: typingDefaults.align,
+    fontWeight: typingDefaults.fontWeight,
+    lineHeight: typingDefaults.lineHeight,
+    textCase: typingDefaults.textCase,
+    highlightColor,
+  }
 
   useEffect(() => {
     if (!note) return
@@ -200,15 +238,6 @@ export function NoteEditor({
   const cmd = (command: string, value?: string) => {
     document.execCommand(command, false, value)
     editorRef.current?.focus()
-    markUnsaved()
-  }
-
-  const applySelectionFormat = (fn: () => void) => {
-    if (formatTarget === 'selection') {
-      preserveSelectionApply(fn)
-    } else {
-      fn()
-    }
     markUnsaved()
   }
 
@@ -397,11 +426,14 @@ export function NoteEditor({
         coords={selectionCoords}
         mode={selectionMode}
         formatTarget={formatTarget}
+        optionValues={optionValues}
         onClose={dismissSelectionToolbar}
         onApplyTextoPreset={() => {
-          typingDefaultsRef.current = { ...BODY_TYPING_DEFAULTS }
+          const next = { ...BODY_TYPING_DEFAULTS }
+          typingDefaultsRef.current = next
+          setTypingDefaults(next)
           if (editorRef.current) {
-            applyTypingDefaultsAtCaret(editorRef.current, typingDefaultsRef.current)
+            applyTypingDefaultsAtCaret(editorRef.current, next)
           }
           markUnsaved()
           showToast('Formato Texto: Poppins, gris, alineado a la izquierda.')
@@ -413,8 +445,63 @@ export function NoteEditor({
           }
           applySelectionFormat(() => document.execCommand('foreColor', false, hex))
         }}
+        onCustomTextColor={(hex) => {
+          if (formatTarget === 'typing') {
+            applyTypingFormat({ colorHex: hex, color: 'black' })
+            return
+          }
+          applySelectionFormat(() => document.execCommand('foreColor', false, hex))
+        }}
         onHighlight={(hex) => {
+          setHighlightColor(hex)
           applySelectionFormat(() => document.execCommand('hiliteColor', false, hex))
+        }}
+        onClearHighlight={() => {
+          setHighlightColor(null)
+          const editor = editorRef.current
+          if (!editor) return
+          applySelectionFormat(() => clearNoteSelectionHighlight(editor))
+        }}
+        onFontWeight={(weight: NoteFontWeight) => {
+          if (formatTarget === 'typing') {
+            applyTypingFormat({ fontWeight: weight })
+            return
+          }
+          const editor = editorRef.current
+          if (!editor) return
+          applySelectionFormat(() => applyNoteFontWeightToSelection(editor, weight))
+        }}
+        onAlign={(align: NoteTextAlign) => {
+          const editor = editorRef.current
+          if (!editor) return
+          if (formatTarget === 'typing') {
+            applyTypingFormat({ align })
+            applyBlockAlign(editor, align)
+            return
+          }
+          applySelectionFormat(() => {
+            editor.focus()
+            document.execCommand(noteTextAlignExecCommand(align), false)
+            applyBlockAlign(editor, align)
+          })
+        }}
+        onLineHeight={(lineHeight) => {
+          if (formatTarget === 'typing') {
+            applyTypingFormat({ lineHeight })
+            return
+          }
+          const editor = editorRef.current
+          if (!editor) return
+          applySelectionFormat(() => applyNoteLineHeightToSelection(editor, lineHeight))
+        }}
+        onTextCase={(textCase: NoteTextCase) => {
+          if (formatTarget === 'typing') {
+            applyTypingFormat({ textCase })
+            return
+          }
+          const editor = editorRef.current
+          if (!editor) return
+          applySelectionFormat(() => applyNoteTextCaseToSelection(editor, textCase))
         }}
         onAlignCenter={() => {
           const editor = editorRef.current
@@ -447,6 +534,19 @@ export function NoteEditor({
           applySelectionFormat(() => {
             applyNoteFontToSelection(editorRef.current!, font)
           })
+        }}
+        onFontSizeSet={(px) => {
+          const clamped = Math.min(
+            NOTE_FONT_SIZE_MAX_PX,
+            Math.max(NOTE_FONT_SIZE_MIN_PX, px),
+          )
+          if (formatTarget === 'typing') {
+            applyTypingFormat({ fontSizePx: clamped })
+            return
+          }
+          const editor = editorRef.current
+          if (!editor) return
+          applySelectionFormat(() => applyNoteFontSizeToSelection(editor, clamped))
         }}
         onFontSizeChange={(delta) => {
           if (!editorRef.current) return

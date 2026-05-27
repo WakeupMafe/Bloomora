@@ -162,7 +162,8 @@ export function applyTypingDefaultsAtCaret(
 
   const block = getBlockInEditor(range.startContainer, editor)
   if (block) {
-    block.style.textAlign = defaults.align === 'center' ? 'center' : 'left'
+    block.style.textAlign = noteTextAlignToCss(defaults.align)
+    block.style.lineHeight = String(defaults.lineHeight)
   }
 
   if (!range.collapsed) return
@@ -172,6 +173,16 @@ export function applyTypingDefaultsAtCaret(
   span.style.fontFamily = noteTitleFontFamily(defaults.font)
   span.style.fontSize = `${defaults.fontSizePx}px`
   span.style.color = defaults.colorHex
+  span.style.fontWeight =
+    defaults.fontWeight === 'bold'
+      ? '700'
+      : defaults.fontWeight === 'medium'
+        ? '500'
+        : '400'
+  span.style.lineHeight = String(defaults.lineHeight)
+  if (defaults.textCase !== 'none') {
+    span.style.textTransform = defaults.textCase
+  }
   const anchor = document.createTextNode('\u200b')
   span.appendChild(anchor)
   range.insertNode(span)
@@ -193,6 +204,32 @@ export function insertParagraphWithTypingDefaults(
   applyTypingDefaultsAtCaret(editor, defaults)
 }
 
+export function noteTextAlignToCss(align: NoteTextAlign): string {
+  switch (align) {
+    case 'center':
+      return 'center'
+    case 'right':
+      return 'right'
+    case 'justify':
+      return 'justify'
+    default:
+      return 'left'
+  }
+}
+
+export function noteTextAlignExecCommand(align: NoteTextAlign): string {
+  switch (align) {
+    case 'center':
+      return 'justifyCenter'
+    case 'right':
+      return 'justifyRight'
+    case 'justify':
+      return 'justifyFull'
+    default:
+      return 'justifyLeft'
+  }
+}
+
 export function applyBlockAlign(editor: HTMLElement, align: NoteTextAlign): void {
   editor.focus()
   const sel = window.getSelection()
@@ -202,9 +239,87 @@ export function applyBlockAlign(editor: HTMLElement, align: NoteTextAlign): void
 
   const block = getBlockInEditor(range.startContainer, editor)
   if (block) {
-    block.style.textAlign = align === 'center' ? 'center' : 'left'
+    block.style.textAlign = noteTextAlignToCss(align)
   }
-  document.execCommand(align === 'center' ? 'justifyCenter' : 'justifyLeft', false)
+  document.execCommand(noteTextAlignExecCommand(align), false)
+}
+
+export function applyNoteFontWeightToSelection(
+  editor: HTMLElement,
+  weight: 'normal' | 'medium' | 'bold',
+): boolean {
+  const sel = window.getSelection()
+  if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return false
+  const range = sel.getRangeAt(0)
+  if (!editor.contains(range.commonAncestorContainer)) return false
+
+  if (weight === 'bold') {
+    document.execCommand('bold', false)
+    return true
+  }
+
+  const span = document.createElement('span')
+  span.style.fontWeight = weight === 'medium' ? '500' : '400'
+  try {
+    const fragment = range.extractContents()
+    span.appendChild(fragment)
+    range.insertNode(span)
+    const selected = document.createRange()
+    selected.selectNodeContents(span)
+    sel.removeAllRanges()
+    sel.addRange(selected)
+    return true
+  } catch {
+    return false
+  }
+}
+
+export function applyNoteLineHeightToSelection(
+  editor: HTMLElement,
+  lineHeight: number,
+): boolean {
+  const sel = window.getSelection()
+  if (!sel || sel.rangeCount === 0) return false
+  const range = sel.getRangeAt(0)
+  if (!editor.contains(range.commonAncestorContainer)) return false
+
+  const block = getBlockInEditor(range.startContainer, editor)
+  if (block) {
+    block.style.lineHeight = String(lineHeight)
+    return true
+  }
+  return false
+}
+
+export function applyNoteTextCaseToSelection(
+  editor: HTMLElement,
+  textCase: 'none' | 'uppercase' | 'lowercase' | 'capitalize',
+): boolean {
+  const sel = window.getSelection()
+  if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return false
+  const range = sel.getRangeAt(0)
+  if (!editor.contains(range.commonAncestorContainer)) return false
+
+  const span = document.createElement('span')
+  span.style.textTransform = textCase === 'none' ? 'none' : textCase
+  try {
+    const fragment = range.extractContents()
+    span.appendChild(fragment)
+    range.insertNode(span)
+    const selected = document.createRange()
+    selected.selectNodeContents(span)
+    sel.removeAllRanges()
+    sel.addRange(selected)
+    return true
+  } catch {
+    return false
+  }
+}
+
+export function clearNoteSelectionHighlight(editor: HTMLElement): void {
+  editor.focus()
+  document.execCommand('hiliteColor', false, 'transparent')
+  document.execCommand('backColor', false, 'transparent')
 }
 
 export function applyNoteFontToSelection(

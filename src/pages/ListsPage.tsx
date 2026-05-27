@@ -11,6 +11,7 @@ import { useSearchParams } from 'react-router-dom'
 import { BloomoraLogo } from '@/components/brand/BloomoraLogo'
 import { BackButton } from '@/components/navigation/BackButton'
 import { Button } from '@/components/ui/Button'
+import { useBloomoraAlert } from '@/contexts/BloomoraAlertContext'
 import { useUserPhone } from '@/contexts/UserPhoneContext'
 import { useAddListMutation, useBloomoraLists } from '@/hooks/useBloomoraLists'
 import {
@@ -38,6 +39,7 @@ import { cn } from '@/utils/cn'
 
 export function ListsPage() {
   const { cedula } = useUserPhone()
+  const { confirm } = useBloomoraAlert()
   const { data: lists = [], isLoading: listsLoading } = useBloomoraLists(cedula)
   const addListMut = useAddListMutation(cedula)
   const updateTitleMut = useUpdateListTitleMutation(cedula)
@@ -349,9 +351,13 @@ export function ListsPage() {
                     variant="ghost"
                     size="sm"
                     className="min-h-10 text-red-600 touch-manipulation"
-                    onClick={() => {
-                      if (!window.confirm('¿Eliminar esta lista y sus ítems?'))
-                        return
+                    onClick={async () => {
+                      const ok = await confirm({
+                        title: '¿Eliminar esta lista y sus ítems?',
+                        confirmLabel: 'Eliminar',
+                        tone: 'danger',
+                      })
+                      if (!ok) return
                       deleteListMut.mutate(selected.id, {
                         onSuccess: () => {
                           setSelectedId(null)
@@ -436,8 +442,13 @@ export function ListsPage() {
                         onRename={(title) =>
                           renameItem.mutate({ id: it.id, title })
                         }
-                        onDelete={() => {
-                          if (!window.confirm('¿Quitar este ítem?')) return
+                        onDelete={async () => {
+                          const ok = await confirm({
+                            title: '¿Quitar este ítem?',
+                            confirmLabel: 'Quitar',
+                            tone: 'danger',
+                          })
+                          if (!ok) return
                           removeItem.mutate(it.id)
                         }}
                       />

@@ -4,6 +4,7 @@ import { BackButton } from '@/components/navigation/BackButton'
 import { Card } from '@/components/ui/Card'
 import { buttonClassName } from '@/components/ui/buttonRecipe'
 import { bloomoraPanelCardClass } from '@/components/ui/formControls'
+import { useBloomoraAlert } from '@/contexts/BloomoraAlertContext'
 import { useBloomoraToast } from '@/contexts/BloomoraToastContext'
 import { useUserPhone } from '@/contexts/UserPhoneContext'
 import { NoteEditor } from '@/features/notes/NoteEditor'
@@ -28,6 +29,7 @@ type NotePatch = Partial<EnglishNoteInput>
 export function EnglishNotesPage() {
   const { cedula } = useUserPhone()
   const { showToast } = useBloomoraToast()
+  const { confirm } = useBloomoraAlert()
   const supabaseReady = !!getSupabaseBrowserClient()
 
   const { data: notes = [], isLoading, isError, error } = useBloomoraEnglishNotes(cedula)
@@ -99,14 +101,19 @@ export function EnglishNotesPage() {
     setActiveId(draft.id)
   }
 
-  const deleteNote = (id: string) => {
+  const deleteNote = async (id: string) => {
     if (isDraftNoteId(id)) {
       setDraftNote(null)
       setActiveId(notes[0]?.id ?? null)
       return
     }
     if (!cedula) return
-    if (!window.confirm('Eliminar este apunte?')) return
+    const ok = await confirm({
+      title: '¿Eliminar este apunte?',
+      confirmLabel: 'Eliminar',
+      tone: 'danger',
+    })
+    if (!ok) return
     deleteMut.mutate(id, {
       onSuccess: () => {
         showToast('Apunte eliminado')

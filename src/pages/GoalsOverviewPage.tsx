@@ -11,6 +11,7 @@ import { GoalTrackerGrid } from '@/features/goals/GoalTrackerGrid'
 import { MonthNavPill } from '@/features/goals/MonthNavPill'
 import { getCompletedDaysForMonth } from '@/features/goals/goalTrackerUtils'
 import { TrackerColorMenu } from '@/features/goals/TrackerColorMenu'
+import { useBloomoraAlert } from '@/contexts/BloomoraAlertContext'
 import { useBloomoraToast } from '@/contexts/BloomoraToastContext'
 import { useUserPhone } from '@/contexts/UserPhoneContext'
 import {
@@ -32,6 +33,7 @@ function statusClasses(status: MockGoalRow['estado']) {
 export function GoalsOverviewPage() {
   const navigate = useNavigate()
   const { showToast } = useBloomoraToast()
+  const { confirm } = useBloomoraAlert()
   const { cedula } = useUserPhone()
   const { data: goals = [], isLoading } = useBloomoraGoals(cedula)
   const clearGoalsMut = useClearGoalsMutation(cedula)
@@ -60,9 +62,14 @@ export function GoalsOverviewPage() {
     )
   }
 
-  const handleClearGoals = () => {
+  const handleClearGoals = async () => {
     if (goals.length === 0) return
-    if (!window.confirm('¿Limpiar todas tus metas y sus marcas de progreso?')) return
+    const ok = await confirm({
+      title: '¿Limpiar todas tus metas y sus marcas de progreso?',
+      confirmLabel: 'Limpiar',
+      tone: 'danger',
+    })
+    if (!ok) return
     clearGoalsMut.mutate(undefined, {
       onSuccess: () => showToast('Metas limpiadas. Ahora puedes empezar desde cero.'),
     })

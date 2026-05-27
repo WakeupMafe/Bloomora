@@ -1176,6 +1176,41 @@
     }
   }
 
+  .note-text-options-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 9999px;
+    background: linear-gradient(
+      to right,
+      #7c6bb5 0%,
+      #7c6bb5 var(--note-slider-pct, 30%),
+      #ece8f7 var(--note-slider-pct, 30%),
+      #ece8f7 100%
+    );
+  }
+
+  .note-text-options-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 9999px;
+    border: 3px solid #fff;
+    background: #7c6bb5;
+    box-shadow: 0 2px 8px rgba(91, 74, 140, 0.35);
+    cursor: pointer;
+  }
+
+  .note-text-options-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 9999px;
+    border: 3px solid #fff;
+    background: #7c6bb5;
+    box-shadow: 0 2px 8px rgba(91, 74, 140, 0.35);
+    cursor: pointer;
+  }
+
   /*
    * Lista de agenda / metas: en móvil/tablet (<lg) sin scroll interno — solo la página hace scroll
    * (evita doble barra al expandir «Pasos»). En desktop (lg+) scroll interno con altura máxima.

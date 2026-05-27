@@ -1,5 +1,6 @@
 import { type FormEvent, useRef, useState } from 'react'
 import { Button } from '@/components/ui/Button'
+import { useBloomoraAlert } from '@/contexts/BloomoraAlertContext'
 import { useBloomoraToast } from '@/contexts/BloomoraToastContext'
 import { uploadFlashcardImage } from '@/services/supabase/flashcardImageUpload'
 import { requireSupabase } from '@/services/supabase/typedClient'
@@ -43,6 +44,7 @@ export function EnglishFlashcardForm({
   onSave,
 }: EnglishFlashcardFormProps) {
   const { showToast } = useBloomoraToast()
+  const { alert: showAlert } = useBloomoraAlert()
   const fileRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState<FlashcardFormState>(() =>
     editing ? flashcardToFormState(editing) : emptyFlashcardFormState(),
@@ -75,7 +77,7 @@ export function EnglishFlashcardForm({
   const isVerb = isVerbsCategory(form.category)
   const isGrammar = isGrammarCategory(form.category)
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (!isVerbFormValid(form) || !form.spanishMeaning.trim()) {
       showToast(
@@ -88,7 +90,10 @@ export function EnglishFlashcardForm({
       return
     }
     if (!form.imageUrl.trim()) {
-      window.alert(FLASHCARD_IMAGE_REQUIRED_MESSAGE)
+      await showAlert({
+        title: 'Imagen requerida',
+        description: FLASHCARD_IMAGE_REQUIRED_MESSAGE,
+      })
       return
     }
     onSave(formStateToInput(form))

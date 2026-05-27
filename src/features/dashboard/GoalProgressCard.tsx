@@ -5,6 +5,7 @@ import { DashboardCard } from "@/components/dashboard/DashboardCard";
 import { GoalActionsMenu } from "@/features/dashboard/GoalActionsMenu";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { buttonClassName } from "@/components/ui/buttonRecipe";
+import { useBloomoraAlert } from "@/contexts/BloomoraAlertContext";
 import { useUserPhone } from "@/contexts/UserPhoneContext";
 import {
   useBloomoraGoals,
@@ -171,6 +172,7 @@ type GoalProgressCardProps = {
 export function GoalProgressCard({ className }: GoalProgressCardProps) {
   const navigate = useNavigate();
   const { cedula } = useUserPhone();
+  const { confirm } = useBloomoraAlert();
   const { data: goals = [], isLoading } = useBloomoraGoals(cedula);
   const deleteGoalMut = useDeleteGoalMutation(cedula);
   const overallPercent = averagePercent(goals);
@@ -184,8 +186,13 @@ export function GoalProgressCard({ className }: GoalProgressCardProps) {
   const ringValue = selected ? selected.percent : overallPercent;
   const accent = selected?.accent ?? "lavender";
 
-  const handleDelete = (id: string) => {
-    if (!window.confirm("¿Borrar esta meta por completo?")) return;
+  const handleDelete = async (id: string) => {
+    const ok = await confirm({
+      title: "¿Borrar esta meta por completo?",
+      confirmLabel: "Borrar",
+      tone: "danger",
+    });
+    if (!ok) return;
     deleteGoalMut.mutate(id);
     setMenuGoalId(null);
     if (selectedId === id) setSelectedId(null);
