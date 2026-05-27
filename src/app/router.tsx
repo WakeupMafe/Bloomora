@@ -63,6 +63,13 @@ const ListsPage = () =>
     'Cargando listas…',
   )
 
+const PomodoroPage = () =>
+  lazyPage(
+    () =>
+      import('@/pages/PomodoroPage').then((m) => ({ default: m.PomodoroPage })),
+    'Cargando pomodoro…',
+  )
+
 const NewGoalPage = () =>
   lazyPage(
     () =>
@@ -102,6 +109,7 @@ export const appRouter = createBrowserRouter([
           { path: 'lists/new', element: <PlaceholderFlowPage /> },
           { path: 'lists', element: <ListsPage /> },
           { path: 'flashcards', element: <EnglishFlashcardsPage /> },
+          { path: 'pomodoro', element: <PomodoroPage /> },
         ],
       },
       { path: 'home', element: <Navigate to="/app" replace /> },

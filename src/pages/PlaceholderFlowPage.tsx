@@ -10,6 +10,7 @@ const titles: Record<string, string> = {
   '/app/shopping': 'Lista de compras',
   '/app/lists': 'Tus listas',
   '/app/lists/new': 'Nueva lista',
+  '/app/apuntes': 'Apuntes',
 }
 
 export function PlaceholderFlowPage() {

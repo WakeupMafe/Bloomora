@@ -3,11 +3,12 @@ import { DashboardAppHeader } from "@/features/dashboard/DashboardAppHeader";
 import { GoalProgressCard } from "@/features/dashboard/GoalProgressCard";
 import { FlashcardsCard } from "@/features/dashboard/FlashcardsCard";
 import { ListsCard } from "@/features/dashboard/ListsCard";
+import { AdditionalToolsPanel } from "@/features/dashboard/AdditionalToolsPanel";
 import { useUserPhone } from "@/contexts/UserPhoneContext";
 import { useAutoPurgePreviousAgendaMonth } from "@/hooks/useAgendaDayOperations";
 
 /**
- * Inicio autenticado: tareas + metas (fila 1) y listas (fila 2, ancho completo).
+ * Inicio: fila 1 tareas + metas; fila 2 flashcards, listas y herramientas adicionales.
  */
 export function DayHomePage() {
   const { cedula } = useUserPhone();
@@ -32,9 +33,10 @@ export function DayHomePage() {
           <GoalProgressCard className="h-full min-h-0 min-w-0 w-full max-w-full max-h-[600px] lg:max-h-[550px]" />
         </div>
 
-        <div className="mt-6 grid min-w-0 grid-cols-1 gap-6 sm:mt-8 lg:mt-10 lg:grid-cols-2 lg:gap-8">
+        <div className="mt-6 grid min-w-0 grid-cols-1 gap-6 sm:mt-8 lg:mt-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(10.75rem,13.5rem)] lg:items-stretch lg:gap-6 xl:gap-8">
           <FlashcardsCard />
           <ListsCard />
+          <AdditionalToolsPanel className="lg:sticky lg:top-6 lg:self-start" />
         </div>
       </main>
     </div>
