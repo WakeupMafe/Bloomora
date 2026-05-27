@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
+import { bloomoraInputClass } from '@/components/ui/formControls'
 import {
   phaseDurationMs,
   phaseEmoji,
@@ -64,21 +66,17 @@ export function PomodoroTimer({ className, compact }: PomodoroTimerProps) {
     >
       <div className="flex flex-wrap justify-center gap-2">
         {PHASES.map((p) => (
-          <button
+          <Button
             key={p}
             type="button"
+            variant={phase === p ? 'primary' : 'outline'}
+            size="sm"
             disabled={!canChangePhase}
             onClick={() => selectPhase(p)}
-            className={cn(
-              'rounded-full px-3 py-1.5 text-xs font-bold ring-1 transition',
-              phase === p
-                ? 'bg-bloomora-violet text-white ring-bloomora-violet'
-                : 'bg-white/90 text-bloomora-violet ring-bloomora-line/40 hover:bg-bloomora-lavender-50',
-              !canChangePhase && 'opacity-50',
-            )}
+            className={cn(!canChangePhase && 'opacity-50')}
           >
             {phaseEmoji(p)} {phaseLabel(p)}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -206,16 +204,17 @@ export function PomodoroTimer({ className, compact }: PomodoroTimerProps) {
 
       {!compact ? (
         <div className="mt-6 w-full max-w-md">
-          <button
+          <Button
             type="button"
-            className="text-xs font-semibold text-bloomora-violet underline-offset-2 hover:underline"
+            variant="ghost"
+            size="sm"
             onClick={() => setShowSettings((v) => !v)}
           >
             {showSettings ? 'Ocultar ajustes' : 'Ajustes del temporizador'}
-          </button>
+          </Button>
 
           {showSettings ? (
-            <div className="mt-3 space-y-3 rounded-2xl bg-white/85 p-4 ring-1 ring-bloomora-line/35">
+            <Card variant="subtle" className="mt-3 space-y-3 rounded-2xl p-4">
               <div className="grid grid-cols-3 gap-3">
                 <label className="block text-xs font-medium text-bloomora-text-muted">
                   Enfoque (min)
@@ -230,7 +229,7 @@ export function PomodoroTimer({ className, compact }: PomodoroTimerProps) {
                         focusMin: Number(e.target.value) || 25,
                       })
                     }
-                    className="mt-1 w-full rounded-xl border border-bloomora-line/50 px-2 py-2 text-sm font-semibold text-bloomora-deep"
+                    className={cn(bloomoraInputClass, 'mt-1 !min-h-10 rounded-xl px-2 py-2')}
                   />
                 </label>
                 <label className="block text-xs font-medium text-bloomora-text-muted">
@@ -246,7 +245,7 @@ export function PomodoroTimer({ className, compact }: PomodoroTimerProps) {
                         shortBreakMin: Number(e.target.value) || 5,
                       })
                     }
-                    className="mt-1 w-full rounded-xl border border-bloomora-line/50 px-2 py-2 text-sm font-semibold text-bloomora-deep"
+                    className={cn(bloomoraInputClass, 'mt-1 !min-h-10 rounded-xl px-2 py-2')}
                   />
                 </label>
                 <label className="block text-xs font-medium text-bloomora-text-muted">
@@ -262,7 +261,7 @@ export function PomodoroTimer({ className, compact }: PomodoroTimerProps) {
                         longBreakMin: Number(e.target.value) || 15,
                       })
                     }
-                    className="mt-1 w-full rounded-xl border border-bloomora-line/50 px-2 py-2 text-sm font-semibold text-bloomora-deep"
+                    className={cn(bloomoraInputClass, 'mt-1 !min-h-10 rounded-xl px-2 py-2')}
                   />
                 </label>
               </div>
@@ -290,18 +289,20 @@ export function PomodoroTimer({ className, compact }: PomodoroTimerProps) {
                 />
                 Iniciar enfoque al terminar descanso
               </label>
-              <button
+              <Button
                 type="button"
-                className="text-xs font-semibold text-bloomora-violet underline-offset-2 hover:underline"
+                variant="ghost"
+                size="sm"
+                className="!min-h-8 px-0"
                 onClick={() => void requestPomodoroNotificationPermission()}
               >
                 Activar notificaciones del navegador
-              </button>
+              </Button>
               <p className="text-[0.65rem] leading-relaxed text-bloomora-text-muted">
                 La alarma usa tu sonido personalizado y sigue sonando en otra
                 pestaña si ya iniciaste el temporizador desde esta página.
               </p>
-            </div>
+            </Card>
           ) : null}
         </div>
       ) : null}

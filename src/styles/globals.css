@@ -1015,6 +1015,167 @@
     gap: clamp(0.85rem, 0.6rem + 0.5vw, 1.35rem);
   }
 
+  /* Apuntes de ingles: layout centrado y amplio en desktop (90vw). */
+  .english-notes-shell {
+    width: min(90vw, 1600px);
+    margin-inline: auto;
+  }
+
+  .english-note-title--popis {
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .english-note-title--arial {
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  .english-note-title--cursive {
+    font-family: 'Cedarville Cursive', cursive;
+    font-weight: 400;
+  }
+
+  .english-note-title--cursive2 {
+    font-family: 'Sacramento', cursive;
+    font-weight: 400;
+  }
+
+  .english-note-title-input::placeholder {
+    color: color-mix(in srgb, var(--color-bloomora-text-muted) 70%, transparent);
+    font-weight: 600;
+  }
+
+  /* Hoja del apunte: medidas reales Carta (US Letter) y A4 */
+  .english-note-sheet {
+    position: relative;
+    margin-inline: auto;
+    box-sizing: border-box;
+    width: min(100%, var(--english-note-sheet-width));
+    max-width: var(--english-note-sheet-width);
+    min-height: var(--english-note-sheet-min-height);
+    padding: 1.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .english-note-sheet {
+      padding: 2rem;
+    }
+  }
+
+  .english-note-sheet--letter {
+    --english-note-sheet-width: 8.5in;
+    --english-note-sheet-min-height: 11in;
+  }
+
+  .english-note-sheet--a4 {
+    --english-note-sheet-width: 210mm;
+    --english-note-sheet-min-height: 297mm;
+    padding-inline: calc(1.5rem + 10mm);
+  }
+
+  @media (min-width: 640px) {
+    .english-note-sheet--a4 {
+      padding-inline: calc(2rem + 10mm);
+    }
+  }
+
+  .english-note-sheet .english-note-content {
+    position: relative;
+    min-height: calc(var(--english-note-sheet-min-height) - 4rem);
+    line-height: 1.35;
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .english-note-content p,
+  .english-note-content div:not([class]) {
+    margin: 0 0 0.2em;
+  }
+
+  .english-note-content p:last-child,
+  .english-note-content div:not([class]):last-child {
+    margin-bottom: 0;
+  }
+
+  .english-note-content li {
+    margin: 0;
+    line-height: 1.35;
+  }
+
+  .english-note-content ul,
+  .english-note-content ol {
+    margin: 0.25em 0;
+    padding-left: 1.35rem;
+  }
+
+  .english-note-content:empty::before {
+    content: attr(data-placeholder);
+    color: color-mix(in srgb, var(--color-bloomora-text-muted) 55%, transparent);
+    pointer-events: none;
+  }
+
+  .english-note-page-number {
+    position: absolute;
+    right: 1.1rem;
+    font-size: 0.7rem;
+    font-weight: 500;
+    line-height: 1;
+    color: #c9c5d4;
+    letter-spacing: 0.02em;
+    user-select: none;
+  }
+
+  .english-note-image-wrap {
+    position: absolute;
+    z-index: 2;
+    max-width: min(100%, 320px);
+    line-height: 0;
+    touch-action: none;
+    user-select: none;
+  }
+
+  .english-note-image-wrap.is-dragging {
+    z-index: 6;
+    cursor: grabbing;
+  }
+
+  .english-note-content img.english-note-inline-image {
+    display: block;
+    max-width: min(100%, 320px);
+    width: 100%;
+    height: auto;
+    margin: 0;
+    border-radius: 1rem;
+    cursor: grab;
+    box-shadow: 0 10px 28px -12px rgba(91, 74, 140, 0.28);
+    border: 1px solid color-mix(in srgb, var(--color-bloomora-line) 35%, transparent);
+  }
+
+  .english-note-image-wrap:not(.is-dragging) img.english-note-inline-image:active {
+    cursor: grabbing;
+  }
+
+  .english-note-image-wrap:focus-within {
+    outline: 2px solid color-mix(in srgb, var(--color-bloomora-lilac) 55%, transparent);
+    outline-offset: 3px;
+    border-radius: 1rem;
+  }
+
+  .english-note-content--two-columns {
+    column-count: 2;
+    column-gap: 1.25rem;
+  }
+
+  .english-note-content--two-columns .english-note-image-wrap,
+  .english-note-content--two-columns img.english-note-inline-image {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  @media (max-width: 640px) {
+    .english-note-content--two-columns {
+      column-count: 1;
+    }
+  }
+
   /*
    * Lista de agenda / metas: en móvil/tablet (<lg) sin scroll interno — solo la página hace scroll
    * (evita doble barra al expandir «Pasos»). En desktop (lg+) scroll interno con altura máxima.

@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { DashboardCard } from '@/components/dashboard/DashboardCard'
-import { useBloomoraToast } from '@/contexts/BloomoraToastContext'
 import { cn } from '@/utils/cn'
 
 type AdditionalToolsPanelProps = {
@@ -173,8 +172,6 @@ function ToolTile({
 }
 
 export function AdditionalToolsPanel({ className }: AdditionalToolsPanelProps) {
-  const { showToast } = useBloomoraToast()
-
   return (
     <aside
       className={cn('min-w-0 w-full lg:max-w-[13.5rem] lg:justify-self-end', className)}
@@ -199,16 +196,13 @@ export function AdditionalToolsPanel({ className }: AdditionalToolsPanelProps) {
             iconWrapClass="bg-gradient-to-br from-rose-50 to-orange-50 text-rose-500 ring-rose-200/50"
           />
           <ToolTile
+            to="/app/english-notes"
             label="Apuntes"
-            hint="Próximamente"
-            badge="Pronto"
+            hint="Ingles"
             icon={
               <NotesToolIcon className="size-9 text-bloomora-violet/70 sm:size-10" />
             }
             iconWrapClass="bg-gradient-to-br from-bloomora-lavender-50 to-bloomora-blush/80 text-bloomora-violet ring-bloomora-line/35"
-            onClick={() =>
-              showToast('Apuntes llegará pronto. Te avisamos cuando esté listo.')
-            }
           />
         </nav>
       </DashboardCard>

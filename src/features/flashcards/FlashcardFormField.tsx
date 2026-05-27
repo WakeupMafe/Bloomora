@@ -1,13 +1,10 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/utils/cn'
+import { bloomoraInputClass, bloomoraSelectClass } from '@/components/ui/formControls'
 
-export const flashcardControlClass =
-  'bloomora-form-input w-full min-h-11 rounded-pill border border-bloomora-line/50 px-4 py-2.5 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/25 focus:ring-2'
+export const flashcardControlClass = bloomoraInputClass
 
-export const flashcardSelectClass = cn(
-  flashcardControlClass,
-  'bg-bloomora-white',
-)
+export const flashcardSelectClass = bloomoraSelectClass
 
 type FlashcardFormFieldProps = {
   label: ReactNode

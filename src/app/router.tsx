@@ -70,6 +70,22 @@ const PomodoroPage = () =>
     'Cargando pomodoro…',
   )
 
+const StudyToolsPage = () =>
+  lazyPage(
+    () =>
+      import('@/pages/StudyToolsPage').then((m) => ({ default: m.StudyToolsPage })),
+    'Cargando herramientas…',
+  )
+
+const EnglishNotesPage = () =>
+  lazyPage(
+    () =>
+      import('@/pages/EnglishNotesPage').then((m) => ({
+        default: m.EnglishNotesPage,
+      })),
+    'Cargando apuntes…',
+  )
+
 const NewGoalPage = () =>
   lazyPage(
     () =>
@@ -110,6 +126,8 @@ export const appRouter = createBrowserRouter([
           { path: 'lists', element: <ListsPage /> },
           { path: 'flashcards', element: <EnglishFlashcardsPage /> },
           { path: 'pomodoro', element: <PomodoroPage /> },
+          { path: 'study-tools', element: <StudyToolsPage /> },
+          { path: 'english-notes', element: <EnglishNotesPage /> },
         ],
       },
       { path: 'home', element: <Navigate to="/app" replace /> },

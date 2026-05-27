@@ -1,8 +1,12 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { BackButton } from '@/components/navigation/BackButton'
+import { Card } from '@/components/ui/Card'
+import { buttonClassName } from '@/components/ui/buttonRecipe'
+import { bloomoraPanelCardClass } from '@/components/ui/formControls'
 import { PomodoroTimer } from '@/features/pomodoro/PomodoroTimer'
 import { registerPomodoroAlarmUnlock } from '@/utils/pomodoroAlarmSound'
+import { cn } from '@/utils/cn'
 
 export function PomodoroPage() {
   useEffect(() => {
@@ -10,12 +14,12 @@ export function PomodoroPage() {
   }, [])
 
   return (
-    <div className="app-shell-padding app-content-fluid mx-auto min-h-dvh bg-[#f8f6fc] pb-16">
+    <div className="app-shell-padding app-content-fluid mx-auto min-h-dvh bg-bloomora-snow pb-16">
       <div className="mb-6 flex items-center justify-between gap-3">
         <BackButton to="/app" label="Volver al inicio" />
         <Link
           to="/app"
-          className="text-xs font-semibold text-bloomora-violet hover:text-bloomora-deep sm:text-sm"
+          className={buttonClassName({ variant: 'ghost', size: 'sm' })}
         >
           Inicio
         </Link>
@@ -31,9 +35,12 @@ export function PomodoroPage() {
         </p>
       </header>
 
-      <div className="mx-auto mt-10 max-w-lg rounded-[1.75rem] bg-white/90 p-6 shadow-[0_12px_40px_-12px_rgba(91,74,140,0.2)] ring-1 ring-bloomora-line/25 sm:p-8">
+      <Card
+        variant="glass"
+        className={cn(bloomoraPanelCardClass, 'mx-auto mt-10 max-w-lg p-6 sm:p-8')}
+      >
         <PomodoroTimer />
-      </div>
+      </Card>
     </div>
   )
 }
