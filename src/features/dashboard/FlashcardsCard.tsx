@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { DashboardCard } from '@/components/dashboard/DashboardCard'
 import { getCategoryTheme } from '@/features/flashcards/flashcardCategoryTheme'
+import { QUICK_FLASHCARD_DAILY_LIMIT } from '@/features/flashcards/flashcardQuickMode'
 import { itemCountLabel } from '@/features/flashcards/groupFlashcardsByCategory'
 import { useUserPhone } from '@/contexts/UserPhoneContext'
 import { useBloomoraEnglishFlashcardsDashboard } from '@/hooks/useBloomoraEnglishFlashcards'
@@ -54,21 +55,35 @@ export function FlashcardsCard() {
             {isLoading ? '…' : countLabel}
           </span>
         </div>
-        <Link
-          to="/app/flashcards"
-          className={cn(
-            'inline-flex w-full items-center justify-center rounded-full px-4 py-2.5 text-sm font-bold text-white shadow-[0_8px_24px_-6px_var(--bloomora-list-panel-glow)] transition sm:w-auto',
-            'bg-gradient-to-r from-[var(--bloomora-list-cta-from)] via-[var(--bloomora-list-cta-via)] to-[var(--bloomora-list-cta-to)] hover:brightness-[1.04]',
-          )}
-        >
-          Abrir flashcards
-          <span aria-hidden className="ml-1">
-            ›
-          </span>
-        </Link>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <Link
+            to="/app/flashcards?crear=rapido"
+            className={cn(
+              'inline-flex w-full items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-bold transition sm:w-auto',
+              'bg-bloomora-violet text-white shadow-[0_6px_20px_-6px_rgba(91,74,140,0.45)] hover:brightness-110',
+            )}
+          >
+            <span aria-hidden>⚡</span>
+            Modo rápido
+          </Link>
+          <Link
+            to="/app/flashcards"
+            className={cn(
+              'inline-flex w-full items-center justify-center rounded-full px-4 py-2.5 text-sm font-bold text-white shadow-[0_8px_24px_-6px_var(--bloomora-list-panel-glow)] transition sm:w-auto',
+              'bg-gradient-to-r from-[var(--bloomora-list-cta-from)] via-[var(--bloomora-list-cta-via)] to-[var(--bloomora-list-cta-to)] hover:brightness-[1.04]',
+            )}
+          >
+            Abrir flashcards
+            <span aria-hidden className="ml-1">
+              ›
+            </span>
+          </Link>
+        </div>
       </div>
       <p className="mt-2 text-sm leading-relaxed text-bloomora-text-muted">
-        Vocabulario en inglés con imagen y tarjetas que puedes voltear.
+        Vocabulario en inglés con imagen y tarjetas que puedes voltear.{' '}
+        <strong className="font-semibold text-bloomora-violet">Modo rápido</strong>: palabra +
+        significado al momento (máx. {QUICK_FLASHCARD_DAILY_LIMIT}/día).
       </p>
 
       {!isLoading && categories.length > 0 ? (

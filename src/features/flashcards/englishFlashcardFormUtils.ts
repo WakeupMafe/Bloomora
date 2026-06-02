@@ -10,6 +10,8 @@ import {
   type VerbForms,
 } from '@/features/flashcards/verbFormsCodec'
 import type { EnglishFlashcard, EnglishFlashcardInput } from '@/types/englishFlashcard'
+import { QUICK_FLASHCARD_PLACEHOLDER_IMAGE } from '@/types/englishFlashcard'
+import { isQuickFlashcardComplete, isQuickFlashcardDraft } from '@/features/flashcards/flashcardQuickMode'
 
 export type FlashcardFormState = {
   englishWord: string
@@ -62,7 +64,8 @@ export function flashcardToFormState(card: EnglishFlashcard): FlashcardFormState
     exampleSpanish: card.exampleSpanish ?? '',
     category: card.category ?? '',
     imageUrl: card.imageUrl,
-    imagePreview: card.imageUrl,
+    imagePreview:
+      card.imageUrl === QUICK_FLASHCARD_PLACEHOLDER_IMAGE ? null : card.imageUrl,
   }
 }
 
@@ -87,6 +90,53 @@ export function formStateToInput(state: FlashcardFormState): EnglishFlashcardInp
     exampleSpanish: state.exampleSpanish || null,
     imageUrl: state.imageUrl,
     category: state.category || null,
+    entryMode: 'full',
+    isQuickDraft: false,
+  }
+}
+
+export function quickFormToInput(
+  englishWord: string,
+  spanishMeaning: string,
+): EnglishFlashcardInput {
+  return {
+    englishWord: englishWord.trim(),
+    spanishMeaning: spanishMeaning.trim(),
+    pronunciation: null,
+    shortMeaning: null,
+    exampleEnglish: null,
+    exampleSpanish: null,
+    imageUrl: QUICK_FLASHCARD_PLACEHOLDER_IMAGE,
+    category: null,
+    entryMode: 'quick',
+    isQuickDraft: true,
+  }
+}
+
+/** Al editar una tarjeta rápida, actualiza flags según imagen y ejemplos. */
+export function formStateToInputForCard(
+  state: FlashcardFormState,
+  editing: EnglishFlashcard | null,
+): EnglishFlashcardInput {
+  const input = formStateToInput(state)
+  if (!editing || !isQuickFlashcardDraft(editing)) {
+    return input
+  }
+
+  const draftCard = {
+    isQuickDraft: true,
+    imageUrl: input.imageUrl,
+    exampleEnglish: input.exampleEnglish,
+    exampleSpanish: input.exampleSpanish,
+    entryMode: 'quick' as const,
+  }
+  const complete = isQuickFlashcardComplete(draftCard)
+
+  return {
+    ...input,
+    entryMode: 'quick',
+    isQuickDraft: !complete,
+    imageUrl: complete ? input.imageUrl : input.imageUrl || QUICK_FLASHCARD_PLACEHOLDER_IMAGE,
   }
 }
 

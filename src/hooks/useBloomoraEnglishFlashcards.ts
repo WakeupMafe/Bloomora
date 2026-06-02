@@ -15,6 +15,7 @@ import {
   type CategorySummary,
 } from '@/features/flashcards/groupFlashcardsByCategory'
 import { resolveVerbForms } from '@/features/flashcards/verbFormsCodec'
+import { QUICK_FLASHCARD_PLACEHOLDER_IMAGE } from '@/types/englishFlashcard'
 import type { EnglishFlashcard, EnglishFlashcardInput } from '@/types/englishFlashcard'
 
 const QUERY_KEY = 'flashcards-english'
@@ -22,6 +23,11 @@ const FLASHCARDS_STALE_MS = 5 * 60_000
 
 function rowToFlashcard(r: FlashcardEnglishRow): EnglishFlashcard {
   const category = r.category
+  const quickByImage = r.image_url === QUICK_FLASHCARD_PLACEHOLDER_IMAGE
+  const entryMode =
+    r.entry_mode === 'quick' || quickByImage ? 'quick' : 'full'
+  const isQuickDraft = r.is_quick_draft === true || quickByImage
+
   return {
     id: String(r.id),
     englishWord: r.english_word,
@@ -33,6 +39,8 @@ function rowToFlashcard(r: FlashcardEnglishRow): EnglishFlashcard {
     exampleSpanish: r.example_spanish,
     imageUrl: r.image_url,
     category: r.category,
+    entryMode,
+    isQuickDraft,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   }

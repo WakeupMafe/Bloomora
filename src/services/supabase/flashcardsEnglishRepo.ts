@@ -18,6 +18,8 @@ export type FlashcardEnglishRow = {
   example_spanish: string | null
   image_url: string
   category: string | null
+  entry_mode?: string | null
+  is_quick_draft?: boolean | null
   created_at: string
   updated_at: string
 }

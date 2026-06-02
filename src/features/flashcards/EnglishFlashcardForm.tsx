@@ -5,7 +5,9 @@ import { useBloomoraToast } from '@/contexts/BloomoraToastContext'
 import { uploadFlashcardImage } from '@/services/supabase/flashcardImageUpload'
 import { requireSupabase } from '@/services/supabase/typedClient'
 import type { EnglishFlashcard } from '@/types/englishFlashcard'
+import { QUICK_FLASHCARD_PLACEHOLDER_IMAGE } from '@/types/englishFlashcard'
 import { FLASHCARD_IMAGE_REQUIRED_MESSAGE } from '@/types/englishFlashcard'
+import { isQuickFlashcardComplete, isQuickFlashcardDraft } from '@/features/flashcards/flashcardQuickMode'
 import {
   FLASHCARD_CATEGORY_OPTIONS,
   isGrammarCategory,
@@ -20,6 +22,7 @@ import {
   emptyFlashcardFormState,
   flashcardToFormState,
   formStateToInput,
+  formStateToInputForCard,
   isVerbFormValid,
   type FlashcardFormState,
 } from '@/features/flashcards/englishFlashcardFormUtils'
@@ -54,7 +57,12 @@ export function EnglishFlashcardForm({
   const set = (patch: Partial<FlashcardFormState>) =>
     setForm((prev) => ({ ...prev, ...patch }))
 
+  const isQuickDraftEdit = editing ? isQuickFlashcardDraft(editing) : false
   const hasImage = !!(form.imageUrl.trim() || form.imagePreview)
+  const showPlaceholderImage =
+    isQuickDraftEdit &&
+    form.imageUrl === QUICK_FLASHCARD_PLACEHOLDER_IMAGE &&
+    !form.imagePreview?.startsWith('blob:')
 
   const handleFile = async (file: File | undefined) => {
     if (!file) return
@@ -93,14 +101,14 @@ export function EnglishFlashcardForm({
       )
       return
     }
-    if (!form.imageUrl.trim()) {
+    if (!isQuickDraftEdit && !form.imageUrl.trim()) {
       await showAlert({
         title: 'Imagen requerida',
         description: FLASHCARD_IMAGE_REQUIRED_MESSAGE,
       })
       return
     }
-    onSave(formStateToInput(form))
+    onSave(formStateToInputForCard(form, editing))
   }
 
   return (
@@ -109,11 +117,18 @@ export function EnglishFlashcardForm({
       className="rounded-[20px] bg-white/80 p-5 ring-1 ring-bloomora-line/35 shadow-[0_8px_28px_-10px_rgba(91,74,140,0.15)] sm:p-6"
     >
       <h2 className="text-lg font-bold text-bloomora-deep">
-        {editing ? 'Editar palabra' : 'Nueva flashcard'}
+        {editing ? (isQuickDraftEdit ? 'Completar tarjeta rápida' : 'Editar palabra') : 'Nueva flashcard'}
       </h2>
       <p className="mt-1 text-sm text-bloomora-text-muted">
-        Asocia cada palabra con una imagen para memorizar mejor.
+        {isQuickDraftEdit
+          ? 'Añade imagen y ejemplos en inglés y español para terminar esta tarjeta.'
+          : 'Asocia cada palabra con una imagen para memorizar mejor.'}
       </p>
+      {editing && isQuickDraftEdit && !isQuickFlashcardComplete(editing) ? (
+        <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900 ring-1 ring-amber-200/80">
+          Pendiente: imagen + ejemplo en inglés + traducción del ejemplo.
+        </p>
+      ) : null}
 
       <FlashcardFormField
         className="mt-5"
@@ -130,7 +145,7 @@ export function EnglishFlashcardForm({
               !hasImage && 'justify-center',
             )}
           >
-            {form.imagePreview ? (
+            {form.imagePreview && !showPlaceholderImage ? (
               <BloomoraImage
                 src={form.imagePreview}
                 alt=""
@@ -139,7 +154,7 @@ export function EnglishFlashcardForm({
               />
             ) : (
               <span className="px-3 text-center text-xs font-medium text-bloomora-text-muted">
-                Sin imagen aún
+                {isQuickDraftEdit ? 'Sin imagen aún' : 'Sin imagen aún'}
               </span>
             )}
           </div>
@@ -161,7 +176,9 @@ export function EnglishFlashcardForm({
               {uploading ? 'Subiendo…' : 'Elegir imagen'}
             </Button>
             <p className="text-xs text-bloomora-text-muted">
-              Obligatoria para guardar la palabra.
+              {isQuickDraftEdit
+                ? 'Obligatoria para completar la tarjeta rápida.'
+                : 'Obligatoria para guardar la palabra.'}
             </p>
           </div>
         </div>

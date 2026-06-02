@@ -5,6 +5,7 @@ import {
   isVerbsCategory,
 } from '@/features/flashcards/flashcardCategories'
 import { getCategoryTheme } from '@/features/flashcards/flashcardCategoryTheme'
+import { isQuickFlashcardComplete, isQuickFlashcardDraft } from '@/features/flashcards/flashcardQuickMode'
 import {
   HeartFilledIcon,
   HeartOutlineIcon,
@@ -53,6 +54,7 @@ export const EnglishFlashcardCard = memo(function EnglishFlashcardCard({
   const showVerbs = verbForms && (verbForms.v1 || verbForms.v2 || verbForms.v3)
   const isGrammar = isGrammarCategory(card.category)
   const grammarExplanation = isGrammar ? card.shortMeaning?.trim() : null
+  const quickPending = isQuickFlashcardDraft(card) && !isQuickFlashcardComplete(card)
 
   const speak = useCallback(() => {
     const text = primaryEnglishDisplay(card.englishWord, card.category)
@@ -109,6 +111,11 @@ export const EnglishFlashcardCard = memo(function EnglishFlashcardCard({
         >
           {theme.badge}
         </span>
+        {quickPending ? (
+          <span className="mt-1.5 inline-flex w-fit rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-900 ring-1 ring-amber-200/80">
+            Rápida · completar
+          </span>
+        ) : null}
 
         <h3
           className={cn(

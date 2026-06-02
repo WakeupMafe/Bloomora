@@ -1,41 +1,88 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { BackButton } from '@/components/navigation/BackButton'
 import { useBloomoraToast } from '@/contexts/BloomoraToastContext'
 import { useUserPhone } from '@/contexts/UserPhoneContext'
 import { EnglishFlashcardForm } from '@/features/flashcards/EnglishFlashcardForm'
 import { EnglishFlashcardList } from '@/features/flashcards/EnglishFlashcardList'
+import { EnglishFlashcardQuickForm } from '@/features/flashcards/EnglishFlashcardQuickForm'
+import { FlashcardCreateModeBar } from '@/features/flashcards/FlashcardCreateModeBar'
 import { SparkleIcon } from '@/features/flashcards/FlashcardIcons'
-import { formStateToInput } from '@/features/flashcards/englishFlashcardFormUtils'
+import {
+  evaluateQuickFlashcardQuota,
+  isQuickFlashcardComplete,
+  isQuickFlashcardDraft,
+  quickQuotaMessage,
+  type FlashcardCreateMode,
+} from '@/features/flashcards/flashcardQuickMode'
+import { useBloomoraAlert } from '@/contexts/BloomoraAlertContext'
 import {
   useBloomoraEnglishFlashcards,
   useEnglishFlashcardMutations,
 } from '@/hooks/useBloomoraEnglishFlashcards'
 import { messageFromSupabaseError } from '@/lib/supabaseError'
-import type { EnglishFlashcard } from '@/types/englishFlashcard'
-import { cn } from '@/utils/cn'
+import type { EnglishFlashcard, EnglishFlashcardInput } from '@/types/englishFlashcard'
 
 type ViewMode = 'list' | 'form'
 
 export function EnglishFlashcardsPage() {
   const { cedula } = useUserPhone()
   const { showToast } = useBloomoraToast()
+  const { alert: showAlert } = useBloomoraAlert()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { data: cards = [], isLoading } = useBloomoraEnglishFlashcards(cedula)
   const { insertMut, updateMut, deleteMut } = useEnglishFlashcardMutations(cedula)
 
   const [view, setView] = useState<ViewMode>('list')
+  const [createMode, setCreateMode] = useState<FlashcardCreateMode>('full')
   const [editing, setEditing] = useState<EnglishFlashcard | null>(null)
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<EnglishFlashcard | null>(null)
 
-  const openCreate = () => {
+  const quickQuota = useMemo(() => evaluateQuickFlashcardQuota(cards), [cards])
+  const pendingQuickCards = useMemo(
+    () => cards.filter((c) => isQuickFlashcardDraft(c) && !isQuickFlashcardComplete(c)),
+    [cards],
+  )
+
+  useEffect(() => {
+    if (isLoading || searchParams.get('crear') !== 'rapido') return
+    setSearchParams({}, { replace: true })
+    void (async () => {
+      const quota = evaluateQuickFlashcardQuota(cards)
+      if (!quota.canCreate) {
+        await showAlert({
+          title: 'Modo rápido no disponible',
+          description: quickQuotaMessage(quota),
+        })
+        return
+      }
+      setCreateMode('quick')
+      setEditing(null)
+      setView('form')
+    })()
+  }, [cards, isLoading, searchParams, setSearchParams, showAlert])
+
+  const tryOpenCreate = async (mode: FlashcardCreateMode) => {
+    if (mode === 'quick') {
+      const quota = evaluateQuickFlashcardQuota(cards)
+      if (!quota.canCreate) {
+        await showAlert({
+          title: 'Modo rápido no disponible',
+          description: quickQuotaMessage(quota),
+        })
+        return
+      }
+    }
+    setCreateMode(mode)
     setEditing(null)
     setView('form')
   }
 
   const openEdit = (card: EnglishFlashcard) => {
     setEditing(card)
+    setCreateMode('full')
     setView('form')
   }
 
@@ -44,14 +91,17 @@ export function EnglishFlashcardsPage() {
     setView('list')
   }
 
-  const handleSave = (input: ReturnType<typeof formStateToInput>) => {
+  const handleSave = (input: EnglishFlashcardInput) => {
     if (!cedula) return
     if (editing) {
       updateMut.mutate(
         { id: editing.id, input },
         {
           onSuccess: () => {
-            showToast('Flashcard actualizada')
+            const completed = editing.isQuickDraft && !input.isQuickDraft
+            showToast(
+              completed ? 'Tarjeta rápida completada' : 'Flashcard actualizada',
+            )
             closeForm()
           },
           onError: (err) =>
@@ -61,7 +111,11 @@ export function EnglishFlashcardsPage() {
     } else {
       insertMut.mutate(input, {
         onSuccess: () => {
-          showToast('¡Palabra guardada!')
+          showToast(
+            input.entryMode === 'quick'
+              ? 'Palabra guardada en modo rápido'
+              : '¡Palabra guardada!',
+          )
           closeForm()
         },
         onError: (err) =>
@@ -93,48 +147,98 @@ export function EnglishFlashcardsPage() {
               <SparkleIcon className="text-amber-400" />
             </h1>
             <p className="mt-2 max-w-md text-sm leading-relaxed text-bloomora-text-muted sm:text-[0.9375rem]">
-              Aprende vocabulario en inglés con memoria visual.
+              Aprende vocabulario en inglés con memoria visual. Usa{' '}
+              <strong className="font-semibold text-bloomora-violet">Modo rápido</strong>{' '}
+              para anotar palabra y significado (hasta 6 al día).
             </p>
           </div>
-          <button
-            type="button"
-            onClick={openCreate}
-            className={cn(
-              'inline-flex shrink-0 items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white shadow-[0_8px_28px_-6px_rgba(236,72,153,0.45)] transition',
-              'bg-gradient-to-r from-[#f687b3] via-[#f9a8d4] to-[#f6ad55] hover:brightness-[1.03] active:scale-[0.99]',
-            )}
-          >
-            <span className="text-lg leading-none" aria-hidden>
-              +
-            </span>
-            Nueva palabra
-          </button>
+          <FlashcardCreateModeBar
+            mode={createMode}
+            onModeChange={setCreateMode}
+            quickQuota={quickQuota}
+            onCreateFull={() => void tryOpenCreate('full')}
+            onCreateQuick={() => void tryOpenCreate('quick')}
+            layout="stack"
+          />
         </header>
       ) : (
         <header>
           <h1 className="text-xl font-bold text-bloomora-deep">
-            {editing ? 'Editar palabra' : 'Nueva palabra'}
+            {editing
+              ? editing.isQuickDraft
+                ? 'Completar tarjeta rápida'
+                : 'Editar palabra'
+              : createMode === 'quick'
+                ? 'Nueva tarjeta rápida'
+                : 'Nueva palabra'}
           </h1>
           <p className="mt-1 text-sm text-bloomora-text-muted">
-            Completa los campos y asocia una imagen.
+            {editing?.isQuickDraft
+              ? 'Añade imagen y ejemplos para finalizar.'
+              : createMode === 'quick'
+                ? 'Solo palabra y significado por ahora.'
+                : 'Completa los campos y asocia una imagen.'}
           </p>
         </header>
       )}
 
       {view === 'form' && cedula ? (
         <div className="mt-6">
-          <EnglishFlashcardForm
-            cedula={cedula}
-            editing={editing}
-            isPending={isFormPending}
-            onCancel={closeForm}
-            onSave={handleSave}
-          />
+          {!editing && createMode === 'quick' ? (
+            <EnglishFlashcardQuickForm
+              isPending={isFormPending}
+              remainingToday={
+                quickQuota.canCreate ? quickQuota.remaining : 0
+              }
+              onCancel={closeForm}
+              onSave={handleSave}
+            />
+          ) : (
+            <EnglishFlashcardForm
+              cedula={cedula}
+              editing={editing}
+              isPending={isFormPending}
+              onCancel={closeForm}
+              onSave={handleSave}
+            />
+          )}
         </div>
       ) : null}
 
       {view === 'list' ? (
-        <div className="mt-8">
+        <div className="mt-8 space-y-4">
+          {pendingQuickCards.length > 0 ? (
+            <div className="rounded-2xl border border-amber-200/80 bg-amber-50/90 px-4 py-3 ring-1 ring-amber-100">
+              <p className="text-sm font-semibold text-amber-950">
+                {pendingQuickCards.length} tarjeta(s) rápida(s) sin completar
+              </p>
+              <p className="mt-1 text-xs text-amber-900/85">
+                Puedes seguir añadiendo en modo rápido hasta {quickQuota.limit} al día
+                {quickQuota.canCreate ? (
+                  <>
+                    {' '}
+                    ({quickQuota.remaining} restante{quickQuota.remaining === 1 ? '' : 's'}).
+                  </>
+                ) : (
+                  '.'
+                )}{' '}
+                Edítalas cuando quieras para añadir imagen y ejemplos.
+              </p>
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {pendingQuickCards.slice(0, 6).map((card) => (
+                  <li key={card.id}>
+                    <button
+                      type="button"
+                      onClick={() => openEdit(card)}
+                      className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-amber-950 ring-1 ring-amber-200/80 hover:bg-amber-100/80"
+                    >
+                      {card.englishWord || 'Sin título'} → completar
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           {isLoading ? (
             <p className="text-sm text-bloomora-text-muted">Cargando flashcards…</p>
           ) : (
