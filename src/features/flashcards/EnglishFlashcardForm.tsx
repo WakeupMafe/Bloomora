@@ -64,8 +64,12 @@ export function EnglishFlashcardForm({
     }
     setUploading(true)
     try {
-      const url = await uploadFlashcardImage(requireSupabase(), cedula, file)
-      const preview = URL.createObjectURL(file)
+      const { url, compressed } = await uploadFlashcardImage(
+        requireSupabase(),
+        cedula,
+        file,
+      )
+      const preview = URL.createObjectURL(compressed)
       set({ imageUrl: url, imagePreview: preview })
     } catch {
       showToast('No se pudo subir la imagen. Revisa la conexión o el bucket.')

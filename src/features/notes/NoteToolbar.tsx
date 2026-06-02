@@ -19,6 +19,7 @@ type NoteToolbarProps = {
   onRedo: () => void
   onExportPdf: () => void
   onPrint: () => void
+  onInsertPageBreak: () => void
   pageSize: EnglishNotePageSize
   onPageSizeChange: (v: EnglishNotePageSize) => void
   pageNumberEnabled: boolean
@@ -61,7 +62,9 @@ const iconBtnClass = '!min-h-9 !min-w-9 !px-0'
 const NOTE_SHORTCUTS = [
   { keys: 'Ctrl+G', desc: 'Guardar en Supabase' },
   { keys: 'Ctrl+O', desc: 'Formato del texto (selección o al escribir)' },
-  { keys: 'Ctrl + + / −', desc: 'Tamaño de letra ±10 px (con selección)' },
+  { keys: 'Ctrl+B', desc: 'Negrita' },
+  { keys: 'Ctrl+Z / Ctrl+Y', desc: 'Deshacer / rehacer' },
+  { keys: 'Ctrl + + / −', desc: 'Tamaño de letra ±10 px' },
 ] as const
 
 function InfoIcon() {
@@ -202,6 +205,15 @@ export function NoteToolbar(props: NoteToolbarProps) {
             </Button>
             <Button type="button" variant="secondary" size="sm" onClick={props.onInsertImage}>
               Imagen
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={props.onInsertPageBreak}
+              title="Salto de hoja manual"
+            >
+              Salto hoja
             </Button>
             <Button type="button" variant="secondary" size="sm" onClick={props.onExportPdf}>
               PDF

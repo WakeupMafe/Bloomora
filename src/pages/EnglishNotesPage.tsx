@@ -17,6 +17,7 @@ import {
 import { NotesList } from '@/features/notes/NotesList'
 import {
   useBloomoraEnglishNotes,
+  useEnglishNoteDetail,
   useEnglishNoteMutations,
 } from '@/hooks/useBloomoraEnglishNotes'
 import { messageFromSupabaseError } from '@/lib/supabaseError'
@@ -38,15 +39,26 @@ export function EnglishNotesPage() {
   const [draftNote, setDraftNote] = useState<EnglishNote | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
 
+  const detailNoteId =
+    activeId && !isDraftNoteId(activeId) ? activeId : null
+  const {
+    data: activeDetail,
+    isFetching: isActiveDetailLoading,
+  } = useEnglishNoteDetail(cedula, detailNoteId)
+
   const visibleNotes = useMemo(() => {
     if (!draftNote) return notes
     return [draftNote, ...notes]
   }, [notes, draftNote])
 
-  const active = useMemo(
-    () => visibleNotes.find((n) => n.id === activeId) ?? null,
-    [visibleNotes, activeId],
-  )
+  const active = useMemo(() => {
+    if (!activeId) return null
+    if (draftNote?.id === activeId) return draftNote
+    const summary = visibleNotes.find((n) => n.id === activeId)
+    if (!summary) return null
+    if (activeDetail?.id === activeId) return activeDetail
+    return summary
+  }, [activeId, activeDetail, draftNote, visibleNotes])
 
   useEffect(() => {
     if (visibleNotes.length === 0) {
@@ -182,8 +194,12 @@ export function EnglishNotesPage() {
           />
           <NoteEditor
             note={active}
+            userCedula={cedula}
             onPatch={patchNote}
             isNotesLoading={isLoading}
+            isNoteContentLoading={
+              !!detailNoteId && isActiveDetailLoading && !activeDetail
+            }
             hasSavedNotes={notes.length > 0}
             isDraft={active ? isDraftNoteId(active.id) : false}
           />

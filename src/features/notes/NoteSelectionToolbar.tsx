@@ -192,6 +192,12 @@ export function useNoteSelectionToolbar(editorRef: React.RefObject<HTMLDivElemen
     }
   }, [panel, editorRef])
 
+  const prepareSelectionForFormat = useCallback(() => {
+    const editor = editorRef.current
+    if (!editor || !savedSelectionRef.current) return false
+    return restoreEditorSelection(editor, savedSelectionRef.current)
+  }, [editorRef])
+
   return {
     coords: panel?.coords ?? null,
     mode: panel?.mode ?? 'options',
@@ -199,6 +205,7 @@ export function useNoteSelectionToolbar(editorRef: React.RefObject<HTMLDivElemen
     openFormatting,
     dismiss,
     preserveSelectionApply,
+    prepareSelectionForFormat,
   }
 }
 
@@ -274,6 +281,7 @@ export function NoteSelectionToolbar({
   onAlignLeft,
   onApplyTextoPreset,
   onClose,
+  onPrepareSelection,
 }: {
   coords: NoteSelectionToolbarCoords | null
   mode: NoteSelectionToolbarMode
@@ -294,10 +302,14 @@ export function NoteSelectionToolbar({
   onAlignLeft: () => void
   onApplyTextoPreset?: () => void
   onClose?: () => void
+  onPrepareSelection?: () => void
 }) {
   if (!coords) return null
 
-  const keepSelection = (e: React.MouseEvent) => e.preventDefault()
+  const keepSelection = (e: React.MouseEvent) => {
+    e.preventDefault()
+    onPrepareSelection?.()
+  }
   const isOptions = mode === 'options'
   const close = onClose ?? (() => {})
 

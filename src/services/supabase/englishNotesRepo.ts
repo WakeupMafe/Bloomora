@@ -29,6 +29,12 @@ export type EnglishNoteRow = {
   updated_at: string
 }
 
+/** Columnas ligeras para la lista (sin HTML pesado). */
+export type EnglishNoteListRow = Omit<EnglishNoteRow, 'content_html' | 'plain_text'>
+
+const ENGLISH_NOTE_LIST_COLUMNS =
+  'id, user_cedula, title, category, title_font, title_color, page_size, page_number_enabled, two_columns, cover_image_url, created_at, updated_at'
+
 function trimOrNull(v: string | null | undefined): string | null {
   if (v == null) return null
   const t = v.trim()
@@ -70,14 +76,29 @@ const DEFAULT_NOTE_INPUT: EnglishNoteInput = {
 export async function listEnglishNotes(
   sb: SupabaseClient,
   userCedula: string,
-): Promise<EnglishNoteRow[]> {
+): Promise<EnglishNoteListRow[]> {
   const { data, error } = await sb
     .from('english_notes')
-    .select('*')
+    .select(ENGLISH_NOTE_LIST_COLUMNS)
     .eq('user_cedula', userCedula.trim())
     .order('updated_at', { ascending: false })
   if (error) throwRepoError(error)
-  return (data ?? []) as EnglishNoteRow[]
+  return (data ?? []) as EnglishNoteListRow[]
+}
+
+export async function getEnglishNoteById(
+  sb: SupabaseClient,
+  userCedula: string,
+  noteId: number,
+): Promise<EnglishNoteRow> {
+  const { data, error } = await sb
+    .from('english_notes')
+    .select('*')
+    .eq('id', noteId)
+    .eq('user_cedula', userCedula.trim())
+    .single()
+  if (error) throwRepoError(error)
+  return data as EnglishNoteRow
 }
 
 export async function insertEnglishNote(
@@ -151,4 +172,12 @@ export function rowToEnglishNote(row: EnglishNoteRow) {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
+}
+
+export function rowToEnglishNoteListItem(row: EnglishNoteListRow) {
+  return rowToEnglishNote({
+    ...row,
+    content_html: '',
+    plain_text: '',
+  })
 }

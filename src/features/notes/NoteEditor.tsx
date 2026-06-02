@@ -2,12 +2,25 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Card } from '@/components/ui/Card'
 import { bloomoraInputClass, bloomoraPanelCardClass } from '@/components/ui/formControls'
 import { useBloomoraToast } from '@/contexts/BloomoraToastContext'
-import { NotePageNumbers } from '@/features/notes/NotePageNumbers'
+import { NotePagesEditor } from '@/features/notes/NotePagesEditor'
+import {
+  collectPagesHtmlFromRefs,
+  parseNotePagesFromHtml,
+  serializeNotePagesHtml,
+  type NotePageSlice,
+} from '@/features/notes/notePageLayoutUtils'
 import {
   NoteSelectionToolbar,
   useNoteSelectionToolbar,
 } from '@/features/notes/NoteSelectionToolbar'
+import {
+  optimizeNoteHtmlForDisplay,
+  restoreNoteHtmlImageSources,
+  uploadImagesInNoteHtml,
+} from '@/features/notes/noteHtmlImages'
 import { isDraftNoteId } from '@/features/notes/noteDraftUtils'
+import { uploadEnglishNoteImage } from '@/services/supabase/englishNoteImageUpload'
+import { requireSupabase } from '@/services/supabase/typedClient'
 import { NoteToolbar } from '@/features/notes/NoteToolbar'
 import {
   BODY_TYPING_DEFAULTS,
@@ -22,18 +35,18 @@ import {
   applyNoteTextCaseToSelection,
   adjustNoteSelectionFontSize,
   applyTypingDefaultsAtCaret,
-  attachNoteImageDragHandlers,
   buildNotePrintDocumentHtml,
   clearNoteSelectionHighlight,
-  enhanceNoteImages,
   insertImageInEditor,
   insertParagraphWithTypingDefaults,
   NOTE_FONT_SIZE_MAX_PX,
   NOTE_FONT_SIZE_MIN_PX,
   NOTE_FONT_SIZE_STEP_PX,
-  notePageSheetClass,
   noteTextAlignExecCommand,
   printNoteDocument,
+  readFormatFromEditorSelection,
+  readFormatFromEditorCaret,
+  runEditorCommand,
 } from '@/features/notes/noteEditorUtils'
 import type { NoteTextOptionsValues } from '@/features/notes/NoteTextOptionsPanel'
 import type { NoteFontWeight, NoteTextAlign, NoteTextCase } from '@/features/notes/noteTypingDefaults'
@@ -45,8 +58,39 @@ import type {
 } from '@/types/englishNote'
 import { cn } from '@/utils/cn'
 
+function defaultsToPanelFormat(
+  d: NoteTypingDefaults,
+  highlight: string | null,
+): NoteTextOptionsValues {
+  return {
+    font: d.font,
+    fontSizePx: d.fontSizePx,
+    colorId: d.color,
+    align: d.align,
+    fontWeight: d.fontWeight,
+    lineHeight: d.lineHeight,
+    textCase: d.textCase,
+    highlightColor: highlight,
+  }
+}
+
+function readToPanelFormatPatch(
+  read: Partial<NoteTypingDefaults>,
+): Partial<NoteTextOptionsValues> {
+  const patch: Partial<NoteTextOptionsValues> = {}
+  if (read.font) patch.font = read.font
+  if (read.fontSizePx != null) patch.fontSizePx = read.fontSizePx
+  if (read.color) patch.colorId = read.color
+  if (read.align) patch.align = read.align
+  if (read.fontWeight) patch.fontWeight = read.fontWeight
+  if (read.lineHeight != null) patch.lineHeight = read.lineHeight
+  if (read.textCase) patch.textCase = read.textCase
+  return patch
+}
+
 type NoteEditorProps = {
   note: EnglishNote | null
+  userCedula: string | null
   onPatch: (
     noteId: string,
     patch: Partial<{
@@ -63,20 +107,27 @@ type NoteEditorProps = {
     }>,
   ) => Promise<boolean>
   isNotesLoading?: boolean
+  isNoteContentLoading?: boolean
   hasSavedNotes?: boolean
   isDraft?: boolean
 }
 
 export function NoteEditor({
   note,
+  userCedula,
   onPatch,
   isNotesLoading = false,
+  isNoteContentLoading = false,
   hasSavedNotes = false,
   isDraft = false,
 }: NoteEditorProps) {
   const { showToast } = useBloomoraToast()
   const editorRef = useRef<HTMLDivElement>(null)
-  const sheetRef = useRef<HTMLElement>(null)
+  const pageContentRefsRef = useRef<Array<HTMLDivElement | null>>([])
+  const insertPageBreakRef = useRef<(() => void) | null>(null)
+  const [pages, setPages] = useState<NotePageSlice[]>([
+    { id: 'page-initial', html: '<p><br /></p>' },
+  ])
   const imgInputRef = useRef<HTMLInputElement>(null)
   const [saveLabel, setSaveLabel] = useState(
     isDraft ? 'Apunte nuevo · pulsa Ctrl+G para guardar' : 'Pulsa Guardar o Ctrl+G para guardar',
@@ -97,8 +148,15 @@ export function NoteEditor({
     ...BODY_TYPING_DEFAULTS,
   })
   const [highlightColor, setHighlightColor] = useState<string | null>(null)
+  const [panelFormat, setPanelFormat] = useState<NoteTextOptionsValues>(() =>
+    defaultsToPanelFormat(BODY_TYPING_DEFAULTS, null),
+  )
   const typingDefaultsRef = useRef<NoteTypingDefaults>({ ...BODY_TYPING_DEFAULTS })
   typingDefaultsRef.current = typingDefaults
+
+  const patchPanelFormat = useCallback((patch: Partial<NoteTextOptionsValues>) => {
+    setPanelFormat((prev) => ({ ...prev, ...patch }))
+  }, [])
 
   noteRef.current = note
   titleDraftRef.current = titleDraft
@@ -119,6 +177,7 @@ export function NoteEditor({
     openFormatting,
     dismiss: dismissSelectionToolbar,
     preserveSelectionApply,
+    prepareSelectionForFormat,
   } = useNoteSelectionToolbar(editorRef)
 
   const applyTypingFormat = useCallback(
@@ -136,9 +195,15 @@ export function NoteEditor({
 
   const applySelectionFormat = useCallback(
     (fn: () => void) => {
+      const editor = editorRef.current
+      if (!editor) return
       if (formatTarget === 'selection') {
-        preserveSelectionApply(fn)
+        preserveSelectionApply(() => {
+          editor.focus({ preventScroll: true })
+          fn()
+        })
       } else {
+        editor.focus({ preventScroll: true })
         fn()
       }
       markUnsaved()
@@ -146,16 +211,25 @@ export function NoteEditor({
     [formatTarget, preserveSelectionApply, markUnsaved],
   )
 
-  const optionValues: NoteTextOptionsValues = {
-    font: typingDefaults.font,
-    fontSizePx: typingDefaults.fontSizePx,
-    colorId: typingDefaults.color,
-    align: typingDefaults.align,
-    fontWeight: typingDefaults.fontWeight,
-    lineHeight: typingDefaults.lineHeight,
-    textCase: typingDefaults.textCase,
-    highlightColor,
-  }
+  useEffect(() => {
+    if (!selectionCoords || selectionMode !== 'options') return
+    const editor = editorRef.current
+    if (!editor) return
+    if (formatTarget === 'selection') {
+      prepareSelectionForFormat()
+    }
+    const read =
+      formatTarget === 'selection'
+        ? readFormatFromEditorSelection(editor)
+        : readFormatFromEditorCaret(editor)
+    if (read) {
+      setPanelFormat((prev) => ({ ...prev, ...readToPanelFormatPatch(read) }))
+    } else {
+      setPanelFormat(defaultsToPanelFormat(typingDefaultsRef.current, highlightColor))
+    }
+  }, [selectionCoords, selectionMode, formatTarget, prepareSelectionForFormat])
+
+  const optionValues = panelFormat
 
   useEffect(() => {
     if (!note) return
@@ -173,31 +247,50 @@ export function NoteEditor({
   }, [note?.id])
 
   useEffect(() => {
-    if (!note || !editorRef.current) return
-    editorRef.current.innerHTML = note.contentHtml || '<p><br /></p>'
-    enhanceNoteImages(editorRef.current)
-  }, [note?.id])
+    if (!note) return
+    const displayHtml = optimizeNoteHtmlForDisplay(note.contentHtml)
+    setPages(parseNotePagesFromHtml(displayHtml))
+  }, [note?.id, note?.contentHtml])
 
   const readEditorPayload = () => {
-    const el = editorRef.current
-    if (!el) return null
-    const html = el.innerHTML
+    const pageHtmlList = collectPagesHtmlFromRefs(pageContentRefsRef.current)
+    const html = restoreNoteHtmlImageSources(serializeNotePagesHtml(pageHtmlList))
     const doc = new DOMParser().parseFromString(html, 'text/html')
+    const plainRoot = doc.body
     return {
       contentHtml: html,
-      plainText: el.innerText,
+      plainText: plainRoot.textContent ?? '',
       coverImageUrl: doc.querySelector('img')?.getAttribute('src') ?? null,
     }
   }
 
+  const preparePayloadForSave = useCallback(
+    async (payload: ReturnType<typeof readEditorPayload>) => {
+      if (!userCedula) return payload
+      const sb = requireSupabase()
+      const contentHtml = await uploadImagesInNoteHtml(
+        sb,
+        userCedula,
+        payload.contentHtml,
+      )
+      return { ...payload, contentHtml }
+    },
+    [userCedula],
+  )
+
   const saveNow = useCallback(async (): Promise<boolean> => {
     const current = noteRef.current
-    if (!current || !editorRef.current) return false
+    if (!current) return false
 
     setSaveLabel('Guardando en Supabase...')
 
-    const payload = readEditorPayload()
-    if (!payload) return false
+    let payload = readEditorPayload()
+    if (userCedula) {
+      if (payload.contentHtml.includes('data:image/')) {
+        setSaveLabel('Optimizando imágenes...')
+      }
+      payload = await preparePayloadForSave(payload)
+    }
 
     const ok = await onPatchRef.current(current.id, {
       title: titleDraftRef.current,
@@ -214,14 +307,7 @@ export function NoteEditor({
       setSaveLabel('Error al guardar')
     }
     return ok
-  }, [showToast])
-
-  useEffect(() => {
-    const el = editorRef.current
-    if (!el || !note) return
-    enhanceNoteImages(el)
-    return attachNoteImageDragHandlers(el, markUnsaved)
-  }, [note?.id, markUnsaved])
+  }, [preparePayloadForSave, showToast, userCedula])
 
   useEffect(() => {
     if (!note) return
@@ -236,24 +322,43 @@ export function NoteEditor({
   }, [note?.id, saveNow])
 
   const cmd = (command: string, value?: string) => {
-    document.execCommand(command, false, value)
-    editorRef.current?.focus()
+    const editor = editorRef.current
+    if (!editor) return
+    runEditorCommand(editor, command, value)
     markUnsaved()
+  }
+
+  const editorHasTextSelection = (editor: HTMLElement) => {
+    const sel = window.getSelection()
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return false
+    if (!editor.contains(sel.getRangeAt(0).commonAncestorContainer)) return false
+    return !!sel.toString().trim()
   }
 
   const insertImageAtCursor = async (file: File | undefined) => {
     if (!file || !editorRef.current) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      const src = String(reader.result ?? '')
-      if (!src) return
-      const inserted = insertImageInEditor(editorRef.current!, src)
+    if (!file.type.startsWith('image/')) {
+      showToast('Elige un archivo de imagen.')
+      return
+    }
+    if (!userCedula) {
+      showToast('Inicia sesión para subir imágenes.')
+      return
+    }
+
+    setSaveLabel('Subiendo imagen...')
+    try {
+      const url = await uploadEnglishNoteImage(requireSupabase(), userCedula, file)
+      const inserted = insertImageInEditor(editorRef.current, url)
       if (inserted) {
         markUnsaved()
-        showToast('Imagen insertada. Arrastrala y pulsa Ctrl+G para guardar.')
+        setSaveLabel('Cambios sin guardar')
+        showToast('Imagen insertada (comprimida). Pulsa Ctrl+G para guardar el apunte.')
       }
+    } catch {
+      showToast('No se pudo subir la imagen. Ejecuta la migración english-note-images en Supabase.')
+      setSaveLabel('Error al subir imagen')
     }
-    reader.readAsDataURL(file)
   }
 
   const handleImageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -263,7 +368,10 @@ export function NoteEditor({
 
   const openPrintWindow = (forPdf: boolean) => {
     if (!note) return
-    const html = editorRef.current?.innerHTML ?? note.contentHtml
+    const html =
+      restoreNoteHtmlImageSources(
+        serializeNotePagesHtml(collectPagesHtmlFromRefs(pageContentRefsRef.current)),
+      ) || note.contentHtml
     const w = window.open('', '_blank')
     if (!w) return
     const docTitle = titleDraft.trim() || 'Apunte'
@@ -299,17 +407,33 @@ export function NoteEditor({
 
     if (ctrlZoomIn && editor) {
       e.preventDefault()
-      preserveSelectionApply(() => {
-        adjustNoteSelectionFontSize(editor, NOTE_FONT_SIZE_STEP_PX)
-      })
+      if (editorHasTextSelection(editor)) {
+        preserveSelectionApply(() => {
+          adjustNoteSelectionFontSize(editor, NOTE_FONT_SIZE_STEP_PX)
+        })
+      } else {
+        const next = Math.min(
+          NOTE_FONT_SIZE_MAX_PX,
+          typingDefaultsRef.current.fontSizePx + NOTE_FONT_SIZE_STEP_PX,
+        )
+        applyTypingFormat({ fontSizePx: next })
+      }
       markUnsaved()
       return
     }
     if (ctrlZoomOut && editor) {
       e.preventDefault()
-      preserveSelectionApply(() => {
-        adjustNoteSelectionFontSize(editor, -NOTE_FONT_SIZE_STEP_PX)
-      })
+      if (editorHasTextSelection(editor)) {
+        preserveSelectionApply(() => {
+          adjustNoteSelectionFontSize(editor, -NOTE_FONT_SIZE_STEP_PX)
+        })
+      } else {
+        const next = Math.max(
+          NOTE_FONT_SIZE_MIN_PX,
+          typingDefaultsRef.current.fontSizePx - NOTE_FONT_SIZE_STEP_PX,
+        )
+        applyTypingFormat({ fontSizePx: next })
+      }
       markUnsaved()
       return
     }
@@ -325,12 +449,17 @@ export function NoteEditor({
       markUnsaved()
       return
     }
-    if (e.ctrlKey && e.key.toLowerCase() === 'b') {
+    if (e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'z') {
+      e.preventDefault()
+      cmd(e.shiftKey ? 'redo' : 'undo')
+      return
+    }
+    if (e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'b') {
       e.preventDefault()
       cmd('bold')
       return
     }
-    if (e.ctrlKey && e.key.toLowerCase() === 'y') {
+    if (e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'y') {
       e.preventDefault()
       cmd('redo')
       return
@@ -349,6 +478,14 @@ export function NoteEditor({
           : hasSavedNotes
             ? 'Selecciona un apunte de la lista.'
             : 'No hay apuntes guardados.'}
+      </Card>
+    )
+  }
+
+  if (isNoteContentLoading) {
+    return (
+      <Card variant="glass" className={cn(bloomoraPanelCardClass, 'p-8 text-center text-bloomora-text-muted')}>
+        Cargando contenido del apunte…
       </Card>
     )
   }
@@ -404,6 +541,7 @@ export function NoteEditor({
         onRedo={() => cmd('redo')}
         onExportPdf={() => openPrintWindow(true)}
         onPrint={() => openPrintWindow(false)}
+        onInsertPageBreak={() => insertPageBreakRef.current?.()}
         pageSize={pageSizeDraft}
         onPageSizeChange={(v) => {
           setPageSizeDraft(v)
@@ -428,10 +566,12 @@ export function NoteEditor({
         formatTarget={formatTarget}
         optionValues={optionValues}
         onClose={dismissSelectionToolbar}
+        onPrepareSelection={prepareSelectionForFormat}
         onApplyTextoPreset={() => {
           const next = { ...BODY_TYPING_DEFAULTS }
           typingDefaultsRef.current = next
           setTypingDefaults(next)
+          setPanelFormat(defaultsToPanelFormat(next, null))
           if (editorRef.current) {
             applyTypingDefaultsAtCaret(editorRef.current, next)
           }
@@ -439,69 +579,93 @@ export function NoteEditor({
           showToast('Formato Texto: Poppins, gris, alineado a la izquierda.')
         }}
         onTextColor={(hex, colorId) => {
+          patchPanelFormat({ colorId })
           if (formatTarget === 'typing') {
             applyTypingFormat({ colorHex: hex, color: colorId })
-            return
+          } else {
+            const editor = editorRef.current
+            if (!editor) return
+            applySelectionFormat(() => runEditorCommand(editor, 'foreColor', hex))
           }
-          applySelectionFormat(() => document.execCommand('foreColor', false, hex))
         }}
         onCustomTextColor={(hex) => {
+          patchPanelFormat({ colorId: 'black' })
           if (formatTarget === 'typing') {
             applyTypingFormat({ colorHex: hex, color: 'black' })
-            return
+          } else {
+            const editor = editorRef.current
+            if (!editor) return
+            applySelectionFormat(() => runEditorCommand(editor, 'foreColor', hex))
           }
-          applySelectionFormat(() => document.execCommand('foreColor', false, hex))
         }}
         onHighlight={(hex) => {
           setHighlightColor(hex)
-          applySelectionFormat(() => document.execCommand('hiliteColor', false, hex))
+          patchPanelFormat({ highlightColor: hex })
+          const editor = editorRef.current
+          if (!editor) return
+          applySelectionFormat(() => runEditorCommand(editor, 'hiliteColor', hex))
         }}
         onClearHighlight={() => {
           setHighlightColor(null)
+          patchPanelFormat({ highlightColor: null })
           const editor = editorRef.current
           if (!editor) return
           applySelectionFormat(() => clearNoteSelectionHighlight(editor))
         }}
         onFontWeight={(weight: NoteFontWeight) => {
+          patchPanelFormat({ fontWeight: weight })
           if (formatTarget === 'typing') {
             applyTypingFormat({ fontWeight: weight })
-            return
+          } else {
+            const editor = editorRef.current
+            if (!editor) return
+            applySelectionFormat(() => applyNoteFontWeightToSelection(editor, weight))
           }
-          const editor = editorRef.current
-          if (!editor) return
-          applySelectionFormat(() => applyNoteFontWeightToSelection(editor, weight))
         }}
         onAlign={(align: NoteTextAlign) => {
+          patchPanelFormat({ align })
           const editor = editorRef.current
           if (!editor) return
           if (formatTarget === 'typing') {
             applyTypingFormat({ align })
             applyBlockAlign(editor, align)
-            return
+          } else {
+            applySelectionFormat(() => {
+              runEditorCommand(editor, noteTextAlignExecCommand(align), undefined)
+              applyBlockAlign(editor, align)
+            })
           }
-          applySelectionFormat(() => {
-            editor.focus()
-            document.execCommand(noteTextAlignExecCommand(align), false)
-            applyBlockAlign(editor, align)
-          })
         }}
         onLineHeight={(lineHeight) => {
-          if (formatTarget === 'typing') {
-            applyTypingFormat({ lineHeight })
-            return
-          }
+          patchPanelFormat({ lineHeight })
           const editor = editorRef.current
           if (!editor) return
-          applySelectionFormat(() => applyNoteLineHeightToSelection(editor, lineHeight))
+
+          const applyLineHeight = () => {
+            if (formatTarget === 'typing') {
+              const next = { ...typingDefaultsRef.current, lineHeight }
+              typingDefaultsRef.current = next
+              setTypingDefaults(next)
+            }
+            applyNoteLineHeightToSelection(editor, lineHeight)
+            markUnsaved()
+          }
+
+          if (formatTarget === 'selection') {
+            applySelectionFormat(applyLineHeight)
+          } else {
+            applyLineHeight()
+          }
         }}
         onTextCase={(textCase: NoteTextCase) => {
+          patchPanelFormat({ textCase })
           if (formatTarget === 'typing') {
             applyTypingFormat({ textCase })
-            return
+          } else {
+            const editor = editorRef.current
+            if (!editor) return
+            applySelectionFormat(() => applyNoteTextCaseToSelection(editor, textCase))
           }
-          const editor = editorRef.current
-          if (!editor) return
-          applySelectionFormat(() => applyNoteTextCaseToSelection(editor, textCase))
         }}
         onAlignCenter={() => {
           const editor = editorRef.current
@@ -526,27 +690,30 @@ export function NoteEditor({
           cmd('justifyLeft')
         }}
         onFontChange={(font) => {
-          if (!editorRef.current) return
+          patchPanelFormat({ font })
+          const editor = editorRef.current
+          if (!editor) return
           if (formatTarget === 'typing') {
             applyTypingFormat({ font })
-            return
+          } else {
+            applySelectionFormat(() => {
+              applyNoteFontToSelection(editor, font)
+            })
           }
-          applySelectionFormat(() => {
-            applyNoteFontToSelection(editorRef.current!, font)
-          })
         }}
         onFontSizeSet={(px) => {
           const clamped = Math.min(
             NOTE_FONT_SIZE_MAX_PX,
             Math.max(NOTE_FONT_SIZE_MIN_PX, px),
           )
+          patchPanelFormat({ fontSizePx: clamped })
           if (formatTarget === 'typing') {
             applyTypingFormat({ fontSizePx: clamped })
-            return
+          } else {
+            const editor = editorRef.current
+            if (!editor) return
+            applySelectionFormat(() => applyNoteFontSizeToSelection(editor, clamped))
           }
-          const editor = editorRef.current
-          if (!editor) return
-          applySelectionFormat(() => applyNoteFontSizeToSelection(editor, clamped))
         }}
         onFontSizeChange={(delta) => {
           if (!editorRef.current) return
@@ -555,9 +722,10 @@ export function NoteEditor({
               NOTE_FONT_SIZE_MAX_PX,
               Math.max(
                 NOTE_FONT_SIZE_MIN_PX,
-                typingDefaultsRef.current.fontSizePx + delta,
+                panelFormat.fontSizePx + delta,
               ),
             )
+            patchPanelFormat({ fontSizePx: next })
             applyTypingFormat({ fontSizePx: next })
             return
           }
@@ -575,37 +743,19 @@ export function NoteEditor({
         onChange={handleImageInputChange}
       />
 
-      <article
-        ref={sheetRef}
-        className={cn(
-          notePageSheetClass(pageSizeDraft),
-        'rounded-[22px] bg-white shadow-[0_20px_54px_-24px_rgba(91,74,140,0.35)] ring-1 ring-bloomora-line/30',
-        )}
-      >
-        <NotePageNumbers
-          enabled={pageNumberEnabledDraft}
-          pageSize={pageSizeDraft}
-          sheetRef={sheetRef}
-          contentRef={editorRef}
-        />
-        <div
-          ref={editorRef}
-          contentEditable
-          suppressContentEditableWarning
-          onInput={markUnsaved}
-          onKeyDown={handleKeyDown}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => {
-            e.preventDefault()
-            markUnsaved()
-          }}
-          className={cn(
-            'english-note-content min-h-[200px] rounded-2xl bg-white/80 p-2 text-[15px] text-[#1f1f1f] outline-none',
-            twoColumnsDraft && 'english-note-content--two-columns',
-          )}
-          data-placeholder="Escribe aqui tu apunte, titulos, listas..."
-        />
-      </article>
+      <NotePagesEditor
+        pages={pages}
+        onPagesChange={setPages}
+        pageSize={pageSizeDraft}
+        pageNumberEnabled={pageNumberEnabledDraft}
+        twoColumns={twoColumnsDraft}
+        activeEditorRef={editorRef}
+        pageContentRefsRef={pageContentRefsRef}
+        insertPageBreakRef={insertPageBreakRef}
+        documentKey={note.id}
+        onPageInput={markUnsaved}
+        onKeyDown={handleKeyDown}
+      />
     </Card>
   )
 }

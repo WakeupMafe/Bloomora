@@ -1072,22 +1072,170 @@
     padding-inline: calc(1.5rem + 10mm);
   }
 
+  /* Vista tipo Word: lienzo gris + hojas blancas apiladas */
+  .english-note-pages-canvas {
+    margin-top: 0.5rem;
+    border-radius: 1.25rem;
+    background: linear-gradient(180deg, #4f4a5e 0%, #3d3849 100%);
+    padding: clamp(1.25rem, 2vw, 2rem);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  .english-note-pages-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    width: min(100%, var(--english-note-sheet-width, 8.5in));
+    max-width: var(--english-note-sheet-width, 8.5in);
+    margin-inline: auto;
+  }
+
+  .english-note-page-block + .english-note-page-block {
+    margin-top: 0;
+  }
+
+  .english-note-page-gutter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3.25rem;
+    margin: 0.65rem 0 1.1rem;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .english-note-page-gutter__label {
+    padding: 0.35rem 0.85rem;
+    border-radius: 9999px;
+    background: rgba(0, 0, 0, 0.22);
+  }
+
+  /* Hoja paginada: altura fija Carta / A4 (como Word) */
+  .english-note-sheet--paged {
+    display: flex;
+    flex-direction: column;
+    height: var(--english-note-sheet-min-height);
+    min-height: var(--english-note-sheet-min-height);
+    max-height: var(--english-note-sheet-min-height);
+    overflow: hidden;
+    position: relative;
+    border-radius: 4px;
+    background: #fff;
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.65) inset,
+      0 14px 38px -12px rgba(0, 0, 0, 0.45),
+      0 4px 14px rgba(0, 0, 0, 0.28);
+  }
+
+  .english-note-page-surface {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .english-note-sheet--paged .english-note-content--paged {
+    box-sizing: border-box;
+    min-height: 100%;
+    height: auto;
+    overflow: visible;
+    padding: 1.25rem 1.5rem 2.25rem;
+    border-radius: 0;
+    background: transparent;
+    position: relative;
+    z-index: 1;
+  }
+
+  .english-note-page-surface.english-note-page-surface--clipped::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3.5rem;
+    pointer-events: none;
+    background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.96));
+    z-index: 2;
+  }
+
+  .english-note-page-overflow-bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    padding: 0.55rem 0.85rem;
+    background: rgba(91, 74, 140, 0.92);
+    color: #fff;
+    font-size: 0.72rem;
+  }
+
+  .english-note-page-overflow-bar button {
+    border: 0;
+    border-radius: 9999px;
+    background: #fff;
+    color: var(--color-bloomora-deep);
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.35rem 0.85rem;
+    cursor: pointer;
+  }
+
+  .english-note-page-overflow-bar button:hover {
+    filter: brightness(0.97);
+  }
+
+  .english-note-page-number--fixed {
+    top: auto;
+    bottom: 0.75rem;
+    z-index: 3;
+  }
+
+  .english-note-page-break {
+    break-before: page;
+    page-break-before: always;
+    height: 0;
+    margin: 0;
+    border: 0;
+  }
+
   @media (min-width: 640px) {
     .english-note-sheet--a4 {
       padding-inline: calc(2rem + 10mm);
     }
   }
 
+  .english-note-sheet--paged {
+    padding: 0;
+  }
+
+  @media (min-width: 640px) {
+    .english-note-sheet--paged.english-note-sheet--a4 {
+      padding-inline: 0;
+    }
+  }
+
   .english-note-sheet .english-note-content {
     position: relative;
-    min-height: calc(var(--english-note-sheet-min-height) - 4rem);
-    line-height: 1.35;
+    line-height: 1.5;
     font-family: 'Poppins', sans-serif;
+  }
+
+  .english-note-sheet .english-note-content:not(.english-note-content--paged) {
+    min-height: calc(var(--english-note-sheet-min-height) - 4rem);
   }
 
   .english-note-content p,
   .english-note-content div:not([class]) {
-    margin: 0 0 0.2em;
+    margin: 0;
   }
 
   .english-note-content p:last-child,
@@ -1097,7 +1245,7 @@
 
   .english-note-content li {
     margin: 0;
-    line-height: 1.35;
+    line-height: inherit;
   }
 
   .english-note-content ul,

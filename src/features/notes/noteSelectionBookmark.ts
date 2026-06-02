@@ -20,7 +20,7 @@ export function restoreEditorSelection(
     const sel = window.getSelection()
     if (!sel) return false
     sel.removeAllRanges()
-    sel.addRange(bookmark.range)
+    sel.addRange(bookmark.range.cloneRange())
     return true
   } catch {
     return false

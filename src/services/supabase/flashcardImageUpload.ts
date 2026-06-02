@@ -1,26 +1,31 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { storageObjectPath } from '@/services/supabase/storageImageUpload'
+import { compressImageFile, IMAGE_COMPRESS_PRESETS } from '@/utils/imageCompress'
 
 const BUCKET = 'flashcard-images'
 
+export type FlashcardImageUploadResult = {
+  url: string
+  compressed: File
+}
+
 /**
- * Sube imagen de flashcard al bucket público `flashcard-images`
- * (ruta `{cedula}/{timestamp}.ext`). Requiere políticas de Storage para `anon`.
+ * Comprime y sube imagen de flashcard al bucket público `flashcard-images`.
  */
 export async function uploadFlashcardImage(
   sb: SupabaseClient,
   userCedula: string,
   file: File,
-): Promise<string> {
-  const ext =
-    (file.name.split('.').pop() ?? 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') ||
-    'jpg'
+): Promise<FlashcardImageUploadResult> {
+  const compressed = await compressImageFile(file, IMAGE_COMPRESS_PRESETS.flashcard)
   const safeCedula = userCedula.replace(/\D/g, '') || 'user'
-  const path = `${safeCedula}/${Date.now()}.${ext}`
-  const { error } = await sb.storage.from(BUCKET).upload(path, file, {
+  const path = storageObjectPath(safeCedula, 'jpg')
+  const { error } = await sb.storage.from(BUCKET).upload(path, compressed, {
     upsert: true,
-    contentType: file.type || 'image/jpeg',
+    contentType: compressed.type || 'image/jpeg',
+    cacheControl: '31536000',
   })
   if (error) throw error
   const { data } = sb.storage.from(BUCKET).getPublicUrl(path)
-  return data.publicUrl
+  return { url: data.publicUrl, compressed }
 }

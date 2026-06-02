@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { NoteFormatTarget } from '@/features/notes/noteTextOptionsConstants'
 import {
   NOTE_FONT_SIZE_SLIDER_MAX,
@@ -116,6 +116,11 @@ export function NoteTextOptionsPanel({
   const customHighlightRef = useRef<HTMLInputElement>(null)
   const [sliderActive, setSliderActive] = useState(false)
   const [fontsExpanded, setFontsExpanded] = useState(false)
+
+  useEffect(() => {
+    const idx = NOTE_TEXT_OPTION_FONTS.findIndex((f) => f.id === values.font)
+    if (idx >= 3) setFontsExpanded(true)
+  }, [values.font])
 
   const visibleFonts = fontsExpanded
     ? NOTE_TEXT_OPTION_FONTS
@@ -514,6 +519,7 @@ export function NoteTextOptionsPanel({
               <button
                 type="button"
                 aria-label="Reducir interlineado"
+                onMouseDown={keepSelection}
                 onClick={() => stepLineHeight(-0.1)}
                 className="flex size-9 items-center justify-center text-lg text-bloomora-violet hover:bg-bloomora-lavender-50/80"
               >
@@ -525,6 +531,7 @@ export function NoteTextOptionsPanel({
               <button
                 type="button"
                 aria-label="Aumentar interlineado"
+                onMouseDown={keepSelection}
                 onClick={() => stepLineHeight(0.1)}
                 className="flex size-9 items-center justify-center text-lg text-bloomora-violet hover:bg-bloomora-lavender-50/80"
               >

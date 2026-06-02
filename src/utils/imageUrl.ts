@@ -1,5 +1,5 @@
 /** Presets de ancho para Supabase Image Transformations (`/render/image/public/...`). */
-export type ImageSizePreset = 'thumb' | 'card' | 'deck' | 'full'
+export type ImageSizePreset = 'thumb' | 'card' | 'deck' | 'note' | 'full'
 
 const PRESET: Record<
   Exclude<ImageSizePreset, 'full'>,
@@ -8,6 +8,7 @@ const PRESET: Record<
   thumb: { width: 128, quality: 72 },
   card: { width: 520, quality: 78 },
   deck: { width: 640, quality: 82 },
+  note: { width: 960, quality: 76 },
 }
 
 const SUPABASE_OBJECT_PATH =
