@@ -7,6 +7,7 @@ export const FLASHCARD_CATEGORY_OPTIONS = [
   { value: 'Verbs', label: 'Verbs' },
   { value: 'Idioms', label: 'Idioms' },
   { value: 'Phrasal verb', label: 'Phrasal verb' },
+  { value: 'Expresiones', label: 'Expresiones' },
   { value: 'Grammar', label: 'Grammar' },
 ] as const
 

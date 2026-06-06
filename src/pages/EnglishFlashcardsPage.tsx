@@ -7,7 +7,8 @@ import { EnglishFlashcardForm } from '@/features/flashcards/EnglishFlashcardForm
 import { EnglishFlashcardList } from '@/features/flashcards/EnglishFlashcardList'
 import { EnglishFlashcardQuickForm } from '@/features/flashcards/EnglishFlashcardQuickForm'
 import { FlashcardCreateModeBar } from '@/features/flashcards/FlashcardCreateModeBar'
-import { SparkleIcon } from '@/features/flashcards/FlashcardIcons'
+import { DownloadIcon, SparkleIcon } from '@/features/flashcards/FlashcardIcons'
+import { exportFlashcardsPdf } from '@/features/flashcards/flashcardPdfExport'
 import {
   evaluateQuickFlashcardQuota,
   isQuickFlashcardComplete,
@@ -39,6 +40,7 @@ export function EnglishFlashcardsPage() {
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<EnglishFlashcard | null>(null)
+  const [autoReviewCategory, setAutoReviewCategory] = useState<string | null>(null)
 
   const quickQuota = useMemo(() => evaluateQuickFlashcardQuota(cards), [cards])
   const pendingQuickCards = useMemo(
@@ -63,6 +65,15 @@ export function EnglishFlashcardsPage() {
       setView('form')
     })()
   }, [cards, isLoading, searchParams, setSearchParams, showAlert])
+
+  useEffect(() => {
+    if (isLoading) return
+    const repasar = searchParams.get('repasar')
+    if (!repasar) return
+    setSearchParams({}, { replace: true })
+    setCategoryFilter(repasar)
+    setAutoReviewCategory(repasar)
+  }, [isLoading, searchParams, setSearchParams])
 
   const tryOpenCreate = async (mode: FlashcardCreateMode) => {
     if (mode === 'quick') {
@@ -126,6 +137,22 @@ export function EnglishFlashcardsPage() {
 
   const isFormPending = insertMut.isPending || updateMut.isPending
 
+  const handleExportPdf = async () => {
+    if (!cards.length) {
+      await showAlert({
+        title: 'Sin flashcards',
+        description: 'Añade al menos una palabra para generar el listado en PDF.',
+      })
+      return
+    }
+    const ok = await exportFlashcardsPdf(cards, () => {
+      showToast('En la ventana de impresión elige Guardar como PDF.')
+    })
+    if (!ok) {
+      showToast('No se pudo abrir la ventana de impresión. Revisa el bloqueador de ventanas emergentes.')
+    }
+  }
+
   return (
     <div className="flashcards-page app-shell-padding app-content-fluid mx-auto min-h-dvh bg-[#f8f6fc] pb-16">
       <div className="mb-6 flex items-center justify-between gap-3">
@@ -151,6 +178,15 @@ export function EnglishFlashcardsPage() {
               <strong className="font-semibold text-bloomora-violet">Modo rápido</strong>{' '}
               para anotar palabra y significado (hasta 6 al día).
             </p>
+            <button
+              type="button"
+              onClick={() => void handleExportPdf()}
+              disabled={isLoading || cards.length === 0}
+              className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-bloomora-violet ring-1 ring-bloomora-violet/25 transition hover:bg-bloomora-lavender-50/80 disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              <DownloadIcon className="size-4" />
+              Descargar PDF
+            </button>
           </div>
           <FlashcardCreateModeBar
             mode={createMode}
@@ -246,6 +282,8 @@ export function EnglishFlashcardsPage() {
               cards={cards}
               search={search}
               categoryFilter={categoryFilter}
+              autoReviewCategory={autoReviewCategory}
+              onAutoReviewHandled={() => setAutoReviewCategory(null)}
               onSearchChange={setSearch}
               onCategoryFilterChange={setCategoryFilter}
               onEdit={openEdit}

@@ -228,6 +228,15 @@ export function sanitizeFlashcardHtml(dirty: string): string {
 
       if (tag === 'br') continue
 
+      for (const attr of [...el.attributes]) {
+        if (
+          attr.name.startsWith('data-') &&
+          attr.name !== NO_AUTO_LIST_ATTR
+        ) {
+          el.removeAttribute(attr.name)
+        }
+      }
+
       if (tag === 'strong' || tag === 'b') {
         el.removeAttribute('style')
         el.className = PINK_BOLD_CLASS

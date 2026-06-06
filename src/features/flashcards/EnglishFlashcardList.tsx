@@ -14,6 +14,8 @@ type EnglishFlashcardListProps = {
   cards: EnglishFlashcard[]
   search: string
   categoryFilter: string
+  autoReviewCategory?: string | null
+  onAutoReviewHandled?: () => void
   onSearchChange: (v: string) => void
   onCategoryFilterChange: (v: string) => void
   onEdit: (card: EnglishFlashcard) => void
@@ -28,6 +30,8 @@ export function EnglishFlashcardList({
   cards,
   search,
   categoryFilter,
+  autoReviewCategory,
+  onAutoReviewHandled,
   onSearchChange,
   onCategoryFilterChange,
   onEdit,
@@ -67,6 +71,20 @@ export function EnglishFlashcardList({
       setExpandedPacks(new Set([packs[0]!.key]))
     }
   }, [categoryFilter, packs])
+
+  useEffect(() => {
+    if (!autoReviewCategory) return
+    const pack = buildCategoryPacks(cards).find((p) => p.key === autoReviewCategory)
+    if (pack) {
+      setReviewPack(pack)
+      setExpandedPacks((prev) => {
+        const next = new Set(prev)
+        next.add(pack.key)
+        return next
+      })
+    }
+    onAutoReviewHandled?.()
+  }, [autoReviewCategory, cards, onAutoReviewHandled])
 
   const togglePack = (key: string) => {
     setExpandedPacks((prev) => {

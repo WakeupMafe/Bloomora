@@ -83,6 +83,16 @@ const THEMES: Record<FlashcardCategory, FlashcardCategoryTheme> = {
     footerPillClass: 'bg-[#ede9fe] text-[#6d28d9] ring-[#ddd6fe]/70',
     editBtnClass: 'bg-[#ede9fe] text-[#7c3aed] hover:bg-[#ddd6fe]/80',
   },
+  Expresiones: {
+    badge: 'EXPRESSION',
+    badgeClass:
+      'bg-[#ccfbf1] text-[#0f766e] ring-1 ring-[#99f6e4]/80',
+    accentText: 'text-[#115e59]',
+    speakerClass: 'text-[#0d9488] hover:bg-[#ccfbf1]',
+    verbBoxClass: 'bg-[#f0fdfa] ring-[#99f6e4]/60',
+    footerPillClass: 'bg-[#ccfbf1] text-[#0f766e] ring-[#99f6e4]/70',
+    editBtnClass: 'bg-[#ccfbf1] text-[#0d9488] hover:bg-[#99f6e4]/80',
+  },
   Grammar: {
     badge: 'GRAMMAR',
     badgeClass:

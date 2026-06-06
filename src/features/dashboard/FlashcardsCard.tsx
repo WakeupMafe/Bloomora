@@ -96,7 +96,7 @@ export function FlashcardsCard() {
             return (
               <li key={cat.key}>
                 <Link
-                  to="/app/flashcards"
+                  to={`/app/flashcards?repasar=${encodeURIComponent(cat.key)}`}
                   className="flex items-center justify-between gap-3 rounded-xl border border-bloomora-line/35 bg-bloomora-white/95 px-3.5 py-2.5 shadow-sm ring-1 ring-bloomora-line/20 transition hover:border-bloomora-lilac/40 hover:bg-bloomora-lavender-50/90"
                 >
                   <span
