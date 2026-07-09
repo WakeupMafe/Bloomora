@@ -33,6 +33,7 @@ import {
   blockDurationSeconds,
   formatMinutes12h,
   minutesFromTimeInput,
+  minutesSinceMidnightLocal,
   startOfLocalDay,
   titleCaseAgendaDate,
   toDateKeyLocal,
@@ -40,8 +41,14 @@ import {
 } from "@/utils/agendaTime";
 import { cn } from "@/utils/cn";
 
-/** Sugerencia por defecto para el primer bloque del día (el usuario puede cambiarla). */
+/** Sugerencia por defecto para el primer bloque en días que no son hoy. */
 const defaultEmptyDayStartMin = 7 * 60;
+
+function suggestedFirstBlockStartMin(isViewingToday: boolean): number {
+  return isViewingToday
+    ? minutesSinceMidnightLocal()
+    : defaultEmptyDayStartMin;
+}
 
 function AgendaTrashIcon({ className }: { className?: string }) {
   return (
@@ -174,15 +181,16 @@ export function AgendaCard({ className }: AgendaCardProps) {
   const progressPct = total > 0 ? (completedCount / total) * 100 : 0;
 
   const nextBlockStartMin = useCallback((list: typeof sortedTasks) => {
-    if (list.length === 0) return defaultEmptyDayStartMin;
+    if (list.length === 0) return suggestedFirstBlockStartMin(isViewingToday);
     return list[list.length - 1].endMin;
-  }, []);
+  }, [isViewingToday]);
 
   const openCreateForm = useCallback(() => {
     if (sortedTasks.length === 0) {
-      setDraftStartTime(toTimeInputValue(defaultEmptyDayStartMin));
+      const start = suggestedFirstBlockStartMin(isViewingToday);
+      setDraftStartTime(toTimeInputValue(start));
       setDraftEndTime(
-        toTimeInputValue(defaultEmptyDayStartMin + defaultNewBlockDurationMin),
+        toTimeInputValue(start + defaultNewBlockDurationMin),
       );
     } else {
       const start = nextBlockStartMin(sortedTasks);
@@ -195,7 +203,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
     setCreateFormError(null);
     setShowCreateForm(true);
     setEditingId(null);
-  }, [sortedTasks, nextBlockStartMin, orderedGoalOptions]);
+  }, [sortedTasks, nextBlockStartMin, orderedGoalOptions, isViewingToday]);
 
   const shiftDay = (delta: number) => {
     setCursorDate((d) => addLocalDays(d, delta));
@@ -579,6 +587,89 @@ export function AgendaCard({ className }: AgendaCardProps) {
                       })
                     }
                   />
+                  {editingId === task.id ? (
+                    <form
+                      onSubmit={handleSubmitEdit}
+                      className="mx-2 mb-3 space-y-3 rounded-[18px] border-2 border-bloomora-sky-deep/55 bg-bloomora-sky/40 p-4 shadow-[0_6px_20px_rgba(155,207,233,0.18)]"
+                    >
+                      <p className="text-xs font-semibold text-bloomora-deep">
+                        Editar tarea
+                      </p>
+                      <label className="block text-xs font-medium text-bloomora-text-muted">
+                        Título
+                        <input
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          className="mt-1.5 w-full rounded-xl border border-bloomora-sky-deep/35 bg-bloomora-white px-3 py-2.5 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-sky/40 focus:ring-2"
+                          autoFocus
+                        />
+                      </label>
+                      <label className="block text-xs font-medium text-bloomora-text-muted">
+                        Hora de inicio
+                        <input
+                          type="time"
+                          step={300}
+                          value={editStartTime}
+                          onChange={(e) => setEditStartTime(e.target.value)}
+                          className="mt-1.5 w-full rounded-xl border border-bloomora-sky-deep/35 bg-bloomora-white px-3 py-2.5 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-sky/40 focus:ring-2"
+                        />
+                      </label>
+                      <label className="block text-xs font-medium text-bloomora-text-muted">
+                        Hora de fin
+                        <input
+                          type="time"
+                          step={300}
+                          value={editEndTime}
+                          onChange={(e) => setEditEndTime(e.target.value)}
+                          className="mt-1.5 w-full rounded-xl border border-bloomora-sky-deep/35 bg-bloomora-white px-3 py-2.5 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-sky/40 focus:ring-2"
+                        />
+                      </label>
+                      {editFormError ? (
+                        <p
+                          className="text-sm font-medium text-red-600"
+                          role="alert"
+                        >
+                          {editFormError}
+                        </p>
+                      ) : null}
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            type="submit"
+                            size="sm"
+                            disabled={!editTitle.trim() || updateTask.isPending}
+                          >
+                            Guardar
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setEditingId(null);
+                              setEditFormError(null);
+                            }}
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="border-red-200/90 text-red-600 shadow-none hover:bg-red-50/90 hover:text-red-700"
+                          disabled={
+                            removeTask.isPending || updateTask.isPending
+                          }
+                          onClick={handleDeleteEdit}
+                          aria-label="Eliminar tarea"
+                        >
+                          <AgendaTrashIcon className="size-[1.125rem] shrink-0" />
+                          Eliminar
+                        </Button>
+                      </div>
+                    </form>
+                  ) : null}
                   <AgendaTaskSubsteps
                     taskId={task.id}
                     subtasks={task.subtasks}
@@ -778,84 +869,6 @@ export function AgendaCard({ className }: AgendaCardProps) {
                 }}
               >
                 Cancelar
-              </Button>
-            </div>
-          </form>
-        ) : null}
-
-        {editingId ? (
-          <form
-            onSubmit={handleSubmitEdit}
-            className="mt-5 space-y-3 rounded-[18px] bg-bloomora-white/85 p-4 shadow-[0_6px_20px_rgba(91,74,140,0.06)] ring-1 ring-bloomora-line/40"
-          >
-            <p className="text-xs font-semibold text-bloomora-deep">
-              Editar tarea
-            </p>
-            <label className="block text-xs font-medium text-bloomora-text-muted">
-              Título
-              <input
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-bloomora-line/60 bg-bloomora-white px-3 py-2.5 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/30 focus:ring-2"
-              />
-            </label>
-            <label className="block text-xs font-medium text-bloomora-text-muted">
-              Hora de inicio
-              <input
-                type="time"
-                step={300}
-                value={editStartTime}
-                onChange={(e) => setEditStartTime(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-bloomora-line/60 bg-bloomora-white px-3 py-2.5 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/30 focus:ring-2"
-              />
-            </label>
-            <label className="block text-xs font-medium text-bloomora-text-muted">
-              Hora de fin
-              <input
-                type="time"
-                step={300}
-                value={editEndTime}
-                onChange={(e) => setEditEndTime(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-bloomora-line/60 bg-bloomora-white px-3 py-2.5 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/30 focus:ring-2"
-              />
-            </label>
-            {editFormError ? (
-              <p className="text-sm font-medium text-red-600" role="alert">
-                {editFormError}
-              </p>
-            ) : null}
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={!editTitle.trim() || updateTask.isPending}
-                >
-                  Guardar
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setEditingId(null);
-                    setEditFormError(null);
-                  }}
-                >
-                  Cancelar
-                </Button>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="border-red-200/90 text-red-600 shadow-none hover:bg-red-50/90 hover:text-red-700"
-                disabled={removeTask.isPending || updateTask.isPending}
-                onClick={handleDeleteEdit}
-                aria-label="Eliminar tarea"
-              >
-                <AgendaTrashIcon className="size-[1.125rem] shrink-0" />
-                Eliminar
               </Button>
             </div>
           </form>
