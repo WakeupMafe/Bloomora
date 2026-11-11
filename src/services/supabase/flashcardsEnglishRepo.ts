@@ -31,7 +31,7 @@ function trimOrNull(v: string | null | undefined): string | null {
 }
 
 function toRowPayload(input: EnglishFlashcardInput) {
-  return {
+  const payload: Record<string, unknown> = {
     english_word: input.englishWord.trim(),
     pronunciation: trimOrNull(input.pronunciation ?? undefined),
     short_meaning: trimOrNull(input.shortMeaning ?? undefined),
@@ -41,6 +41,13 @@ function toRowPayload(input: EnglishFlashcardInput) {
     image_url: input.imageUrl.trim(),
     category: trimOrNull(input.category ?? undefined),
   }
+
+  if (input.entryMode !== undefined) payload.entry_mode = input.entryMode
+  if (input.isQuickDraft !== undefined) {
+    payload.is_quick_draft = input.isQuickDraft
+  }
+
+  return payload
 }
 
 export async function listFlashcardsEnglish(
@@ -125,16 +132,26 @@ export async function insertFlashcardEnglish(
 export async function updateFlashcardEnglish(
   sb: SupabaseClient,
   id: number,
+  userCedula: string,
   input: EnglishFlashcardInput,
 ) {
   const { error } = await sb
     .from('flashcards_english')
     .update(toRowPayload(input))
     .eq('id', id)
+    .eq('user_cedula', userCedula.trim())
   if (error) throwRepoError(error)
 }
 
-export async function deleteFlashcardEnglish(sb: SupabaseClient, id: number) {
-  const { error } = await sb.from('flashcards_english').delete().eq('id', id)
+export async function deleteFlashcardEnglish(
+  sb: SupabaseClient,
+  id: number,
+  userCedula: string,
+) {
+  const { error } = await sb
+    .from('flashcards_english')
+    .delete()
+    .eq('id', id)
+    .eq('user_cedula', userCedula.trim())
   if (error) throwRepoError(error)
 }

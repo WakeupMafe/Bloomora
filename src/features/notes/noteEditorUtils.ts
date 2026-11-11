@@ -1,5 +1,7 @@
 import type {
+  NoteBodyFont,
   NoteFontWeight,
+  NoteParagraphStyle,
   NoteTextAlign,
   NoteTextCase,
   NoteTypingDefaults,
@@ -7,6 +9,8 @@ import type {
 import { parseNotePagesHtmlList } from '@/features/notes/notePageLayoutUtils'
 import type { EnglishNoteColor, EnglishNotePageSize, EnglishNoteTitleFont } from '@/types/englishNote'
 import { ENGLISH_NOTE_COLORS } from '@/types/englishNote'
+import { noteBodyFontFamily } from '@/features/notes/noteFontUtils'
+import { normalizeSpacing, setBlockSpacing, NOTE_DEFAULT_LINE_HEIGHT, NOTE_DEFAULT_SPACING_AFTER, NOTE_LINE_HEIGHTS, NOTE_SPACING_AFTER } from '@/features/notes/noteSpacingModel.mjs'
 
 export function notePageSheetClass(pageSize: EnglishNotePageSize): string {
   return pageSize === 'letter'
@@ -85,15 +89,27 @@ export function applyNoteFontSizeToSelection(
     Math.max(NOTE_FONT_SIZE_MIN_PX, Math.round(sizePx)),
   )
 
-  const span = document.createElement('span')
-  span.style.fontSize = `${clamped}px`
-
   try {
     const fragment = range.extractContents()
-    span.appendChild(fragment)
-    range.insertNode(span)
+    const textNodes: Text[] = []
+    const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_TEXT)
+    while (walker.nextNode()) {
+      const textNode = walker.currentNode as Text
+      if (textNode.data) textNodes.push(textNode)
+    }
+    for (const textNode of textNodes) {
+      const span = document.createElement('span')
+      span.style.fontSize = `${clamped}px`
+      textNode.parentNode?.replaceChild(span, textNode)
+      span.appendChild(textNode)
+    }
+    const firstInserted = fragment.firstChild
+    const lastInserted = fragment.lastChild
+    if (!firstInserted || !lastInserted) return false
+    range.insertNode(fragment)
     const selected = document.createRange()
-    selected.selectNodeContents(span)
+    selected.setStartBefore(firstInserted)
+    selected.setEndAfter(lastInserted)
     sel.removeAllRanges()
     sel.addRange(selected)
     return true
@@ -122,7 +138,7 @@ function getBlockInEditor(node: Node, editor: HTMLElement): HTMLElement | null {
     node.nodeType === Node.TEXT_NODE ? (node.parentElement as HTMLElement) : (node as HTMLElement)
   while (el && el !== editor) {
     const tag = el.tagName
-    if (tag === 'P' || tag === 'DIV' || tag === 'LI' || tag === 'H1' || tag === 'H2' || tag === 'H3') {
+    if (tag === 'P' || tag === 'DIV' || tag === 'LI' || tag === 'H1' || tag === 'H2' || tag === 'H3' || tag === 'BLOCKQUOTE' || tag === 'PRE') {
       return el
     }
     el = el.parentElement
@@ -132,7 +148,7 @@ function getBlockInEditor(node: Node, editor: HTMLElement): HTMLElement | null {
 
 function isNoteBlockElement(el: HTMLElement): boolean {
   const tag = el.tagName
-  return tag === 'P' || tag === 'DIV' || tag === 'LI' || tag === 'H1' || tag === 'H2' || tag === 'H3'
+  return tag === 'P' || tag === 'DIV' || tag === 'LI' || tag === 'H1' || tag === 'H2' || tag === 'H3' || tag === 'BLOCKQUOTE' || tag === 'PRE'
 }
 
 function isNoteContentRoot(el: HTMLElement, editor: HTMLElement): boolean {
@@ -147,12 +163,6 @@ function stripDescendantLineHeight(block: HTMLElement): void {
       el.style.lineHeight = ''
     }
   })
-}
-
-function blockMarginForLineHeight(lineHeight: number): string {
-  if (lineHeight <= 1.05) return '0'
-  if (lineHeight <= 1.25) return '0.05em'
-  return '0.2em'
 }
 
 function getBlocksTouchingRange(range: Range, editor: HTMLElement): HTMLElement[] {
@@ -184,24 +194,62 @@ function applyLineHeightToBlocks(
   lineHeight: number,
   editor: HTMLElement,
 ): void {
-  const lh = String(lineHeight)
-  const marginBottom = blockMarginForLineHeight(lineHeight)
+  const lh = Number(lineHeight)
   for (const block of blocks) {
     if (isNoteContentRoot(block, editor)) continue
-    block.style.setProperty('line-height', lh, 'important')
-    block.style.marginTop = '0'
-    block.style.marginBottom = marginBottom
+    setBlockSpacing(block, { lineHeight: lh })
     stripDescendantLineHeight(block)
   }
 }
 
+export function applyNoteParagraphSpacing(
+  editor: HTMLElement,
+  spacingPx: number,
+): boolean {
+  editor.focus({ preventScroll: true })
+  const selection = window.getSelection()
+  if (!selection || selection.rangeCount === 0) return false
+  const range = selection.getRangeAt(0)
+  if (!editor.contains(range.commonAncestorContainer)) return false
+  const candidates = getBlocksTouchingRange(range, editor)
+  const blocks = candidates.filter((block) =>
+    !candidates.some((other) => other !== block && block.contains(other)),
+  )
+  const targetBlocks = blocks.length ? blocks : [getBlockInEditor(range.startContainer, editor)].filter((block): block is HTMLElement => !!block && !isNoteContentRoot(block, editor))
+  if (targetBlocks.length === 0) return false
+  const clamped = NOTE_SPACING_AFTER.reduce((best, value) =>
+    Math.abs(value - spacingPx) < Math.abs(best - spacingPx) ? value : best,
+  NOTE_DEFAULT_SPACING_AFTER)
+  for (const block of targetBlocks) setBlockSpacing(block, { spacingAfter: clamped })
+  return true
+}
+
 function resolveLineHeightAtNode(editor: HTMLElement, node: Node): number {
-  const block = getBlockInEditor(node, editor)
-  if (block && !isNoteContentRoot(block, editor) && block.style.lineHeight) {
-    const fromBlock = parseFloat(block.style.lineHeight)
-    if (!Number.isNaN(fromBlock)) {
-      return Math.round(fromBlock * 10) / 10
+  const normalize = (raw: string, element: HTMLElement): number | null => {
+    const value = raw.trim()
+    if (!value || value === 'normal') return null
+    const amount = Number.parseFloat(value)
+    if (!Number.isFinite(amount)) return null
+    let ratio = amount
+    if (value.endsWith('%')) ratio = amount / 100
+    else if (value.endsWith('px') || value.endsWith('em') || value.endsWith('rem')) {
+      const fontSize = Number.parseFloat(window.getComputedStyle(element).fontSize)
+      if (!Number.isFinite(fontSize) || fontSize <= 0) return null
+      const px = value.endsWith('px') ? amount : amount * (value.endsWith('rem')
+        ? Number.parseFloat(window.getComputedStyle(document.documentElement).fontSize) || 16
+        : fontSize)
+      ratio = px / fontSize
     }
+    return ratio >= 1 && ratio <= 3 ? Math.round(ratio * 100) / 100 : null
+  }
+  const block = getBlockInEditor(node, editor)
+  if (block?.dataset.lineHeight) {
+    const stored = Number(block.dataset.lineHeight)
+    if (NOTE_LINE_HEIGHTS.includes(stored)) return stored
+  }
+  if (block && !isNoteContentRoot(block, editor) && block.style.lineHeight) {
+    const fromBlock = normalize(block.style.lineHeight, block)
+    if (fromBlock != null) return fromBlock
   }
 
   let el: HTMLElement | null =
@@ -210,28 +258,23 @@ function resolveLineHeightAtNode(editor: HTMLElement, node: Node): number {
       : (node as HTMLElement)
 
   while (el && el !== editor) {
-    const inline = el.style.lineHeight.trim()
-    if (inline) {
-      const unitless = parseFloat(inline)
-      if (!Number.isNaN(unitless) && !inline.endsWith('px')) {
-        return Math.round(unitless * 10) / 10
-      }
-    }
+    const inline = normalize(el.style.lineHeight, el)
+    if (inline != null) return inline
     el = el.parentElement
   }
 
   const target =
     node.nodeType === Node.TEXT_NODE ? node.parentElement : (node as HTMLElement)
-  if (!target) return 1.5
+  if (!target) return NOTE_DEFAULT_LINE_HEIGHT
 
   const blockStyle = block
     ? window.getComputedStyle(block)
     : window.getComputedStyle(target)
   const parsedSize = parseFloat(window.getComputedStyle(target).fontSize)
   const lineHeightRaw = parseFloat(blockStyle.lineHeight)
-  if (Number.isNaN(lineHeightRaw) || blockStyle.lineHeight === 'normal') return 1.5
-  if (Number.isNaN(parsedSize) || parsedSize <= 0) return 1.5
-  return Math.round((lineHeightRaw / parsedSize) * 10) / 10
+  if (Number.isNaN(lineHeightRaw) || blockStyle.lineHeight === 'normal') return NOTE_DEFAULT_LINE_HEIGHT
+  if (Number.isNaN(parsedSize) || parsedSize <= 0) return NOTE_DEFAULT_LINE_HEIGHT
+  return Math.round(Math.min(3, Math.max(1, lineHeightRaw / parsedSize)) * 100) / 100
 }
 
 function rangeSelectionHasBlockNodes(range: Range): boolean {
@@ -279,26 +322,23 @@ export function applyTypingDefaultsAtCaret(
   const block = getBlockInEditor(range.startContainer, editor)
   if (block && !isNoteContentRoot(block, editor)) {
     block.style.textAlign = noteTextAlignToCss(defaults.align)
-    block.style.setProperty('line-height', String(defaults.lineHeight), 'important')
-    block.style.marginTop = '0'
-    block.style.marginBottom = blockMarginForLineHeight(defaults.lineHeight)
+    setBlockSpacing(block, { lineHeight: defaults.lineHeight, spacingAfter: defaults.paragraphSpacingPx })
     stripDescendantLineHeight(block)
   }
 
   if (!range.collapsed) return
 
   const span = document.createElement('span')
-  span.className = noteTitleFontClass(defaults.font)
-  span.style.fontFamily = noteTitleFontFamily(defaults.font)
+  span.style.fontFamily = noteBodyFontFamily(defaults.font)
   span.style.fontSize = `${defaults.fontSizePx}px`
   span.style.color = defaults.colorHex
+  if (defaults.highlightColor) span.style.backgroundColor = defaults.highlightColor
   span.style.fontWeight =
     defaults.fontWeight === 'bold'
       ? '700'
       : defaults.fontWeight === 'medium'
         ? '500'
         : '400'
-  span.style.lineHeight = String(defaults.lineHeight)
   if (defaults.textCase !== 'none') {
     span.style.textTransform = defaults.textCase
   }
@@ -318,8 +358,22 @@ export function insertParagraphWithTypingDefaults(
   editor: HTMLElement,
   defaults: NoteTypingDefaults,
 ): void {
-  editor.focus()
+  editor.focus({ preventScroll: true })
+  const selection = window.getSelection()
+  const previousBlock = selection?.rangeCount
+    ? getBlockInEditor(selection.getRangeAt(0).startContainer, editor)
+    : null
   document.execCommand('insertParagraph')
+  const currentSelection = window.getSelection()
+  const currentBlock = currentSelection?.rangeCount
+    ? getBlockInEditor(currentSelection.getRangeAt(0).startContainer, editor)
+    : null
+  if (currentBlock && currentBlock !== previousBlock && currentBlock.tagName !== 'LI' && currentBlock.tagName !== 'P') {
+    const paragraph = document.createElement('p')
+    for (const attribute of [...currentBlock.attributes]) paragraph.setAttribute(attribute.name, attribute.value)
+    while (currentBlock.firstChild) paragraph.appendChild(currentBlock.firstChild)
+    currentBlock.replaceWith(paragraph)
+  }
   applyTypingDefaultsAtCaret(editor, defaults)
 }
 
@@ -356,11 +410,131 @@ export function applyBlockAlign(editor: HTMLElement, align: NoteTextAlign): void
   const range = sel.getRangeAt(0)
   if (!editor.contains(range.commonAncestorContainer)) return
 
+  const candidates = getBlocksTouchingRange(range, editor)
+  const blocks = candidates.filter((block) =>
+    !candidates.some((other) => other !== block && block.contains(other)),
+  )
+  const targets = blocks.length
+    ? blocks
+    : [getBlockInEditor(range.startContainer, editor)].filter((block): block is HTMLElement => !!block && !isNoteContentRoot(block, editor))
+  for (const block of targets) block.style.textAlign = noteTextAlignToCss(align)
+}
+
+export function applyNoteParagraphStyle(
+  editor: HTMLElement,
+  style: NoteParagraphStyle,
+): boolean {
+  editor.focus({ preventScroll: true })
+  const tag = style === 'p' ? 'P' : style.toUpperCase()
+  return document.execCommand('formatBlock', false, `<${tag}>`)
+}
+
+export function readNoteParagraphStyle(editor: HTMLElement): NoteParagraphStyle {
+  const selection = window.getSelection()
+  if (!selection || selection.rangeCount === 0) return 'p'
+  const range = selection.getRangeAt(0)
+  if (!editor.contains(range.commonAncestorContainer)) return 'p'
   const block = getBlockInEditor(range.startContainer, editor)
-  if (block) {
-    block.style.textAlign = noteTextAlignToCss(align)
+  const tag = block?.tagName.toLowerCase()
+  return tag === 'h1' || tag === 'h2' || tag === 'h3' ? tag : 'p'
+}
+
+export function readActiveNoteMarks(editor: HTMLElement) {
+  const selection = window.getSelection()
+  if (!selection || selection.rangeCount === 0 || !editor.contains(selection.getRangeAt(0).commonAncestorContainer)) {
+    return { bold: false, italic: false, underline: false, strike: false, align: 'left' as NoteTextAlign }
   }
-  document.execCommand(noteTextAlignExecCommand(align), false)
+  const block = getBlockInEditor(selection.getRangeAt(0).startContainer, editor)
+  const alignValue = block ? window.getComputedStyle(block).textAlign : 'left'
+  return {
+    bold: document.queryCommandState('bold'),
+    italic: document.queryCommandState('italic'),
+    underline: document.queryCommandState('underline'),
+    strike: document.queryCommandState('strikeThrough'),
+    align: (alignValue === 'center' || alignValue === 'right' || alignValue === 'justify' ? alignValue : 'left') as NoteTextAlign,
+  }
+}
+
+export function insertNoteBlock(editor: HTMLElement): boolean {
+  editor.focus({ preventScroll: true })
+  const selection = window.getSelection()
+  const block = document.createElement('blockquote')
+  block.className = 'note-callout'
+  block.dataset.noteBlock = 'true'
+  const label = document.createElement('strong')
+  label.className = 'note-callout__label'
+  label.textContent = 'Nota'
+  const body = document.createElement('p')
+  body.className = 'note-callout__content'
+  body.innerHTML = '<br>'
+  block.append(label, body)
+
+  const range = selection?.rangeCount ? selection.getRangeAt(0) : null
+  if (range && editor.contains(range.commonAncestorContainer)) {
+    range.deleteContents()
+    range.insertNode(block)
+  } else {
+    editor.append(block)
+  }
+
+  const caret = document.createRange()
+  caret.selectNodeContents(body)
+  caret.collapse(false)
+  selection?.removeAllRanges()
+  selection?.addRange(caret)
+  return true
+}
+
+/** Conserva estructura y formato semántico habitual, descarta estilos y etiquetas ajenas. */
+export function sanitizePastedNoteHtml(html: string): string {
+  const normalizedInput = normalizeSpacing(html)
+  const doc = new DOMParser().parseFromString(normalizedInput, 'text/html')
+  const allowed = new Set(['P', 'DIV', 'H1', 'H2', 'H3', 'BR', 'STRONG', 'B', 'EM', 'I', 'U', 'S', 'STRIKE', 'UL', 'OL', 'LI', 'BLOCKQUOTE', 'SPAN', 'A'])
+  const safeColors = new Set([
+    ...ENGLISH_NOTE_COLORS.map((color) => color.value.toLowerCase()),
+    '#fef08a', '#bbf7d0', '#fecdd3', '#bfdbfe',
+  ])
+
+  const cleanNode = (node: Node): Node[] => {
+    if (node.nodeType === Node.TEXT_NODE) return [doc.createTextNode(node.textContent ?? '')]
+    if (!(node instanceof HTMLElement)) return []
+    if (['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'SVG', 'VIDEO', 'AUDIO'].includes(node.tagName)) return []
+    const children = [...node.childNodes].flatMap(cleanNode)
+    if (!allowed.has(node.tagName)) return children
+
+    const clean = doc.createElement(node.tagName.toLowerCase())
+    if (node.tagName === 'BLOCKQUOTE' && node.dataset.noteBlock === 'true') {
+      clean.className = 'note-callout'
+      clean.dataset.noteBlock = 'true'
+    }
+    if (node.tagName === 'SPAN' || node.tagName === 'P' || node.tagName === 'DIV' || /^H[1-3]$/.test(node.tagName) || node.tagName === 'LI') {
+      if (node.dataset.lineHeight && ['P', 'H1', 'H2', 'H3', 'LI'].includes(node.tagName)) clean.dataset.lineHeight = node.dataset.lineHeight
+      if (node.dataset.spacing && ['P', 'H1', 'H2', 'H3', 'LI'].includes(node.tagName)) clean.dataset.spacing = node.dataset.spacing
+      const align = node.style.textAlign
+      if (['left', 'center', 'right', 'justify'].includes(align)) clean.style.textAlign = align
+      const family = node.style.fontFamily.trim().toLowerCase()
+      const safeFamily = /^(?:"|')?(poppins|quicksand|inter|fraunces|georgia|times new roman|arial)(?:"|')?(?:\s*,.*)?$/i.exec(family)
+      if (safeFamily) {
+        clean.style.fontFamily = node.style.fontFamily
+      }
+      const size = parseFloat(node.style.fontSize)
+      if (node.style.fontSize.endsWith('px') && size >= NOTE_FONT_SIZE_MIN_PX && size <= NOTE_FONT_SIZE_MAX_PX) clean.style.fontSize = `${size}px`
+      const color = cssColorToHex(node.style.color).toLowerCase()
+      if (safeColors.has(color)) clean.style.color = color
+      const background = cssColorToHex(node.style.backgroundColor).toLowerCase()
+      if (safeColors.has(background)) clean.style.backgroundColor = background
+    }
+    if (node.tagName === 'A') {
+      const href = node.getAttribute('href')
+      if (href && /^https?:\/\//i.test(href)) clean.setAttribute('href', href)
+    }
+    children.forEach((child) => clean.appendChild(child))
+    return [clean]
+  }
+
+  const root = doc.createElement('div')
+  ;[...doc.body.childNodes].flatMap(cleanNode).forEach((node) => root.appendChild(node))
+  return normalizeSpacing(root.innerHTML.trim() || '<p><br></p>', { renderStyles: true })
 }
 
 export function applyNoteFontWeightToSelection(
@@ -404,8 +578,7 @@ export function applyNoteLineHeightToSelection(
   const range = sel.getRangeAt(0)
   if (!editor.contains(range.commonAncestorContainer)) return false
 
-  const lh = String(lineHeight)
-  let blocks = getBlocksTouchingRange(range, editor)
+  const blocks = getBlocksTouchingRange(range, editor)
 
   if (blocks.length > 0) {
     applyLineHeightToBlocks(blocks, lineHeight, editor)
@@ -413,14 +586,14 @@ export function applyNoteLineHeightToSelection(
   }
 
   if (!sel.isCollapsed && sel.toString().trim() && !rangeSelectionHasBlockNodes(range)) {
-    const span = document.createElement('span')
-    span.style.setProperty('line-height', lh, 'important')
+    const paragraph = document.createElement('p')
     try {
       const fragment = range.extractContents()
-      span.appendChild(fragment)
-      range.insertNode(span)
+      paragraph.appendChild(fragment)
+      setBlockSpacing(paragraph, { lineHeight })
+      range.insertNode(paragraph)
       const selected = document.createRange()
-      selected.selectNodeContents(span)
+      selected.selectNodeContents(paragraph)
       sel.removeAllRanges()
       sel.addRange(selected)
       return true
@@ -463,9 +636,25 @@ export function clearNoteSelectionHighlight(editor: HTMLElement): void {
   document.execCommand('backColor', false, 'transparent')
 }
 
+export function readNoteHighlightColor(editor: HTMLElement): string | null {
+  const selection = window.getSelection()
+  if (!selection || selection.rangeCount === 0 || !editor.contains(selection.getRangeAt(0).commonAncestorContainer)) return null
+  let el: HTMLElement | null = selection.getRangeAt(0).startContainer.nodeType === Node.TEXT_NODE
+    ? selection.getRangeAt(0).startContainer.parentElement
+    : selection.getRangeAt(0).startContainer as HTMLElement
+  while (el && el !== editor) {
+    const background = el.style.backgroundColor
+    if (background && background !== 'transparent' && background !== 'rgba(0, 0, 0, 0)') {
+      return cssColorToHex(background)
+    }
+    el = el.parentElement
+  }
+  return null
+}
+
 export function applyNoteFontToSelection(
   editor: HTMLElement,
-  font: EnglishNoteTitleFont,
+  font: NoteBodyFont,
 ): boolean {
   editor.focus({ preventScroll: true })
   const sel = window.getSelection()
@@ -473,16 +662,27 @@ export function applyNoteFontToSelection(
   const range = sel.getRangeAt(0)
   if (!editor.contains(range.commonAncestorContainer)) return false
 
-  const span = document.createElement('span')
-  span.className = noteTitleFontClass(font)
-  span.style.fontFamily = noteTitleFontFamily(font)
-
   try {
     const fragment = range.extractContents()
-    span.appendChild(fragment)
-    range.insertNode(span)
+    const textNodes: Text[] = []
+    const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_TEXT)
+    while (walker.nextNode()) {
+      const textNode = walker.currentNode as Text
+      if (textNode.data) textNodes.push(textNode)
+    }
+    for (const textNode of textNodes) {
+      const span = document.createElement('span')
+      span.style.fontFamily = noteBodyFontFamily(font)
+      textNode.parentNode?.replaceChild(span, textNode)
+      span.appendChild(textNode)
+    }
+    const firstInserted = fragment.firstChild
+    const lastInserted = fragment.lastChild
+    if (!firstInserted || !lastInserted) return false
+    range.insertNode(fragment)
     const selected = document.createRange()
-    selected.selectNodeContents(span)
+    selected.setStartBefore(firstInserted)
+    selected.setEndAfter(lastInserted)
     sel.removeAllRanges()
     sel.addRange(selected)
     return true
@@ -586,11 +786,12 @@ function getNoteImageWrap(img: HTMLImageElement, editor: HTMLElement): HTMLSpanE
 
 /** Inserta una imagen en el contentEditable con la selección actual. */
 export function insertImageInEditor(editor: HTMLElement, src: string): boolean {
-  editor.focus()
+  editor.focus({ preventScroll: true })
 
   const img = createNoteImageElement(src)
   const wrap = createNoteImageWrap(img)
   const sel = window.getSelection()
+  let insertedAtCaret = false
 
   let anchorRect: DOMRect | null = null
   if (sel && sel.rangeCount > 0) {
@@ -598,10 +799,12 @@ export function insertImageInEditor(editor: HTMLElement, src: string): boolean {
     if (editor.contains(range.commonAncestorContainer)) {
       anchorRect = range.getBoundingClientRect()
       range.deleteContents()
+      range.insertNode(wrap)
+      insertedAtCaret = true
     }
   }
 
-  editor.appendChild(wrap)
+  if (!insertedAtCaret) editor.appendChild(wrap)
 
   const place = () => {
     let left = 24
@@ -738,21 +941,22 @@ export function attachNoteImageDragHandlers(
   }
 }
 
-function fontIdFromElement(el: HTMLElement): EnglishNoteTitleFont | null {
+function fontIdFromElement(el: HTMLElement): NoteBodyFont | null {
   if (el.classList.contains('english-note-title--arial')) return 'arial'
-  if (el.classList.contains('english-note-title--cursive')) return 'cursive'
-  if (el.classList.contains('english-note-title--cursive2')) return 'cursive2'
-  if (el.classList.contains('english-note-title--popis')) return 'popis'
+  if (el.classList.contains('english-note-title--popis')) return 'poppins'
+  if (el.classList.contains('english-note-title--cursive') || el.classList.contains('english-note-title--cursive2')) return 'poppins'
   return null
 }
 
-function fontIdFromFamily(family: string): EnglishNoteTitleFont {
+function fontIdFromFamily(family: string): NoteBodyFont {
   const f = family.toLowerCase()
   if (f.includes('arial')) return 'arial'
-  if (f.includes('cedarville')) return 'cursive'
-  if (f.includes('sacramento')) return 'cursive2'
-  if (f.includes('poppins')) return 'popis'
-  return 'popis'
+  if (f.includes('times')) return 'times'
+  if (f.includes('georgia')) return 'georgia'
+  if (f.includes('inter')) return 'inter'
+  if (f.includes('fraunces')) return 'fraunces'
+  if (f.includes('quicksand')) return 'quicksand'
+  return 'poppins'
 }
 
 function cssColorToHex(color: string): string {
@@ -775,14 +979,14 @@ function colorIdFromCssColor(color: string): EnglishNoteColor {
   return 'black'
 }
 
-function resolveFontAtNode(editor: HTMLElement, node: Node): EnglishNoteTitleFont {
+function resolveFontAtNode(editor: HTMLElement, node: Node): NoteBodyFont {
   let el: HTMLElement | null =
     node.nodeType === Node.TEXT_NODE
       ? (node.parentElement as HTMLElement | null)
       : (node as HTMLElement)
 
-  let fromClass: EnglishNoteTitleFont | null = null
-  let fromInline: EnglishNoteTitleFont | null = null
+  let fromClass: NoteBodyFont | null = null
+  let fromInline: NoteBodyFont | null = null
 
   while (el && el !== editor) {
     if (!fromClass) {
@@ -796,7 +1000,7 @@ function resolveFontAtNode(editor: HTMLElement, node: Node): EnglishNoteTitleFon
 
   const target =
     node.nodeType === Node.TEXT_NODE ? node.parentElement : (node as HTMLElement)
-  if (!target) return 'popis'
+  if (!target) return 'poppins'
 
   const fromComputed = fontIdFromFamily(window.getComputedStyle(target).fontFamily)
   return fromClass ?? fromInline ?? fromComputed
@@ -813,6 +1017,10 @@ function readFormatAtNode(editor: HTMLElement, node: Node): Partial<NoteTypingDe
   const parsedSize = parseFloat(computed.fontSize)
   const colorHex = cssColorToHex(computed.color)
   const lineHeight = resolveLineHeightAtNode(editor, node)
+  const paragraphBlock = getBlockInEditor(node, editor)
+  const paragraphSpacingPx = paragraphBlock?.dataset.spacing
+    ? Number(paragraphBlock.dataset.spacing)
+    : paragraphBlock ? parseFloat(paragraphBlock.style.marginBottom) || NOTE_DEFAULT_SPACING_AFTER : NOTE_DEFAULT_SPACING_AFTER
 
   return {
     font: resolveFontAtNode(editor, node),
@@ -823,7 +1031,8 @@ function readFormatAtNode(editor: HTMLElement, node: Node): Partial<NoteTypingDe
     color: colorIdFromCssColor(computed.color),
     fontWeight: fontWeightFromComputed(computed.fontWeight),
     align: alignFromComputed(blockStyle.textAlign),
-    lineHeight: Number.isNaN(lineHeight) ? 1.5 : lineHeight,
+    lineHeight: Number.isNaN(lineHeight) ? NOTE_DEFAULT_LINE_HEIGHT : lineHeight,
+    paragraphSpacingPx,
     textCase: textCaseFromComputed(computed.textTransform),
   }
 }
@@ -870,7 +1079,7 @@ export function readFormatFromEditorCaret(
   const range = sel.getRangeAt(0)
   if (!editor.contains(range.commonAncestorContainer)) return null
 
-  let node: Node = range.startContainer
+  const node: Node = range.startContainer
   if (node.nodeType === Node.TEXT_NODE && range.startOffset > 0) {
     return readFormatAtNode(editor, node)
   }
@@ -914,7 +1123,7 @@ const NOTE_FONT_CLASS_MAP: Record<string, string> = {
 }
 
 export const NOTE_PRINT_GOOGLE_FONTS_URL =
-  'https://fonts.googleapis.com/css2?family=Cedarville+Cursive&family=Poppins:wght@400;500;600;700&family=Sacramento&display=swap'
+  'https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap'
 
 /** Inline font-family en spans con clase para que el PDF respete las fuentes. */
 export function prepareNoteHtmlForPrint(html: string): string {
@@ -952,6 +1161,13 @@ export function buildNotePrintDocumentHtml(options: {
     ? 'english-note-content english-note-content--two-columns'
     : 'english-note-content'
   const totalPages = pageHtmlList.length
+  const escapedTitle = docTitle.replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  })[character] ?? character)
   const bodySections = pageHtmlList
     .map((pageHtml, index) => {
       const pageNumberMarkup = pageNumberEnabled
@@ -965,7 +1181,7 @@ export function buildNotePrintDocumentHtml(options: {
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>${docTitle.replace(/</g, '&lt;')}</title>
+  <title>${escapedTitle}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="${NOTE_PRINT_GOOGLE_FONTS_URL}" rel="stylesheet" />
@@ -985,6 +1201,13 @@ export function buildNotePrintDocumentHtml(options: {
     .english-note-content, #note-print-root { font-family: 'Poppins', sans-serif; }
     p, div { margin: 0 0 0.2em; line-height: 1.35; }
     p:last-child { margin-bottom: 0; }
+    h1, h2, h3 { margin: 0.55em 0 0.35em; color: #5b4a8c; font-weight: 700; line-height: 1.2; break-after: avoid; page-break-after: avoid; }
+    h1 { font-size: 2em; }
+    h2 { font-size: 1.5em; }
+    h3 { font-size: 1.17em; }
+    blockquote.note-callout { margin: 0.8em 0; padding: 0.65em 0.9em; border-left: 4px solid #e89bb8; border-radius: 0 0.65rem 0.65rem 0; background: #fff5f8; color: #4a3f6b; break-inside: avoid; page-break-inside: avoid; }
+    .note-callout__label { display: block; margin-bottom: 0.2em; color: #7c6bb5; font-size: 0.82em; }
+    .note-callout__content { margin: 0; }
     .english-note-title--popis { font-family: 'Poppins', sans-serif !important; }
     .english-note-title--arial { font-family: Arial, Helvetica, sans-serif !important; }
     .english-note-title--cursive {
@@ -995,11 +1218,13 @@ export function buildNotePrintDocumentHtml(options: {
       font-family: 'Sacramento', cursive !important;
       font-weight: 400;
     }
-  .english-note-content { position: relative; }
+    .english-note-content { position: relative; }
     .english-note-image-wrap { position: absolute; z-index: 2; line-height: 0; max-width: min(100%, 320px); }
     .english-note-image-wrap img { display: block; max-width: 100%; height: auto; border-radius: 12px; margin: 0; }
     img { max-width: 100%; height: auto; border-radius: 12px; }
     ul, ol { margin: 0.25em 0; padding-left: 1.35rem; }
+    ul { list-style: disc outside; }
+    ol { list-style: decimal outside; }
     li { line-height: 1.35; }
     .english-note-content--two-columns {
       column-count: 2;

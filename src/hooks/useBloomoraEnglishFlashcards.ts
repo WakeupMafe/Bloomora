@@ -110,7 +110,12 @@ export function useEnglishFlashcardMutations(cedula: string | null) {
       input: EnglishFlashcardInput
     }) => {
       if (!cedula) throw new Error('Sin sesión')
-      await updateFlashcardEnglish(requireSupabase(), Number(id), input)
+      await updateFlashcardEnglish(
+        requireSupabase(),
+        Number(id),
+        cedula,
+        input,
+      )
     },
     onSuccess: invalidate,
   })
@@ -118,7 +123,7 @@ export function useEnglishFlashcardMutations(cedula: string | null) {
   const deleteMut = useMutation({
     mutationFn: async (id: string) => {
       if (!cedula) throw new Error('Sin sesión')
-      await deleteFlashcardEnglish(requireSupabase(), Number(id))
+      await deleteFlashcardEnglish(requireSupabase(), Number(id), cedula)
     },
     onSuccess: invalidate,
   })

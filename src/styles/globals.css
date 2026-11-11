@@ -1113,6 +1113,31 @@
     background: rgba(0, 0, 0, 0.22);
   }
 
+  .english-note-page-gutter__remove {
+    min-height: 2rem;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 9999px;
+    color: rgba(255, 255, 255, 0.82);
+    background: rgba(0, 0, 0, 0.16);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: normal;
+    text-transform: none;
+    cursor: pointer;
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+
+  .english-note-page-gutter__remove:hover {
+    color: #fff;
+    background: rgba(232, 122, 160, 0.62);
+  }
+
+  .english-note-page-gutter__remove:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+
   /* Hoja paginada: altura fija Carta / A4 (como Word) */
   .english-note-sheet--paged {
     display: flex;
@@ -1225,7 +1250,7 @@
 
   .english-note-sheet .english-note-content {
     position: relative;
-    line-height: 1.5;
+    line-height: 1.15;
     font-family: 'Poppins', sans-serif;
   }
 
@@ -1234,9 +1259,57 @@
   }
 
   .english-note-content p,
-  .english-note-content div:not([class]) {
+  .english-note-content h1,
+  .english-note-content h2,
+  .english-note-content h3,
+  .english-note-content li {
     margin: 0;
+    padding: 0;
+    line-height: inherit;
   }
+
+  .english-note-content span {
+    line-height: inherit !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    height: auto !important;
+  }
+
+  .english-note-content h1,
+  .english-note-content h2,
+  .english-note-content h3 {
+    color: var(--color-bloomora-deep);
+    font-weight: 700;
+    line-height: inherit;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .english-note-content h1 { font-size: 2em; }
+  .english-note-content h2 { font-size: 1.5em; }
+  .english-note-content h3 { font-size: 1.17em; }
+
+  .english-note-content blockquote.note-callout {
+    margin: 0.8em 0;
+    padding: 0.65em 0.9em;
+    border-left: 4px solid #e89bb8;
+    border-radius: 0 0.65rem 0.65rem 0;
+    background: #fff5f8;
+    color: #4a3f6b;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .english-note-content .note-callout__label {
+    display: block;
+    margin-bottom: 0.2em;
+    color: #7c6bb5;
+    font-size: 0.82em;
+  }
+
+  .english-note-content .note-callout__content { margin: 0; }
 
   .english-note-content p:last-child,
   .english-note-content div:not([class]):last-child {
@@ -1253,6 +1326,9 @@
     margin: 0.25em 0;
     padding-left: 1.35rem;
   }
+
+  .english-note-content ul { list-style: disc outside; }
+  .english-note-content ol { list-style: decimal outside; }
 
   .english-note-content:empty::before {
     content: attr(data-placeholder);

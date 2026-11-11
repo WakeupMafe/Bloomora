@@ -8,6 +8,7 @@ import {
 } from 'react'
 import { useBloomoraAlert } from '@/contexts/BloomoraAlertContext'
 import {
+  cleanLeadingEmptyNoteBlocks,
   extractOverflowHtml,
   isPageContentOverflowing,
   newNotePageId,
@@ -17,9 +18,49 @@ import {
   attachNoteImageDragHandlers,
   enhanceNoteImages,
   notePageSheetClass,
+  sanitizePastedNoteHtml,
 } from '@/features/notes/noteEditorUtils'
 import type { EnglishNotePageSize } from '@/types/englishNote'
 import { cn } from '@/utils/cn'
+
+const EDITABLE_BLOCK_SELECTOR = 'p,div,h1,h2,h3,li,blockquote'
+
+function editableBlocks(content: HTMLElement): HTMLElement[] {
+  return [...content.querySelectorAll<HTMLElement>(EDITABLE_BLOCK_SELECTOR)]
+    .filter((block) => !block.querySelector(EDITABLE_BLOCK_SELECTOR))
+}
+
+function closestEditableBlock(node: Node, content: HTMLElement): HTMLElement | null {
+  let element = node.nodeType === Node.ELEMENT_NODE ? node as HTMLElement : node.parentElement
+  while (element && element !== content) {
+    if (element.matches(EDITABLE_BLOCK_SELECTOR)) return element
+    element = element.parentElement
+  }
+  return null
+}
+
+function isAtBlockBoundary(block: HTMLElement, range: Range, edge: 'start' | 'end'): boolean {
+  const probe = document.createRange()
+  probe.selectNodeContents(block)
+  if (edge === 'start') probe.setEnd(range.startContainer, range.startOffset)
+  else probe.setStart(range.startContainer, range.startOffset)
+  return !probe.toString().replace(/[\u200b\u00a0]/g, '').trim()
+}
+
+function isEmptyEditableBlock(block: HTMLElement): boolean {
+  return !block.textContent?.replace(/[\u200b\u00a0]/g, '').trim()
+    && !block.querySelector('img,hr,canvas,video,audio,[data-note-block="true"]')
+}
+
+function setCaretInBlock(block: HTMLElement, edge: 'start' | 'end') {
+  block.focus?.()
+  const range = document.createRange()
+  range.selectNodeContents(block)
+  range.collapse(edge === 'start')
+  const selection = window.getSelection()
+  selection?.removeAllRanges()
+  selection?.addRange(range)
+}
 
 type NotePagesEditorProps = {
   pages: NotePageSlice[]
@@ -251,6 +292,124 @@ export function NotePagesEditor({
     [checkPageOverflow, refreshOverflowState],
   )
 
+  const removePageBreak = useCallback((pageIndex: number) => {
+    if (pageIndex <= 0 || pageIndex >= pages.length) return
+    const previousContent = pageContentRefsRef.current[pageIndex - 1]
+    const currentContent = pageContentRefsRef.current[pageIndex]
+    const previousHtml = previousContent?.innerHTML ?? pages[pageIndex - 1]?.html ?? ''
+    const currentHtml = currentContent?.innerHTML ?? pages[pageIndex]?.html ?? ''
+    const previousDoc = new DOMParser().parseFromString(previousHtml, 'text/html')
+    const previousIsEmpty = !previousDoc.body.textContent?.trim() && !previousDoc.body.querySelector('img, [data-note-block="true"]')
+    const currentDoc = new DOMParser().parseFromString(currentHtml, 'text/html')
+    const currentIsEmpty = !currentDoc.body.textContent?.trim() && !currentDoc.body.querySelector('img, [data-note-block="true"]')
+    const mergedHtml = `${previousIsEmpty ? '' : previousHtml}${currentIsEmpty ? '' : currentHtml}` || '<p><br /></p>'
+    const updated = pages.filter((_, index) => index !== pageIndex).map((page, index) =>
+      index === pageIndex - 1
+        ? { ...page, html: mergedHtml }
+        : page,
+    )
+    onPagesChange(updated)
+    pendingFocusPageRef.current = pageIndex - 1
+    setFocusedPageIndex(pageIndex - 1)
+    setTimeout(() => scheduleOverflowCheck(pageIndex - 1), 0)
+  }, [onPagesChange, pageContentRefsRef, pages, scheduleOverflowCheck])
+
+  const moveCaretAcrossPages = (event: KeyboardEvent<HTMLDivElement>, pageIndex: number): boolean => {
+    if (!['ArrowUp', 'ArrowDown'].includes(event.key)) return false
+    const content = pageContentRefsRef.current[pageIndex]
+    const selection = window.getSelection()
+    if (!content || !selection || selection.rangeCount === 0 || !selection.isCollapsed) return false
+    const caret = selection.getRangeAt(0)
+    if (!content.contains(caret.startContainer)) return false
+
+    const atStart = document.createRange()
+    atStart.selectNodeContents(content)
+    atStart.setEnd(caret.startContainer, caret.startOffset)
+    const atEnd = document.createRange()
+    atEnd.selectNodeContents(content)
+    atEnd.setStart(caret.startContainer, caret.startOffset)
+    const isAtStart = !atStart.toString().trim()
+    const isAtEnd = !atEnd.toString().trim()
+    const targetIndex = event.key === 'ArrowUp' && isAtStart
+      ? pageIndex - 1
+      : event.key === 'ArrowDown' && isAtEnd
+        ? pageIndex + 1
+        : -1
+    const target = pageContentRefsRef.current[targetIndex]
+    if (!target) return false
+
+    event.preventDefault()
+    target.focus({ preventScroll: true })
+    const nextRange = document.createRange()
+    nextRange.selectNodeContents(target)
+    nextRange.collapse(event.key === 'ArrowDown')
+    selection.removeAllRanges()
+    selection.addRange(nextRange)
+    setFocusedPageIndex(targetIndex)
+    setActiveEditor(target)
+    return true
+  }
+
+  const handleWordBoundaryDelete = (event: KeyboardEvent<HTMLDivElement>, pageIndex: number): boolean => {
+    if (event.key !== 'Backspace' && event.key !== 'Delete') return false
+    const content = pageContentRefsRef.current[pageIndex]
+    const selection = window.getSelection()
+    if (!content || !selection || selection.rangeCount === 0 || !selection.isCollapsed) return false
+    const range = selection.getRangeAt(0)
+    if (!content.contains(range.startContainer)) return false
+    const currentBlock = closestEditableBlock(range.startContainer, content)
+    if (!currentBlock) return false
+    const edge = event.key === 'Backspace' ? 'start' : 'end'
+    if (!isAtBlockBoundary(currentBlock, range, edge)) return false
+
+    const localBlocks = editableBlocks(content)
+    let blockIndex = localBlocks.indexOf(currentBlock)
+    if (blockIndex < 0) {
+      localBlocks.push(currentBlock)
+      localBlocks.sort((a, b) => a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1)
+      blockIndex = localBlocks.indexOf(currentBlock)
+    }
+    let neighbor: HTMLElement | null = localBlocks[blockIndex + (edge === 'start' ? -1 : 1)] ?? null
+    let neighborPageIndex = pageIndex
+    if (!neighbor) {
+      neighborPageIndex = pageIndex + (edge === 'start' ? -1 : 1)
+      const adjacentContent = pageContentRefsRef.current[neighborPageIndex]
+      const adjacentBlocks = adjacentContent ? editableBlocks(adjacentContent) : []
+      neighbor = edge === 'start' ? adjacentBlocks.at(-1) ?? null : adjacentBlocks[0] ?? null
+    }
+    if (!neighbor) return false
+
+    event.preventDefault()
+    const targetBlock = edge === 'start' ? neighbor : currentBlock
+    const sourceBlock = edge === 'start' ? currentBlock : neighbor
+    if (isEmptyEditableBlock(neighbor)) {
+      neighbor.remove()
+      setCaretInBlock(currentBlock, edge)
+    } else {
+      const marker = document.createTextNode('\u200b')
+      targetBlock.appendChild(marker)
+      while (sourceBlock.firstChild) targetBlock.appendChild(sourceBlock.firstChild)
+      sourceBlock.remove()
+      const caret = document.createRange()
+      caret.setStartBefore(marker)
+      caret.collapse(true)
+      marker.remove()
+      selection.removeAllRanges()
+      selection.addRange(caret)
+      const targetPageIndex = edge === 'start' ? neighborPageIndex : pageIndex
+      if (targetPageIndex !== pageIndex) {
+        setFocusedPageIndex(targetPageIndex)
+        const targetContent = pageContentRefsRef.current[targetPageIndex]
+        if (targetContent) setActiveEditor(targetContent)
+      }
+    }
+
+    onPageInput()
+    if (neighborPageIndex !== pageIndex) scheduleOverflowCheck(neighborPageIndex)
+    scheduleOverflowCheck(pageIndex)
+    return true
+  }
+
   const hydratePage = (pageIndex: number, el: HTMLDivElement, page: NotePageSlice) => {
     pageContentRefsRef.current[pageIndex] = el
     if (!hydratedPageIdsRef.current.has(page.id)) {
@@ -275,8 +434,18 @@ export function NotePagesEditor({
           return (
             <div key={page.id} className="english-note-page-block">
               {pageIndex > 0 ? (
-                <div className="english-note-page-gutter" aria-hidden>
-                  <span className="english-note-page-gutter__label">Salto de hoja</span>
+                <div className="english-note-page-gutter">
+                  <span className="english-note-page-gutter__label" aria-hidden>Salto de hoja</span>
+                  <button
+                    type="button"
+                    className="english-note-page-gutter__remove"
+                    aria-label={`Quitar salto antes de la hoja ${pageIndex + 1}`}
+                    title="Quitar salto y unir con la hoja anterior"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => removePageBreak(pageIndex)}
+                  >
+                    Quitar salto
+                  </button>
                 </div>
               ) : null}
               <article
@@ -303,12 +472,31 @@ export function NotePagesEditor({
                   )}
                 >
                   <div
+                    data-note-page
                     ref={(el) => {
                       if (el) hydratePage(pageIndex, el, page)
                       else pageContentRefsRef.current[pageIndex] = null
                     }}
                     contentEditable
                     suppressContentEditableWarning
+                    onMouseDown={(event) => {
+                      if (event.button !== 0) return
+                      const content = event.currentTarget
+                      const firstFlowNode = [...content.children].find(
+                        (child) => window.getComputedStyle(child).position !== 'absolute',
+                      )
+                      if (!firstFlowNode || event.clientY >= firstFlowNode.getBoundingClientRect().top) return
+                      event.preventDefault()
+                      content.focus({ preventScroll: true })
+                      const range = document.createRange()
+                      range.selectNodeContents(content)
+                      range.collapse(true)
+                      const selection = window.getSelection()
+                      selection?.removeAllRanges()
+                      selection?.addRange(range)
+                      setFocusedPageIndex(pageIndex)
+                      setActiveEditor(content)
+                    }}
                     onInput={() => {
                       onPageInput()
                       scheduleOverflowCheck(pageIndex)
@@ -317,7 +505,26 @@ export function NotePagesEditor({
                       setFocusedPageIndex(pageIndex)
                       setActiveEditor(e.currentTarget)
                     }}
-                    onKeyDown={onKeyDown}
+                    onKeyDown={(event) => {
+                      if (moveCaretAcrossPages(event, pageIndex)) return
+                      if (handleWordBoundaryDelete(event, pageIndex)) return
+                      onKeyDown(event)
+                    }}
+                    onPaste={(event) => {
+                      const html = event.clipboardData.getData('text/html')
+                      const plainText = event.clipboardData.getData('text/plain')
+                      if (!html && !plainText) return
+                      event.preventDefault()
+                      const pastedHtml = html
+                        ? sanitizePastedNoteHtml(html)
+                        : plainText
+                            .split(/\r?\n+/)
+                            .map((paragraph) => `<p>${paragraph.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char] ?? char).replace(/\n/g, '<br>')}</p>`)
+                            .join('')
+                      document.execCommand('insertHTML', false, cleanLeadingEmptyNoteBlocks(pastedHtml))
+                      onPageInput()
+                      scheduleOverflowCheck(pageIndex)
+                    }}
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={(e) => {
                       e.preventDefault()
@@ -329,7 +536,7 @@ export function NotePagesEditor({
                     )}
                     data-placeholder={
                       pageIndex === 0
-                        ? 'Escribe aqui tu apunte, titulos, listas...'
+                        ? 'Escribe aquí tu apunte; usa la barra para crear títulos y listas…'
                         : 'Continua en esta hoja...'
                     }
                   />

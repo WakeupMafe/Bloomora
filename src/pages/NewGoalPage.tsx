@@ -73,7 +73,7 @@ export function NewGoalPage() {
     let variant: MockGoalRow['variant'] = 'days'
     let goal_type = 'habit'
     let target_value: number | null = null
-    let current_value = 0
+    const current_value = 0
     let unit: string | null = null
     let frequency: string | null = null
     let progress_label: string | null = null

@@ -1,6 +1,10 @@
-import type { ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { DashboardQuickAction } from '@/components/dashboard/DashboardQuickAction'
 import { DashboardCard } from '@/components/dashboard/DashboardCard'
+import { Button } from '@/components/ui/Button'
+import { useWorkspaceTools } from '@/contexts/WorkspaceToolsContext'
+import { useUserPhone } from '@/contexts/UserPhoneContext'
+import { useBloomoraEnglishFlashcardsDashboard } from '@/hooks/useBloomoraEnglishFlashcards'
 import { cn } from '@/utils/cn'
 
 type AdditionalToolsPanelProps = {
@@ -97,114 +101,80 @@ function NotesToolIcon({ className }: { className?: string }) {
   )
 }
 
-type ToolTileProps = {
-  label: string
-  hint?: string
-  badge?: string
-  icon: ReactNode
-  iconWrapClass: string
-  onClick?: () => void
-  to?: string
-  disabled?: boolean
-}
-
-function ToolTile({
-  label,
-  hint,
-  badge,
-  icon,
-  iconWrapClass,
-  onClick,
-  to,
-  disabled,
-}: ToolTileProps) {
-  const content = (
-    <>
-      <span
-        className={cn(
-          'flex size-[3.25rem] items-center justify-center rounded-2xl shadow-sm ring-1 transition group-hover:scale-[1.03] group-hover:shadow-md sm:size-14',
-          iconWrapClass,
-        )}
-      >
-        {icon}
-      </span>
-      <span className="mt-2.5 text-center text-xs font-bold leading-tight text-bloomora-deep sm:text-[0.8125rem]">
-        {label}
-      </span>
-      {hint ? (
-        <span className="mt-0.5 text-center text-[0.65rem] leading-snug text-bloomora-text-muted">
-          {hint}
-        </span>
-      ) : null}
-      {badge ? (
-        <span className="mt-1.5 rounded-full bg-bloomora-lavender-100/90 px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide text-bloomora-violet ring-1 ring-bloomora-line/30">
-          {badge}
-        </span>
-      ) : null}
-    </>
-  )
-
-  const baseClass = cn(
-    'group flex w-full flex-col items-center rounded-2xl px-2 py-3.5 transition',
-    'hover:bg-bloomora-lavender-50/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloomora-lilac/50',
-    disabled && 'cursor-default opacity-70 hover:bg-transparent',
-  )
-
-  if (to && !disabled) {
-    return (
-      <Link to={to} className={baseClass} aria-label={label}>
-        {content}
-      </Link>
-    )
-  }
-
+function FlashcardsToolIcon({ className }: { className?: string }) {
   return (
-    <button
-      type="button"
-      className={baseClass}
-      disabled={disabled}
-      onClick={onClick}
-      aria-label={label}
-    >
-      {content}
-    </button>
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <rect x="8" y="3" width="12" height="15" rx="2" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M5 7v12a2 2 0 0 0 2 2h9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
   )
 }
 
 export function AdditionalToolsPanel({ className }: AdditionalToolsPanelProps) {
+  const { openTool } = useWorkspaceTools()
+  const { cedula } = useUserPhone()
+  const { data: flashcards, isLoading: isFlashcardsLoading } = useBloomoraEnglishFlashcardsDashboard(cedula)
+  const [toolChoice, setToolChoice] = useState<'pomodoro' | 'english-notes' | null>(null)
   return (
+    <>
     <aside
-      className={cn('min-w-0 w-full lg:max-w-[13.5rem] lg:justify-self-end', className)}
+      className={cn('h-full min-w-0 w-full self-stretch', className)}
       aria-label="Herramientas adicionales"
     >
-      <DashboardCard className="h-full bg-gradient-to-b from-bloomora-white via-bloomora-lavender-50/25 to-bloomora-mist/40 p-4 shadow-[0_10px_32px_-14px_rgba(91,74,140,0.14)] sm:p-5">
-        <h2 className="text-center text-[0.7rem] font-bold uppercase tracking-[0.12em] text-bloomora-violet/90 sm:text-xs">
-          Herramientas adicionales
+      <DashboardCard className="h-full gap-3 border border-bloomora-line/50 bg-white p-4 shadow-[0_5px_18px_rgba(91,74,140,0.06)] ring-0 sm:p-5">
+        <h2 className="text-base font-bold tracking-tight text-bloomora-deep">
+          Herramientas
         </h2>
-        <p className="mt-1 text-center text-[0.65rem] leading-snug text-bloomora-text-muted sm:text-xs">
+        <p className="-mt-2 text-xs leading-snug text-bloomora-text-muted">
           Accesos rápidos
         </p>
 
-        <nav className="mt-5 flex flex-row justify-center gap-2 sm:flex-col sm:gap-1 lg:mt-6">
-          <ToolTile
-            to="/app/pomodoro"
+        <nav className="flex flex-col gap-2">
+          <DashboardQuickAction
+            onClick={() => setToolChoice('pomodoro')}
             label="Pomodoro"
-            hint="Temporizador"
+            description="Temporizador de enfoque"
             icon={
               <PomodoroToolIcon className="size-9 text-rose-500 sm:size-10" />
             }
-            iconWrapClass="bg-gradient-to-br from-rose-50 to-orange-50 text-rose-500 ring-rose-200/50"
+            iconClassName="bg-rose-50 text-rose-500 ring-rose-200/50"
           />
-          <ToolTile
-            to="/app/english-notes"
+          <DashboardQuickAction
+            to="/app/flashcards"
+            label="Flashcards"
+            description={isFlashcardsLoading ? 'Cargando…' : `${flashcards?.count ?? 0} palabras · Inglés`}
+            icon={<FlashcardsToolIcon className="size-6 text-orange-500" />}
+            iconClassName="bg-orange-50 text-orange-500 ring-orange-200/50"
+          />
+          <DashboardQuickAction
+            onClick={() => setToolChoice('english-notes')}
             label="Apuntes"
+            description="Tus notas"
             icon={
               <NotesToolIcon className="size-9 text-bloomora-violet/70 sm:size-10" />
             }
-            iconWrapClass="bg-gradient-to-br from-bloomora-lavender-50 to-bloomora-blush/80 text-bloomora-violet ring-bloomora-line/35"
+            iconClassName="bg-bloomora-lavender-50 text-bloomora-violet ring-bloomora-line/35"
           />
         </nav>
       </DashboardCard>
     </aside>
+    {toolChoice ? (
+      <div className="fixed inset-0 z-[10080] flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget) setToolChoice(null) }}>
+        <section role="dialog" aria-modal="true" aria-labelledby="workspace-tool-choice-title" className="w-full max-w-sm rounded-3xl border border-bloomora-line/50 bg-white p-6 shadow-2xl">
+          <h2 id="workspace-tool-choice-title" className="text-lg font-bold text-bloomora-deep">¿Cómo quieres abrir {toolChoice === 'pomodoro' ? 'Pomodoro' : 'Apuntes'}?</h2>
+          <p className="mt-1 text-sm text-bloomora-text-muted">Puedes cambiar de modo cuando quieras.</p>
+          <div className="mt-5 grid gap-3">
+            <Button variant="secondary" fullWidth className="h-auto min-h-0 justify-start rounded-2xl px-4 py-3 text-left" onClick={() => { openTool(toolChoice, 'full'); setToolChoice(null) }}>
+              <span><span className="block text-sm font-bold">Pantalla completa</span><span className="mt-0.5 block text-xs font-normal text-bloomora-text-muted">Ocupa el espacio de trabajo; puedes minimizarlo después.</span></span>
+            </Button>
+            <Button variant="secondary" fullWidth className="h-auto min-h-0 justify-start rounded-2xl px-4 py-3 text-left" onClick={() => { openTool(toolChoice, 'minimized'); setToolChoice(null) }}>
+              <span><span className="block text-sm font-bold">Modo gadget</span><span className="mt-0.5 block text-xs font-normal text-bloomora-text-muted">Abre una ventana flotante que puedes mover por la pantalla.</span></span>
+            </Button>
+          </div>
+          <Button variant="ghost" size="sm" fullWidth className="mt-3" onClick={() => setToolChoice(null)}>Cancelar</Button>
+        </section>
+      </div>
+    ) : null}
+    </>
   )
 }

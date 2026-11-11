@@ -1,15 +1,18 @@
-import type { EnglishNoteTitleFont } from '@/types/englishNote'
+import type { NoteBodyFont } from '@/features/notes/noteTypingDefaults'
 
 export type NoteFormatTarget = 'selection' | 'typing'
 
 export const NOTE_TEXT_OPTION_FONTS: Array<{
-  id: EnglishNoteTitleFont
+  id: NoteBodyFont
   label: string
 }> = [
-  { id: 'popis', label: 'Poppins' },
+  { id: 'poppins', label: 'Poppins' },
+  { id: 'quicksand', label: 'Quicksand' },
+  { id: 'inter', label: 'Inter' },
+  { id: 'fraunces', label: 'Fraunces' },
+  { id: 'georgia', label: 'Georgia' },
+  { id: 'times', label: 'Times New Roman' },
   { id: 'arial', label: 'Arial' },
-  { id: 'cursive', label: 'Cursiva' },
-  { id: 'cursive2', label: 'Cursiva 2' },
 ]
 
 export const NOTE_HIGHLIGHT_PRESETS = [

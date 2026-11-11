@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   loadPomodoroSettings,
   phaseDurationMs,
@@ -16,6 +16,8 @@ import {
 } from '@/utils/pomodoroAlarmSound'
 
 export type PomodoroStatus = 'idle' | 'running' | 'paused' | 'alarm'
+
+export type PomodoroTimerController = ReturnType<typeof usePomodoroTimer>
 
 export function usePomodoroTimer() {
   const [settings, setSettings] = useState<PomodoroSettings>(() =>
@@ -36,11 +38,13 @@ export function usePomodoroTimer() {
   const alarmFiredRef = useRef(false)
   const remainingMsRef = useRef(remainingMs)
 
-  settingsRef.current = settings
-  remainingMsRef.current = remainingMs
-  phaseRef.current = phase
-  statusRef.current = status
-  endsAtRef.current = endsAt
+  useLayoutEffect(() => {
+    settingsRef.current = settings
+    remainingMsRef.current = remainingMs
+    phaseRef.current = phase
+    statusRef.current = status
+    endsAtRef.current = endsAt
+  }, [settings, remainingMs, phase, status, endsAt])
 
   const updateSettings = useCallback((patch: Partial<PomodoroSettings>) => {
     setSettings((prev) => {

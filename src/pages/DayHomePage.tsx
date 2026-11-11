@@ -1,30 +1,20 @@
 import { AgendaCard } from "@/features/dashboard/AgendaCard";
 import { DashboardAppHeader } from "@/features/dashboard/DashboardAppHeader";
 import { GoalProgressCard } from "@/features/dashboard/GoalProgressCard";
-import { FlashcardsCard } from "@/features/dashboard/FlashcardsCard";
 import { ListsCard } from "@/features/dashboard/ListsCard";
 import { AdditionalToolsPanel } from "@/features/dashboard/AdditionalToolsPanel";
 import { useUserPhone } from "@/contexts/UserPhoneContext";
 import { useAutoPurgePreviousAgendaMonth } from "@/hooks/useAgendaDayOperations";
 
 /**
- * Inicio: fila 1 tareas + metas; fila 2 flashcards, listas y herramientas adicionales.
+ * Inicio: fila 1 tareas + metas; fila 2 listas y accesos rápidos a herramientas.
  */
 export function DayHomePage() {
   const { cedula } = useUserPhone();
   useAutoPurgePreviousAgendaMonth(cedula);
 
   return (
-    <div className="relative isolate min-h-dvh bg-bloomora-snow">
-      <div
-        className="bloomora-page-glows pointer-events-none absolute inset-0 -z-10"
-        aria-hidden
-      >
-        <div className="absolute inset-0 bg-gradient-to-b from-bloomora-blush/35 via-bloomora-snow to-bloomora-mist/90" />
-        <div className="absolute -right-24 top-1/4 h-72 w-72 rounded-full bg-bloomora-lavender-50/35 blur-3xl" />
-        <div className="absolute -left-20 bottom-1/3 h-64 w-64 rounded-full bg-bloomora-rose/12 blur-3xl" />
-      </div>
-
+    <div className="min-h-dvh bg-bloomora-snow">
       <main className="app-shell-padding--dashboard mx-auto w-full max-w-[1200px]">
         <DashboardAppHeader />
 
@@ -33,10 +23,9 @@ export function DayHomePage() {
           <GoalProgressCard className="h-full min-h-0 min-w-0 w-full max-w-full max-h-[600px] lg:max-h-[550px]" />
         </div>
 
-        <div className="mt-6 grid min-w-0 grid-cols-1 gap-6 sm:mt-8 lg:mt-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(10.75rem,13.5rem)] lg:items-stretch lg:gap-6 xl:gap-8">
-          <FlashcardsCard />
+        <div className="mt-6 grid min-w-0 grid-cols-1 gap-6 sm:mt-8 lg:mt-10 lg:grid-cols-[minmax(0,1.8fr)_minmax(16rem,0.9fr)] lg:items-stretch lg:gap-6 xl:gap-8">
           <ListsCard />
-          <AdditionalToolsPanel className="lg:sticky lg:top-6 lg:self-start" />
+          <AdditionalToolsPanel className="h-full self-stretch" />
         </div>
       </main>
     </div>

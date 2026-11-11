@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { DashboardCard } from '@/components/dashboard/DashboardCard'
+import { ButtonLink } from '@/components/ui/ButtonLink'
 import { getCategoryTheme } from '@/features/flashcards/flashcardCategoryTheme'
-import { QUICK_FLASHCARD_DAILY_LIMIT } from '@/features/flashcards/flashcardQuickMode'
 import { itemCountLabel } from '@/features/flashcards/groupFlashcardsByCategory'
 import { useUserPhone } from '@/contexts/UserPhoneContext'
 import { useBloomoraEnglishFlashcardsDashboard } from '@/hooks/useBloomoraEnglishFlashcards'
@@ -42,7 +42,7 @@ export function FlashcardsCard() {
         : `${count} palabras`
 
   return (
-    <DashboardCard className="overflow-hidden rounded-[clamp(1.25rem,1.05rem+1vw,1.75rem)] bg-gradient-to-br from-bloomora-white via-bloomora-lavender-50/40 to-bloomora-blush/60 p-5 shadow-[0_12px_40px_-18px_rgba(124,107,181,0.18)] ring-1 ring-bloomora-line/30 sm:p-6">
+    <DashboardCard className="overflow-hidden rounded-[clamp(1.25rem,1.05rem+1vw,1.75rem)] border border-bloomora-line/50 bg-white p-5 shadow-[0_5px_18px_rgba(91,74,140,0.06)] ring-0 sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-bloomora-lavender-100/90 text-bloomora-violet ring-1 ring-bloomora-lilac/25">
@@ -56,36 +56,28 @@ export function FlashcardsCard() {
           </span>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-          <Link
+          <ButtonLink
             to="/app/flashcards?crear=rapido"
-            className={cn(
-              'inline-flex w-full items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-bold transition sm:w-auto',
-              'bg-bloomora-violet text-white shadow-[0_6px_20px_-6px_rgba(91,74,140,0.45)] hover:brightness-110',
-            )}
+            variant="secondary"
+            size="sm"
+            className="w-full gap-1.5 sm:w-auto"
           >
             <span aria-hidden>⚡</span>
             Modo rápido
-          </Link>
-          <Link
+          </ButtonLink>
+          <ButtonLink
             to="/app/flashcards"
-            className={cn(
-              'inline-flex w-full items-center justify-center rounded-full px-4 py-2.5 text-sm font-bold text-white shadow-[0_8px_24px_-6px_var(--bloomora-list-panel-glow)] transition sm:w-auto',
-              'bg-gradient-to-r from-[var(--bloomora-list-cta-from)] via-[var(--bloomora-list-cta-via)] to-[var(--bloomora-list-cta-to)] hover:brightness-[1.04]',
-            )}
+            variant="primary"
+            size="sm"
+            className="w-full sm:w-auto"
           >
             Abrir flashcards
             <span aria-hidden className="ml-1">
               ›
             </span>
-          </Link>
+          </ButtonLink>
         </div>
       </div>
-      <p className="mt-2 text-sm leading-relaxed text-bloomora-text-muted">
-        Vocabulario en inglés con imagen y tarjetas que puedes voltear.{' '}
-        <strong className="font-semibold text-bloomora-violet">Modo rápido</strong>: palabra +
-        significado al momento (máx. {QUICK_FLASHCARD_DAILY_LIMIT}/día).
-      </p>
-
       {!isLoading && categories.length > 0 ? (
         <ul
           className="mt-4 flex flex-col gap-2"

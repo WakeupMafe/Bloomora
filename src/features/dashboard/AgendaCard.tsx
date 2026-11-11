@@ -24,6 +24,7 @@ import { useAgendaBlockEndAlerts } from "@/hooks/useAgendaBlockEndAlerts";
 import { useBloomoraGoals } from "@/hooks/useBloomoraGoals";
 import { useBloomoraProfile } from "@/hooks/useBloomoraProfile";
 import { useGoalTaskTemplates } from "@/hooks/useGoalTaskTemplates";
+import { messageFromSupabaseError } from "@/lib/supabaseError";
 import {
   useDuplicateAgendaDay,
   nextDateKeyFrom,
@@ -114,6 +115,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
     data: tasks = [],
     isLoading,
     isError,
+    error: agendaError,
   } = useBloomoraAgenda(cedula, dayKey);
   const { data: goals = [] } = useBloomoraGoals(cedula);
   const { templateIds } = useGoalTaskTemplates(cedula);
@@ -526,12 +528,11 @@ export function AgendaCard({ className }: AgendaCardProps) {
             <code className="rounded bg-bloomora-lavender-50 px-1 text-bloomora-deep">
               subtasks
             </code>{" "}
-            y políticas RLS para tu usuario. Si faltan listas o marcas del
-            tracker, ejecuta{" "}
+            y sus permisos RLS. Comprueba que esté aplicada la migración{" "}
             <code className="rounded bg-bloomora-lavender-50 px-1 text-bloomora-deep">
-              20260416_bloomora_goal_marks_lists_goals_ui.sql
+              20260417_bloomora_simple_mode_rls_anon_core.sql
             </code>
-            .
+            . Detalle de Supabase: {messageFromSupabaseError(agendaError)}
           </p>
         </div>
       ) : null}

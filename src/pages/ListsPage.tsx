@@ -249,7 +249,6 @@ export function ListsPage() {
 
   useEffect(() => {
     exitMultiSelectMode()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId])
 
   return (

@@ -8,7 +8,10 @@ import {
   phaseLabel,
   type PomodoroPhase,
 } from '@/features/pomodoro/pomodoroSettings'
-import { usePomodoroTimer } from '@/hooks/usePomodoroTimer'
+import {
+  usePomodoroTimer,
+  type PomodoroTimerController,
+} from '@/hooks/usePomodoroTimer'
 import { requestPomodoroNotificationPermission } from '@/utils/pomodoroAlarmSound'
 import { cn } from '@/utils/cn'
 
@@ -27,6 +30,21 @@ type PomodoroTimerProps = {
 }
 
 export function PomodoroTimer({ className, compact }: PomodoroTimerProps) {
+  const controller = usePomodoroTimer()
+  return (
+    <PomodoroTimerView
+      controller={controller}
+      className={className}
+      compact={compact}
+    />
+  )
+}
+
+export function PomodoroTimerView({
+  controller,
+  className,
+  compact,
+}: PomodoroTimerProps & { controller: PomodoroTimerController }) {
   const {
     phase,
     status,
@@ -41,7 +59,7 @@ export function PomodoroTimer({ className, compact }: PomodoroTimerProps) {
     stopAlarm,
     selectPhase,
     skipToNext,
-  } = usePomodoroTimer()
+  } = controller
 
   const [showSettings, setShowSettings] = useState(false)
 
@@ -81,12 +99,12 @@ export function PomodoroTimer({ className, compact }: PomodoroTimerProps) {
       </div>
 
       <div
-        className="relative mt-6 flex items-center justify-center"
-        style={{ width: ringSize, height: ringSize }}
+        className={cn('relative mt-4 flex aspect-square items-center justify-center', compact ? 'w-[min(200px,30dvh)]' : 'w-[min(260px,34dvh)]')}
+        style={{ height: 'auto' }}
       >
         <svg
-          width={ringSize}
-          height={ringSize}
+          width="100%"
+          height="100%"
           className="-rotate-90"
           aria-hidden
         >
@@ -202,7 +220,7 @@ export function PomodoroTimer({ className, compact }: PomodoroTimerProps) {
         </span>
       </p>
 
-      {!compact ? (
+      {(
         <div className="mt-6 w-full max-w-md">
           <Button
             type="button"
@@ -305,7 +323,7 @@ export function PomodoroTimer({ className, compact }: PomodoroTimerProps) {
             </Card>
           ) : null}
         </div>
-      ) : null}
+      )}
     </div>
   )
 }

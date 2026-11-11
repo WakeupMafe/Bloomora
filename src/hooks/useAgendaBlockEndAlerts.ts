@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { AgendaTask } from '@/data/dashboardMock'
 import {
   formatMinutes12h,
@@ -74,7 +74,9 @@ export function useAgendaBlockEndAlerts(
   const [prompt, setPrompt] = useState<AgendaBlockEndPrompt | null>(null)
   const notifiedRef = useRef<Set<string>>(new Set())
   const tasksRef = useRef(tasks)
-  tasksRef.current = tasks
+  useLayoutEffect(() => {
+    tasksRef.current = tasks
+  }, [tasks])
   const lastScanMinuteRef = useRef<number | null>(null)
   const promptQueueRef = useRef<AgendaBlockEndPrompt[]>([])
 

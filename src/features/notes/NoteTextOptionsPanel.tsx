@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import type { NoteFormatTarget } from '@/features/notes/noteTextOptionsConstants'
 import {
   NOTE_FONT_SIZE_SLIDER_MAX,
@@ -7,21 +7,25 @@ import {
   NOTE_TEXT_OPTION_FONTS,
 } from '@/features/notes/noteTextOptionsConstants'
 import type {
+  NoteBodyFont,
   NoteFontWeight,
   NoteTextAlign,
   NoteTextCase,
 } from '@/features/notes/noteTypingDefaults'
-import type { EnglishNoteColor, EnglishNoteTitleFont } from '@/types/englishNote'
+import type { EnglishNoteColor } from '@/types/englishNote'
+import { noteBodyFontFamily } from '@/features/notes/noteFontUtils'
 import { ENGLISH_NOTE_COLORS } from '@/types/englishNote'
+import { NOTE_LINE_HEIGHTS } from '@/features/notes/noteSpacingModel.mjs'
 import { cn } from '@/utils/cn'
 
 export type NoteTextOptionsValues = {
-  font: EnglishNoteTitleFont
+  font: NoteBodyFont
   fontSizePx: number
   colorId: EnglishNoteColor
   align: NoteTextAlign
   fontWeight: NoteFontWeight
   lineHeight: number
+  paragraphSpacingPx: number
   textCase: NoteTextCase
   highlightColor: string | null
 }
@@ -31,7 +35,7 @@ type NoteTextOptionsPanelProps = {
   values: NoteTextOptionsValues
   onClose: () => void
   keepSelection: (e: React.MouseEvent) => void
-  onFontChange: (font: EnglishNoteTitleFont) => void
+  onFontChange: (font: NoteBodyFont) => void
   onFontSizeChange: (px: number) => void
   onTextColor: (hex: string, colorId: EnglishNoteColor) => void
   onCustomTextColor: (hex: string) => void
@@ -40,6 +44,7 @@ type NoteTextOptionsPanelProps = {
   onFontWeight: (weight: NoteFontWeight) => void
   onAlign: (align: NoteTextAlign) => void
   onLineHeight: (value: number) => void
+  onParagraphSpacingChange: (value: number) => void
   onTextCase: (textCase: NoteTextCase) => void
   onApplyTextoPreset?: () => void
 }
@@ -108,6 +113,7 @@ export function NoteTextOptionsPanel({
   onFontWeight,
   onAlign,
   onLineHeight,
+  onParagraphSpacingChange,
   onTextCase,
   onApplyTextoPreset,
 }: NoteTextOptionsPanelProps) {
@@ -115,12 +121,11 @@ export function NoteTextOptionsPanel({
   const customColorRef = useRef<HTMLInputElement>(null)
   const customHighlightRef = useRef<HTMLInputElement>(null)
   const [sliderActive, setSliderActive] = useState(false)
-  const [fontsExpanded, setFontsExpanded] = useState(false)
-
-  useEffect(() => {
-    const idx = NOTE_TEXT_OPTION_FONTS.findIndex((f) => f.id === values.font)
-    if (idx >= 3) setFontsExpanded(true)
-  }, [values.font])
+  const [showAllFonts, setShowAllFonts] = useState(false)
+  const selectedFontIndex = NOTE_TEXT_OPTION_FONTS.findIndex(
+    (f) => f.id === values.font,
+  )
+  const fontsExpanded = showAllFonts || selectedFontIndex >= 3
 
   const visibleFonts = fontsExpanded
     ? NOTE_TEXT_OPTION_FONTS
@@ -138,8 +143,9 @@ export function NoteTextOptionsPanel({
   }
 
   const stepLineHeight = (delta: number) => {
-    const next = Math.min(3, Math.max(1, Math.round((values.lineHeight + delta) * 10) / 10))
-    onLineHeight(next)
+    const current = NOTE_LINE_HEIGHTS.reduce((best, value) => Math.abs(value - values.lineHeight) < Math.abs(best - values.lineHeight) ? value : best, NOTE_LINE_HEIGHTS[0])
+    const index = NOTE_LINE_HEIGHTS.indexOf(current)
+    onLineHeight(NOTE_LINE_HEIGHTS[Math.min(NOTE_LINE_HEIGHTS.length - 1, Math.max(0, index + delta))])
   }
 
   return (
@@ -211,7 +217,7 @@ export function NoteTextOptionsPanel({
                 <button
                   type="button"
                   className="text-[0.7rem] font-semibold text-bloomora-violet hover:underline"
-                  onClick={() => setFontsExpanded(true)}
+                  onClick={() => setShowAllFonts(true)}
                 >
                   Ver más
                 </button>
@@ -243,10 +249,8 @@ export function NoteTextOptionsPanel({
                   <span
                     className={cn(
                       'block text-sm font-semibold text-bloomora-deep',
-                      f.id === 'popis' && 'font-[Poppins,sans-serif]',
-                      f.id === 'arial' && 'font-[Arial,sans-serif]',
-                      (f.id === 'cursive' || f.id === 'cursive2') && 'italic',
                     )}
+                    style={{ fontFamily: noteBodyFontFamily(f.id) }}
                   >
                     {f.label}
                   </span>
@@ -257,7 +261,7 @@ export function NoteTextOptionsPanel({
               <button
                 type="button"
                 aria-label="Más fuentes"
-                onClick={() => setFontsExpanded(true)}
+                onClick={() => setShowAllFonts(true)}
                 className="flex min-w-[2.5rem] shrink-0 items-center justify-center rounded-xl border border-bloomora-line/40 text-bloomora-text-muted hover:border-bloomora-lilac/50"
               >
                 …
@@ -526,7 +530,7 @@ export function NoteTextOptionsPanel({
                 −
               </button>
               <span className="min-w-[2.5rem] flex-1 text-center text-sm font-semibold tabular-nums text-bloomora-deep">
-                {values.lineHeight}
+                {Number(values.lineHeight.toFixed(2))}
               </span>
               <button
                 type="button"
@@ -537,6 +541,26 @@ export function NoteTextOptionsPanel({
               >
                 +
               </button>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Espaciados predefinidos">
+              {NOTE_LINE_HEIGHTS.map((spacing) => (
+                <button
+                  key={spacing}
+                  type="button"
+                  aria-pressed={Math.abs(values.lineHeight - spacing) < 0.01}
+                  onMouseDown={keepSelection}
+                  onClick={() => onLineHeight(spacing)}
+                  className={cn(
+                    'min-h-9 min-w-10 rounded-full border px-2 text-xs font-semibold transition',
+                    Math.abs(values.lineHeight - spacing) < 0.01
+                      ? 'border-bloomora-violet/30 bg-bloomora-lavender-50 text-bloomora-violet'
+                      : 'border-bloomora-line/35 bg-white text-bloomora-text-muted hover:bg-bloomora-lavender-50/60',
+                  )}
+                  title={`Interlineado ${spacing}`}
+                >
+                  {spacing}
+                </button>
+              ))}
             </div>
           </section>
 
@@ -570,6 +594,21 @@ export function NoteTextOptionsPanel({
             </div>
           </section>
         </div>
+
+        <section>
+          <SectionLabel>Espacio después del párrafo</SectionLabel>
+          <select
+            aria-label="Espaciado entre párrafos"
+            value={values.paragraphSpacingPx}
+            onChange={(event) => onParagraphSpacingChange(Number(event.target.value))}
+            className="min-h-10 w-full rounded-xl border border-bloomora-line/35 bg-bloomora-snow/80 px-3 text-sm text-bloomora-deep outline-none focus:ring-2 focus:ring-bloomora-lilac/50"
+          >
+            <option value={0}>Sin espacio</option>
+            <option value={6}>Agregar 6 px después</option>
+            <option value={8}>Espacio normal · 8 px</option>
+            <option value={12}>Agregar 12 px después</option>
+          </select>
+        </section>
       </div>
     </div>
   )

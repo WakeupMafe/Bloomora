@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, useMemo, useState } from 'react'
 import type { AgendaSubtask } from '@/data/dashboardMock'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/utils/cn'
@@ -33,7 +33,13 @@ export function AgendaTaskSubsteps({
   const [draft, setDraft] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editDraft, setEditDraft] = useState('')
-  const safeSubtasks = Array.isArray(subtasks) ? subtasks : []
+  const safeSubtasks = useMemo(
+    () => (Array.isArray(subtasks) ? subtasks : []),
+    [subtasks],
+  )
+  const activeEditingId = safeSubtasks.some((s) => s.id === editingId)
+    ? editingId
+    : null
 
   const summary = useMemo(() => {
     const done = safeSubtasks.filter((s) => s.completed).length
@@ -46,13 +52,6 @@ export function AgendaTaskSubsteps({
       tone,
     } as const
   }, [safeSubtasks])
-
-  useEffect(() => {
-    if (editingId && !safeSubtasks.some((s) => s.id === editingId)) {
-      setEditingId(null)
-      setEditDraft('')
-    }
-  }, [safeSubtasks, editingId])
 
   const handleAdd = (e: FormEvent) => {
     e.preventDefault()
@@ -148,7 +147,7 @@ export function AgendaTaskSubsteps({
             <ol className="space-y-1.5">
               {safeSubtasks.map((s, idx) => (
                 <li key={s.id}>
-                  {editingId === s.id ? (
+                  {activeEditingId === s.id ? (
                     <form
                       className="flex flex-col gap-2 rounded-xl bg-bloomora-sky/55 p-2 ring-1 ring-bloomora-sky-deep/25"
                       onSubmit={handleSaveEdit}

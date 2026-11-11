@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/Button'
 import {
   NoteTextOptionsPanel,
   type NoteTextOptionsValues,
 } from '@/features/notes/NoteTextOptionsPanel'
-import type { EnglishNoteColor, EnglishNoteTitleFont } from '@/types/englishNote'
+import type { EnglishNoteColor } from '@/types/englishNote'
+import type { NoteBodyFont } from '@/features/notes/noteTypingDefaults'
+import { NOTE_BODY_FONTS } from '@/features/notes/noteFontUtils'
 import { ENGLISH_NOTE_COLORS } from '@/types/englishNote'
 import { NOTE_FONT_SIZE_STEP_PX } from '@/features/notes/noteEditorUtils'
 import { coordsFromEditorCaret } from '@/features/notes/noteEditorUtils'
@@ -90,7 +92,9 @@ export function useNoteSelectionToolbar(editorRef: React.RefObject<HTMLDivElemen
   }, [])
 
   const dismissRef = useRef(dismiss)
-  dismissRef.current = dismiss
+  useLayoutEffect(() => {
+    dismissRef.current = dismiss
+  }, [dismiss])
 
   const preserveSelectionApply = useCallback(
     (fn: () => void) => {
@@ -275,6 +279,7 @@ export function NoteSelectionToolbar({
   onFontWeight,
   onAlign,
   onLineHeight,
+  onParagraphSpacingChange,
   onTextCase,
   onCustomTextColor,
   onAlignCenter,
@@ -290,12 +295,13 @@ export function NoteSelectionToolbar({
   onTextColor: (hex: string, colorId: EnglishNoteColor) => void
   onHighlight: (hex: string) => void
   onClearHighlight: () => void
-  onFontChange: (font: EnglishNoteTitleFont) => void
+  onFontChange: (font: NoteBodyFont) => void
   onFontSizeChange: (deltaPx: number) => void
   onFontSizeSet: (px: number) => void
   onFontWeight: (weight: NoteFontWeight) => void
   onAlign: (align: NoteTextAlign) => void
   onLineHeight: (value: number) => void
+  onParagraphSpacingChange: (value: number) => void
   onTextCase: (textCase: NoteTextCase) => void
   onCustomTextColor: (hex: string) => void
   onAlignCenter: () => void
@@ -345,6 +351,7 @@ export function NoteSelectionToolbar({
             onFontWeight={onFontWeight}
             onAlign={onAlign}
             onLineHeight={onLineHeight}
+            onParagraphSpacingChange={onParagraphSpacingChange}
             onTextCase={onTextCase}
             onApplyTextoPreset={onApplyTextoPreset}
           />
@@ -368,7 +375,7 @@ export function NoteSelectionToolbar({
         <span className="text-[0.6rem] font-bold uppercase tracking-wide text-bloomora-violet">
           Fuente
         </span>
-        {(['popis', 'arial', 'cursive', 'cursive2'] as const).map((id) => (
+        {NOTE_BODY_FONTS.map(({ id, label }) => (
           <Button
             key={id}
             type="button"
@@ -378,7 +385,7 @@ export function NoteSelectionToolbar({
             onMouseDown={keepSelection}
             onClick={() => onFontChange(id)}
           >
-            {id === 'popis' ? 'Poppins' : id === 'arial' ? 'Arial' : id === 'cursive' ? 'Cursiva' : 'Cursiva 2'}
+            {label}
           </Button>
         ))}
         <span className="mx-0.5 h-5 w-px bg-bloomora-line/40" aria-hidden />

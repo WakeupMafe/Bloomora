@@ -22,7 +22,7 @@ export function BloomoraThemeSync() {
     }
     if (!profile) return
     applyBloomoraThemeCssVars(resolveAppThemeId(profile.preferred_theme))
-  }, [phone, profile?.preferred_theme])
+  }, [phone, profile, profile?.preferred_theme])
 
   return null
 }

@@ -5,13 +5,13 @@ export type ButtonSize = 'sm' | 'md' | 'lg'
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    'bg-[linear-gradient(90deg,var(--bloomora-btn-from)_0%,var(--bloomora-btn-to)_100%)] text-white font-semibold shadow-[0_12px_32px_-8px_var(--bloomora-btn-shadow)] hover:brightness-[1.08] hover:saturate-[1.06] hover:shadow-[0_14px_40px_-8px_var(--bloomora-btn-shadow-hover)]',
+    'bg-bloomora-rose text-white font-bold shadow-sm hover:bg-bloomora-rose-deep hover:shadow-md',
   secondary:
-    'bg-bloomora-white/80 text-bloomora-deep shadow-bloomora-card ring-1 ring-bloomora-line hover:bg-bloomora-white hover:ring-bloomora-lilac/50 hover:shadow-[0_10px_32px_-14px_rgba(124,107,181,0.24)] hover:text-bloomora-deep',
+    'border border-bloomora-line/70 bg-white text-bloomora-deep shadow-sm hover:border-bloomora-lilac/60 hover:bg-bloomora-lavender-50/50 hover:shadow-md',
   ghost:
     'text-bloomora-violet hover:bg-bloomora-lavender-50/95 hover:text-bloomora-deep hover:shadow-[inset_0_0_0_1px_rgba(184,168,232,0.2)] active:bg-bloomora-lavender-100/75',
   outline:
-    'border border-bloomora-line bg-transparent text-bloomora-deep hover:border-bloomora-lilac/50 hover:bg-bloomora-blush/75 hover:text-bloomora-deep hover:shadow-[0_6px_22px_-10px_rgba(124,107,181,0.18)]',
+    'border border-bloomora-line/70 bg-white text-bloomora-violet hover:border-bloomora-lilac/60 hover:bg-bloomora-lavender-50/50',
 }
 
 const sizeStyles: Record<ButtonSize, string> = {
@@ -21,7 +21,7 @@ const sizeStyles: Record<ButtonSize, string> = {
 }
 
 const baseStyles =
-  'inline-flex items-center justify-center rounded-pill font-medium tracking-tight ring-offset-bloomora-snow transition-[transform,box-shadow,background-color,border-color,color,filter,opacity] duration-[220ms] ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloomora-lilac motion-reduce:transition-none motion-reduce:active:scale-100 active:scale-[0.972] active:duration-150 active:ease-out'
+  'inline-flex items-center justify-center rounded-pill font-semibold tracking-tight ring-offset-bloomora-snow transition-[transform,box-shadow,background-color,border-color,color,opacity] duration-150 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloomora-lilac motion-reduce:transition-none active:scale-[0.98]'
 
 export function buttonClassName(options: {
   variant?: ButtonVariant

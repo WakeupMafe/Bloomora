@@ -1,4 +1,5 @@
 import type { EnglishNotePageSize } from '@/types/englishNote'
+import { normalizeSpacing } from '@/features/notes/noteSpacingModel.mjs'
 
 export type NotePageSlice = { id: string; html: string }
 
@@ -15,6 +16,58 @@ export function newNotePageId(): string {
     return crypto.randomUUID()
   }
   return `page-${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
+
+function hasMeaningfulContent(node: Node): boolean {
+  if (node.nodeType === Node.TEXT_NODE) {
+    return !!node.textContent?.replace(/[\u200b\u00a0]/g, '').trim()
+  }
+  if (!(node instanceof HTMLElement)) return false
+  if (node.matches('img,hr,canvas,video,audio,[data-note-block="true"]')) return true
+  return [...node.childNodes].some(hasMeaningfulContent)
+}
+
+function clearLegacyTopOffset(block: HTMLElement): void {
+  // The page already supplies its fixed top margin. Pasted first blocks must not
+  // add a second CSS margin/padding before the text.
+  block.style.marginTop = '0'
+  block.style.marginBlockStart = '0'
+  block.style.paddingTop = '0'
+  block.style.paddingBlockStart = '0'
+  const firstMeaningfulChild = [...block.children].find(hasMeaningfulContent) as HTMLElement | undefined
+  if (firstMeaningfulChild && /^(P|DIV|H1|H2|H3|BLOCKQUOTE)$/.test(firstMeaningfulChild.tagName)) {
+    clearLegacyTopOffset(firstMeaningfulChild)
+  }
+}
+
+/** Removes blank paragraphs and breaks before the first real content, including inside pasted wrappers. */
+export function cleanLeadingEmptyNoteBlocks(html: string): string {
+  const doc = new DOMParser().parseFromString(`<div id="note-clean-root">${html}</div>`, 'text/html')
+  const root = doc.getElementById('note-clean-root')
+  if (!root) return html
+
+  const stripLeading = (container: HTMLElement): void => {
+    while (container.firstChild) {
+      const first = container.firstChild
+      if (!hasMeaningfulContent(first)) {
+        first.remove()
+        continue
+      }
+      if (first instanceof HTMLElement && /^(P|DIV|SECTION|ARTICLE|BLOCKQUOTE)$/.test(first.tagName)) {
+        stripLeading(first)
+        if (!hasMeaningfulContent(first)) {
+          first.remove()
+          continue
+        }
+      }
+      break
+    }
+  }
+
+  stripLeading(root)
+  const firstBlock = root.firstElementChild as HTMLElement | null
+  if (firstBlock) clearLegacyTopOffset(firstBlock)
+  return root.innerHTML || '<p><br /></p>'
 }
 
 function lengthToPx(value: string, rootFontSize: number): number {
@@ -50,7 +103,7 @@ export function getNotePageContentMaxHeightPx(
 }
 
 export function parseNotePagesFromHtml(html: string): NotePageSlice[] {
-  const normalized = html?.trim() || ''
+  const normalized = normalizeSpacing(html?.trim() || '')
   if (!normalized) {
     return [{ id: newNotePageId(), html: '<p><br /></p>' }]
   }
@@ -68,7 +121,7 @@ export function parseNotePagesFromHtml(html: string): NotePageSlice[] {
   let buffer = doc.createElement('div')
 
   const flush = () => {
-    htmlParts.push(buffer.innerHTML.trim() || '<p><br /></p>')
+    htmlParts.push(normalizeSpacing(cleanLeadingEmptyNoteBlocks(buffer.innerHTML).trim() || '<p><br /></p>', { renderStyles: true }))
     buffer = doc.createElement('div')
   }
 

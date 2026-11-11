@@ -1,4 +1,4 @@
-import tulipanLogo from '@/assets/TulipanLogo.png'
+import navbarFlower from '@/assets/logos/bloomora_navbar_flor.png'
 import { BloomoraImage } from '@/components/ui/BloomoraImage'
 import { cn } from '@/utils/cn'
 
@@ -7,7 +7,7 @@ type BloomoraLogoProps = {
   size?: 'sm' | 'md' | 'lg'
   priority?: boolean
   /**
-   * El PNG es el tulipán de marca. Por defecto se muestra la palabra “Bloomora” al lado.
+   * La flor se toma del recurso oficial de navbar; el wordmark se renderiza como texto.
    * Si más adelante usas un PNG que ya incluye el texto, pon `false`.
    */
   showWordmark?: boolean
@@ -39,7 +39,7 @@ export function BloomoraLogo({
       )}
     >
       <BloomoraImage
-        src={tulipanLogo}
+        src={navbarFlower}
         alt={showWordmark ? '' : 'Bloomora'}
         aria-hidden={showWordmark || undefined}
         size="full"

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Card } from '@/components/ui/Card'
 import { bloomoraInputClass, bloomoraPanelCardClass } from '@/components/ui/formControls'
 import { useBloomoraToast } from '@/contexts/BloomoraToastContext'
@@ -26,18 +26,24 @@ import {
   BODY_TYPING_DEFAULTS,
   type NoteTypingDefaults,
 } from '@/features/notes/noteTypingDefaults'
+import type { NoteBodyFont, NoteParagraphStyle } from '@/features/notes/noteTypingDefaults'
+import { stepNoteFontSize } from '@/features/notes/noteFontUtils'
+import { captureEditorSelection, restoreEditorSelection, type EditorSelectionBookmark } from '@/features/notes/noteSelectionBookmark'
 import {
   applyBlockAlign,
+  applyNoteParagraphStyle,
   applyNoteFontSizeToSelection,
   applyNoteFontToSelection,
   applyNoteFontWeightToSelection,
   applyNoteLineHeightToSelection,
+  applyNoteParagraphSpacing,
   applyNoteTextCaseToSelection,
   adjustNoteSelectionFontSize,
   applyTypingDefaultsAtCaret,
   buildNotePrintDocumentHtml,
   clearNoteSelectionHighlight,
   insertImageInEditor,
+  insertNoteBlock,
   insertParagraphWithTypingDefaults,
   NOTE_FONT_SIZE_MAX_PX,
   NOTE_FONT_SIZE_MIN_PX,
@@ -46,6 +52,9 @@ import {
   printNoteDocument,
   readFormatFromEditorSelection,
   readFormatFromEditorCaret,
+  readActiveNoteMarks,
+  readNoteHighlightColor,
+  readNoteParagraphStyle,
   runEditorCommand,
 } from '@/features/notes/noteEditorUtils'
 import type { NoteTextOptionsValues } from '@/features/notes/NoteTextOptionsPanel'
@@ -56,7 +65,9 @@ import type {
   EnglishNotePageSize,
   EnglishNoteTitleFont,
 } from '@/types/englishNote'
+import { ENGLISH_NOTE_COLORS } from '@/types/englishNote'
 import { cn } from '@/utils/cn'
+import { normalizeSpacing } from '@/features/notes/noteSpacingModel.mjs'
 
 function defaultsToPanelFormat(
   d: NoteTypingDefaults,
@@ -69,6 +80,7 @@ function defaultsToPanelFormat(
     align: d.align,
     fontWeight: d.fontWeight,
     lineHeight: d.lineHeight,
+    paragraphSpacingPx: d.paragraphSpacingPx,
     textCase: d.textCase,
     highlightColor: highlight,
   }
@@ -84,6 +96,7 @@ function readToPanelFormatPatch(
   if (read.align) patch.align = read.align
   if (read.fontWeight) patch.fontWeight = read.fontWeight
   if (read.lineHeight != null) patch.lineHeight = read.lineHeight
+  if (read.paragraphSpacingPx != null) patch.paragraphSpacingPx = read.paragraphSpacingPx
   if (read.textCase) patch.textCase = read.textCase
   return patch
 }
@@ -110,6 +123,7 @@ type NoteEditorProps = {
   isNoteContentLoading?: boolean
   hasSavedNotes?: boolean
   isDraft?: boolean
+  onUnsavedChange?: (dirty: boolean) => void
 }
 
 export function NoteEditor({
@@ -120,6 +134,7 @@ export function NoteEditor({
   isNoteContentLoading = false,
   hasSavedNotes = false,
   isDraft = false,
+  onUnsavedChange,
 }: NoteEditorProps) {
   const { showToast } = useBloomoraToast()
   const editorRef = useRef<HTMLDivElement>(null)
@@ -129,9 +144,16 @@ export function NoteEditor({
     { id: 'page-initial', html: '<p><br /></p>' },
   ])
   const imgInputRef = useRef<HTMLInputElement>(null)
-  const [saveLabel, setSaveLabel] = useState(
-    isDraft ? 'Apunte nuevo · pulsa Ctrl+G para guardar' : 'Pulsa Guardar o Ctrl+G para guardar',
-  )
+  const [saveLabel, setSaveLabel] = useState(isDraft ? 'Apunte nuevo · sin guardar' : 'Guardado')
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [changeCount, setChangeCount] = useState(0)
+  const dirtyRef = useRef(false)
+  const changeVersionRef = useRef(0)
+  const savePromiseRef = useRef<Promise<boolean> | null>(null)
+  const toolbarSelectionRef = useRef<EditorSelectionBookmark | null>(null)
+  const [activeMarks, setActiveMarks] = useState({ bold: false, italic: false, underline: false, strike: false, align: 'left' as NoteTextAlign })
+  const [paragraphStyle, setParagraphStyle] = useState<NoteParagraphStyle>('p')
   const [titleDraft, setTitleDraft] = useState('')
   const [categoryDraft, setCategoryDraft] = useState('')
   const [pageSizeDraft, setPageSizeDraft] = useState<EnglishNotePageSize>('letter')
@@ -144,6 +166,9 @@ export function NoteEditor({
   const pageNumberEnabledDraftRef = useRef(pageNumberEnabledDraft)
   const twoColumnsDraftRef = useRef(twoColumnsDraft)
   const onPatchRef = useRef(onPatch)
+  const onUnsavedChangeRef = useRef(onUnsavedChange)
+  const loadedNoteIdRef = useRef<string | null>(null)
+  const lastAppliedContentRef = useRef<{ id: string; html: string } | null>(null)
   const [typingDefaults, setTypingDefaults] = useState<NoteTypingDefaults>({
     ...BODY_TYPING_DEFAULTS,
   })
@@ -152,21 +177,45 @@ export function NoteEditor({
     defaultsToPanelFormat(BODY_TYPING_DEFAULTS, null),
   )
   const typingDefaultsRef = useRef<NoteTypingDefaults>({ ...BODY_TYPING_DEFAULTS })
-  typingDefaultsRef.current = typingDefaults
-
   const patchPanelFormat = useCallback((patch: Partial<NoteTextOptionsValues>) => {
     setPanelFormat((prev) => ({ ...prev, ...patch }))
   }, [])
 
-  noteRef.current = note
-  titleDraftRef.current = titleDraft
-  categoryDraftRef.current = categoryDraft
-  pageSizeDraftRef.current = pageSizeDraft
-  pageNumberEnabledDraftRef.current = pageNumberEnabledDraft
-  twoColumnsDraftRef.current = twoColumnsDraft
-  onPatchRef.current = onPatch
+  const refreshToolbarFormat = useCallback(() => {
+    const editor = editorRef.current
+    const selection = window.getSelection()
+    if (!editor || !selection || selection.rangeCount === 0 || !editor.contains(selection.getRangeAt(0).commonAncestorContainer)) return
+    toolbarSelectionRef.current = captureEditorSelection(editor) ?? toolbarSelectionRef.current
+    setActiveMarks(readActiveNoteMarks(editor))
+    setParagraphStyle(readNoteParagraphStyle(editor))
+    const read = readFormatFromEditorCaret(editor)
+    if (read) setPanelFormat((previous) => ({ ...previous, ...readToPanelFormatPatch(read) }))
+    setHighlightColor(readNoteHighlightColor(editor))
+  }, [])
+
+  useEffect(() => {
+    document.addEventListener('selectionchange', refreshToolbarFormat)
+    return () => document.removeEventListener('selectionchange', refreshToolbarFormat)
+  }, [refreshToolbarFormat])
+
+  useLayoutEffect(() => {
+    noteRef.current = note
+    titleDraftRef.current = titleDraft
+    categoryDraftRef.current = categoryDraft
+    pageSizeDraftRef.current = pageSizeDraft
+    pageNumberEnabledDraftRef.current = pageNumberEnabledDraft
+    twoColumnsDraftRef.current = twoColumnsDraft
+    onPatchRef.current = onPatch
+    onUnsavedChangeRef.current = onUnsavedChange
+    typingDefaultsRef.current = typingDefaults
+  }, [note, titleDraft, categoryDraft, pageSizeDraft, pageNumberEnabledDraft, twoColumnsDraft, onPatch, onUnsavedChange, typingDefaults])
 
   const markUnsaved = useCallback(() => {
+    changeVersionRef.current += 1
+    setChangeCount((count) => count + 1)
+    dirtyRef.current = true
+    setHasUnsavedChanges(true)
+    onUnsavedChangeRef.current?.(true)
     setSaveLabel('Cambios sin guardar')
   }, [])
 
@@ -227,34 +276,45 @@ export function NoteEditor({
     } else {
       setPanelFormat(defaultsToPanelFormat(typingDefaultsRef.current, highlightColor))
     }
-  }, [selectionCoords, selectionMode, formatTarget, prepareSelectionForFormat])
+  }, [selectionCoords, selectionMode, formatTarget, prepareSelectionForFormat, highlightColor])
 
   const optionValues = panelFormat
 
   useEffect(() => {
     if (!note) return
+    if (loadedNoteIdRef.current === note.id && dirtyRef.current) return
+    if (loadedNoteIdRef.current !== note.id) {
+      loadedNoteIdRef.current = note.id
+      changeVersionRef.current += 1
+      dirtyRef.current = false
+      setChangeCount(0)
+      setHasUnsavedChanges(false)
+      onUnsavedChangeRef.current?.(false)
+    }
     setTitleDraft(note.title)
     setCategoryDraft(note.category ?? '')
     setPageSizeDraft(note.pageSize)
     setPageNumberEnabledDraft(note.pageNumberEnabled)
     setTwoColumnsDraft(note.twoColumns)
-    setSaveLabel(
-      isDraftNoteId(note.id)
-        ? 'Apunte nuevo · pulsa Ctrl+G para guardar'
-        : 'Pulsa Guardar o Ctrl+G para guardar',
-    )
+    setSaveLabel(isDraftNoteId(note.id) ? 'Apunte nuevo · sin guardar' : 'Guardado')
     typingDefaultsRef.current = { ...BODY_TYPING_DEFAULTS }
-  }, [note?.id])
+    setTypingDefaults({ ...BODY_TYPING_DEFAULTS })
+    setHighlightColor(null)
+    setPanelFormat(defaultsToPanelFormat(BODY_TYPING_DEFAULTS, null))
+  }, [note])
 
   useEffect(() => {
     if (!note) return
+    if (loadedNoteIdRef.current !== note.id || dirtyRef.current) return
+    if (lastAppliedContentRef.current?.id === note.id && lastAppliedContentRef.current.html === note.contentHtml) return
     const displayHtml = optimizeNoteHtmlForDisplay(note.contentHtml)
     setPages(parseNotePagesFromHtml(displayHtml))
+    lastAppliedContentRef.current = { id: note.id, html: note.contentHtml }
   }, [note?.id, note?.contentHtml])
 
   const readEditorPayload = () => {
     const pageHtmlList = collectPagesHtmlFromRefs(pageContentRefsRef.current)
-    const html = restoreNoteHtmlImageSources(serializeNotePagesHtml(pageHtmlList))
+    const html = normalizeSpacing(restoreNoteHtmlImageSources(serializeNotePagesHtml(pageHtmlList)))
     const doc = new DOMParser().parseFromString(html, 'text/html')
     const plainRoot = doc.body
     return {
@@ -278,48 +338,100 @@ export function NoteEditor({
     [userCedula],
   )
 
-  const saveNow = useCallback(async (): Promise<boolean> => {
+  const saveNow = useCallback(async (notify = false): Promise<boolean> => {
+    if (savePromiseRef.current) return savePromiseRef.current
     const current = noteRef.current
     if (!current) return false
 
-    setSaveLabel('Guardando en Supabase...')
+    const saveVersion = changeVersionRef.current
+    const title = titleDraftRef.current
+    const category = categoryDraftRef.current.trim() || null
+    const pageSize = pageSizeDraftRef.current
+    const pageNumberEnabled = pageNumberEnabledDraftRef.current
+    const twoColumns = twoColumnsDraftRef.current
+    setIsSaving(true)
+    setSaveLabel('Guardando…')
 
-    let payload = readEditorPayload()
-    if (userCedula) {
-      if (payload.contentHtml.includes('data:image/')) {
-        setSaveLabel('Optimizando imágenes...')
+    const saveTask = (async () => {
+      try {
+        let payload = readEditorPayload()
+        if (userCedula) {
+          if (payload.contentHtml.includes('data:image/')) setSaveLabel('Guardando imágenes…')
+          payload = await preparePayloadForSave(payload)
+        }
+
+        const ok = await onPatchRef.current(current.id, {
+          title,
+          category,
+          pageSize,
+          pageNumberEnabled,
+          twoColumns,
+          ...payload,
+        })
+        if (!ok) {
+          setSaveLabel('No se pudo guardar; se volverá a intentar')
+          return false
+        }
+
+        lastAppliedContentRef.current = { id: current.id, html: payload.contentHtml }
+
+        if (changeVersionRef.current === saveVersion) {
+          dirtyRef.current = false
+          setHasUnsavedChanges(false)
+          setChangeCount(0)
+          onUnsavedChangeRef.current?.(false)
+          setSaveLabel('Guardado')
+        } else {
+          setSaveLabel('Hay cambios nuevos por guardar')
+        }
+        if (notify) showToast('Apunte guardado en Supabase')
+        return true
+      } catch (error) {
+        setSaveLabel('No se pudo guardar; se volverá a intentar')
+        if (notify) showToast(error instanceof Error ? error.message : 'No se pudo guardar el apunte.')
+        return false
       }
-      payload = await preparePayloadForSave(payload)
-    }
-
-    const ok = await onPatchRef.current(current.id, {
-      title: titleDraftRef.current,
-      category: categoryDraftRef.current.trim() || null,
-      pageSize: pageSizeDraftRef.current,
-      pageNumberEnabled: pageNumberEnabledDraftRef.current,
-      twoColumns: twoColumnsDraftRef.current,
-      ...payload,
-    })
-    if (ok) {
-      setSaveLabel('Guardado en Supabase')
-      showToast('Apunte guardado en Supabase')
-    } else {
-      setSaveLabel('Error al guardar')
-    }
-    return ok
+    })()
+    savePromiseRef.current = saveTask
+    const result = await saveTask
+    if (savePromiseRef.current === saveTask) savePromiseRef.current = null
+    setIsSaving(false)
+    return result
   }, [preparePayloadForSave, showToast, userCedula])
 
   useEffect(() => {
+    if (!note || !hasUnsavedChanges || isSaving || changeCount === 0) return
+    // Keep the browser's contentEditable undo stack intact while a user is
+    // actively editing. Save after three edits and a short quiet period; if
+    // there are fewer edits, save them after a longer idle period.
+    const delay = changeCount >= 3 ? 3800 : 12000
+    const timer = window.setTimeout(() => void saveNow(false), delay)
+    return () => window.clearTimeout(timer)
+  }, [changeCount, hasUnsavedChanges, isSaving, note?.id, saveNow])
+
+  useEffect(() => {
     if (!note) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'g') {
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      const target = e.target
+      const withinEditor = target instanceof Element && !!target.closest('[data-note-editor]')
+      if (withinEditor && e.ctrlKey && !e.altKey && ['g', 's'].includes(e.key.toLowerCase())) {
         e.preventDefault()
-        void saveNow()
+        void saveNow(true)
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [note?.id, saveNow])
+  }, [note, saveNow])
+
+  useEffect(() => {
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!dirtyRef.current) return
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [])
 
   const cmd = (command: string, value?: string) => {
     const editor = editorRef.current
@@ -335,8 +447,40 @@ export function NoteEditor({
     return !!sel.toString().trim()
   }
 
+  const restoreToolbarSelection = useCallback((editor: HTMLElement) => {
+    if (toolbarSelectionRef.current) restoreEditorSelection(editor, toolbarSelectionRef.current)
+  }, [])
+
+  const runToolbarCommand = useCallback((command: string, value?: string) => {
+    const editor = editorRef.current
+    if (!editor) return
+    restoreToolbarSelection(editor)
+    runEditorCommand(editor, command, value)
+    markUnsaved()
+    requestAnimationFrame(refreshToolbarFormat)
+  }, [markUnsaved, refreshToolbarFormat, restoreToolbarSelection])
+
+  const applyToolbarSelectionOrTyping = useCallback((
+    onSelection: (editor: HTMLElement) => void,
+    onTyping: (editor: HTMLElement) => void,
+  ) => {
+    const editor = editorRef.current
+    if (!editor) return
+    restoreToolbarSelection(editor)
+    if (editorHasTextSelection(editor)) {
+      onSelection(editor)
+      markUnsaved()
+    } else {
+      onTyping(editor)
+    }
+    requestAnimationFrame(refreshToolbarFormat)
+  }, [markUnsaved, refreshToolbarFormat, restoreToolbarSelection])
+
   const insertImageAtCursor = async (file: File | undefined) => {
-    if (!file || !editorRef.current) return
+    const editor = editorRef.current
+    if (!file || !editor) return
+    const noteId = note?.id
+    toolbarSelectionRef.current = captureEditorSelection(editor) ?? toolbarSelectionRef.current
     if (!file.type.startsWith('image/')) {
       showToast('Elige un archivo de imagen.')
       return
@@ -349,11 +493,13 @@ export function NoteEditor({
     setSaveLabel('Subiendo imagen...')
     try {
       const url = await uploadEnglishNoteImage(requireSupabase(), userCedula, file)
-      const inserted = insertImageInEditor(editorRef.current, url)
+      if (note?.id !== noteId || editorRef.current !== editor) return
+      restoreToolbarSelection(editor)
+      const inserted = insertImageInEditor(editor, url)
       if (inserted) {
         markUnsaved()
         setSaveLabel('Cambios sin guardar')
-        showToast('Imagen insertada (comprimida). Pulsa Ctrl+G para guardar el apunte.')
+        showToast('Imagen insertada. Se guardará automáticamente.')
       }
     } catch {
       showToast('No se pudo subir la imagen. Ejecuta la migración english-note-images en Supabase.')
@@ -369,9 +515,9 @@ export function NoteEditor({
   const openPrintWindow = (forPdf: boolean) => {
     if (!note) return
     const html =
-      restoreNoteHtmlImageSources(
+      normalizeSpacing(restoreNoteHtmlImageSources(
         serializeNotePagesHtml(collectPagesHtmlFromRefs(pageContentRefsRef.current)),
-      ) || note.contentHtml
+      ) || note.contentHtml, { renderStyles: true })
     const w = window.open('', '_blank')
     if (!w) return
     const docTitle = titleDraft.trim() || 'Apunte'
@@ -393,6 +539,40 @@ export function NoteEditor({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     const editor = editorRef.current
+    if (e.ctrlKey && !e.altKey && ['home', 'end'].includes(e.key.toLowerCase())) {
+      const pages = pageContentRefsRef.current.filter((page): page is HTMLDivElement => !!page)
+      const target = e.key.toLowerCase() === 'home' ? pages[0] : pages.at(-1)
+      if (target) {
+        e.preventDefault()
+        target.focus({ preventScroll: true })
+        const range = document.createRange()
+        range.selectNodeContents(target)
+        range.collapse(e.key.toLowerCase() === 'home')
+        const selection = window.getSelection()
+        selection?.removeAllRanges()
+        selection?.addRange(range)
+        toolbarSelectionRef.current = captureEditorSelection(target)
+        requestAnimationFrame(refreshToolbarFormat)
+        return
+      }
+    }
+    if (e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'a') {
+      // Each hoja is a separate contentEditable, but browsers can otherwise
+      // extend Ctrl+A to the surrounding app when focus moved between sheets.
+      e.preventDefault()
+      const pageEditor = e.currentTarget
+      pageEditor.focus({ preventScroll: true })
+      const selection = window.getSelection()
+      if (selection) {
+        const range = document.createRange()
+        range.selectNodeContents(pageEditor)
+        selection.removeAllRanges()
+        selection.addRange(range)
+        toolbarSelectionRef.current = captureEditorSelection(pageEditor)
+        requestAnimationFrame(refreshToolbarFormat)
+      }
+      return
+    }
     const ctrlZoomIn =
       e.ctrlKey &&
       !e.altKey &&
@@ -412,10 +592,7 @@ export function NoteEditor({
           adjustNoteSelectionFontSize(editor, NOTE_FONT_SIZE_STEP_PX)
         })
       } else {
-        const next = Math.min(
-          NOTE_FONT_SIZE_MAX_PX,
-          typingDefaultsRef.current.fontSizePx + NOTE_FONT_SIZE_STEP_PX,
-        )
+        const next = stepNoteFontSize(typingDefaultsRef.current.fontSizePx, 1)
         applyTypingFormat({ fontSizePx: next })
       }
       markUnsaved()
@@ -428,10 +605,7 @@ export function NoteEditor({
           adjustNoteSelectionFontSize(editor, -NOTE_FONT_SIZE_STEP_PX)
         })
       } else {
-        const next = Math.max(
-          NOTE_FONT_SIZE_MIN_PX,
-          typingDefaultsRef.current.fontSizePx - NOTE_FONT_SIZE_STEP_PX,
-        )
+        const next = stepNoteFontSize(typingDefaultsRef.current.fontSizePx, -1)
         applyTypingFormat({ fontSizePx: next })
       }
       markUnsaved()
@@ -445,7 +619,11 @@ export function NoteEditor({
     }
     if (e.key === 'Enter' && !e.shiftKey && editor) {
       e.preventDefault()
-      insertParagraphWithTypingDefaults(editor, typingDefaultsRef.current)
+      const activeFormat = readFormatFromEditorCaret(editor)
+      const paragraphDefaults = { ...typingDefaultsRef.current, ...activeFormat }
+      typingDefaultsRef.current = paragraphDefaults
+      setTypingDefaults(paragraphDefaults)
+      insertParagraphWithTypingDefaults(editor, paragraphDefaults)
       markUnsaved()
       return
     }
@@ -457,6 +635,16 @@ export function NoteEditor({
     if (e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'b') {
       e.preventDefault()
       cmd('bold')
+      return
+    }
+    if (e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'i') {
+      e.preventDefault()
+      cmd('italic')
+      return
+    }
+    if (e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'u') {
+      e.preventDefault()
+      cmd('underline')
       return
     }
     if (e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'y') {
@@ -491,7 +679,7 @@ export function NoteEditor({
   }
 
   return (
-    <Card variant="glass" className={cn(bloomoraPanelCardClass, 'space-y-4 p-4 sm:p-5')}>
+    <Card data-note-editor variant="glass" className={cn(bloomoraPanelCardClass, 'mx-auto w-full min-w-0 max-w-full space-y-4 overflow-visible p-3 sm:p-5')}>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="text-xs font-semibold text-bloomora-text-muted">
           Nombre del apunte
@@ -507,7 +695,7 @@ export function NoteEditor({
             className={cn(bloomoraInputClass, 'mt-1 !min-h-10 rounded-xl px-3 py-2')}
           />
           <span className="mt-1 block text-[0.65rem] font-normal text-bloomora-text-muted/90">
-            Solo identifica el archivo en tu lista. Escribe titulos en la hoja como texto normal.
+            Solo identifica el archivo en tu lista. Usa Texto normal o estilos de Título 1, 2 y 3 desde la barra.
           </span>
         </label>
         <label className="text-xs font-semibold text-bloomora-text-muted">
@@ -526,16 +714,69 @@ export function NoteEditor({
       <div className="flex flex-wrap items-center gap-3 text-xs text-bloomora-text-muted">
         <span>Creado: {new Date(note.createdAt).toLocaleString('es-CO')}</span>
         <span>Ultima edicion: {new Date(note.updatedAt).toLocaleString('es-CO')}</span>
-        <span className="text-emerald-600">{saveLabel}</span>
+        <span role="status" aria-live="polite" className={cn(isSaving ? 'text-bloomora-violet' : hasUnsavedChanges ? 'text-amber-600' : 'text-emerald-600')}>
+          {isSaving ? 'Guardando…' : hasUnsavedChanges ? 'Cambios pendientes de guardar' : saveLabel}
+        </span>
       </div>
 
       <NoteToolbar
-        onBold={() => cmd('bold')}
-        onUnderline={() => cmd('underline')}
-        onBulletList={() => cmd('insertUnorderedList')}
-        onNumberedList={() => cmd('insertOrderedList')}
-        onAlignCenter={() => cmd('justifyCenter')}
-        onAlignLeft={() => cmd('justifyLeft')}
+        onBeforeControl={() => { if (editorRef.current) toolbarSelectionRef.current = captureEditorSelection(editorRef.current) ?? toolbarSelectionRef.current }}
+        onBold={() => runToolbarCommand('bold')}
+        onItalic={() => runToolbarCommand('italic')}
+        onUnderline={() => runToolbarCommand('underline')}
+        onStrike={() => runToolbarCommand('strikeThrough')}
+        onBulletList={() => runToolbarCommand('insertUnorderedList')}
+        onNumberedList={() => runToolbarCommand('insertOrderedList')}
+        onAlign={(align) => applyToolbarSelectionOrTyping(
+          (editor) => applyBlockAlign(editor, align),
+          (editor) => { applyTypingFormat({ align }); applyBlockAlign(editor, align) },
+        )}
+        onInsertNote={() => {
+          applyToolbarSelectionOrTyping(
+            (editor) => { insertNoteBlock(editor); markUnsaved() },
+            (editor) => { insertNoteBlock(editor); markUnsaved() },
+          )
+        }}
+        onFontChange={(font: NoteBodyFont) => applyToolbarSelectionOrTyping(
+          (editor) => applyNoteFontToSelection(editor, font),
+          () => applyTypingFormat({ font }),
+        )}
+        onFontSizeChange={(fontSizePx) => applyToolbarSelectionOrTyping(
+          (editor) => applyNoteFontSizeToSelection(editor, fontSizePx),
+          () => applyTypingFormat({ fontSizePx }),
+        )}
+        onFontSizeStep={(direction) => {
+          const next = stepNoteFontSize(panelFormat.fontSizePx, direction)
+          applyToolbarSelectionOrTyping(
+            (editor) => applyNoteFontSizeToSelection(editor, next),
+            () => applyTypingFormat({ fontSizePx: next }),
+          )
+        }}
+        onParagraphStyleChange={(style: NoteParagraphStyle) => applyToolbarSelectionOrTyping(
+          (editor) => { applyNoteParagraphStyle(editor, style); markUnsaved() },
+          (editor) => { applyNoteParagraphStyle(editor, style); markUnsaved() },
+        )}
+        onTextColor={(hex) => applyToolbarSelectionOrTyping(
+          (editor) => runEditorCommand(editor, 'foreColor', hex),
+          () => {
+            const color = ENGLISH_NOTE_COLORS.find((item) => item.value === hex)?.id ?? 'black'
+            applyTypingFormat({ colorHex: hex, color })
+          },
+        )}
+        onHighlight={(hex) => {
+          setHighlightColor(hex)
+          patchPanelFormat({ highlightColor: hex })
+          applyToolbarSelectionOrTyping(
+            (editor) => hex ? runEditorCommand(editor, 'hiliteColor', hex) : clearNoteSelectionHighlight(editor),
+            () => applyTypingFormat({ highlightColor: hex }),
+          )
+        }}
+        active={activeMarks}
+        font={panelFormat.font}
+        fontSizePx={panelFormat.fontSizePx}
+        paragraphStyle={paragraphStyle}
+        textColor={ENGLISH_NOTE_COLORS.find((color) => color.id === panelFormat.colorId)?.value ?? '#111111'}
+        highlightColor={highlightColor}
         onInsertImage={() => imgInputRef.current?.click()}
         onUndo={() => cmd('undo')}
         onRedo={() => cmd('redo')}
@@ -557,7 +798,7 @@ export function NoteEditor({
           setTwoColumnsDraft(enabled)
           markUnsaved()
         }}
-        onSave={() => void saveNow()}
+        onSave={() => void saveNow(true)}
       />
 
       <NoteSelectionToolbar
@@ -657,6 +898,16 @@ export function NoteEditor({
             applyLineHeight()
           }
         }}
+        onParagraphSpacingChange={(spacingPx) => {
+          patchPanelFormat({ paragraphSpacingPx: spacingPx })
+          const editor = editorRef.current
+          if (!editor) return
+          if (formatTarget === 'typing') {
+            applyTypingFormat({ paragraphSpacingPx: spacingPx })
+          } else {
+            applySelectionFormat(() => { applyNoteParagraphSpacing(editor, spacingPx); markUnsaved() })
+          }
+        }}
         onTextCase={(textCase: NoteTextCase) => {
           patchPanelFormat({ textCase })
           if (formatTarget === 'typing') {
@@ -717,20 +968,14 @@ export function NoteEditor({
         }}
         onFontSizeChange={(delta) => {
           if (!editorRef.current) return
+          const next = stepNoteFontSize(panelFormat.fontSizePx, delta < 0 ? -1 : 1)
           if (formatTarget === 'typing') {
-            const next = Math.min(
-              NOTE_FONT_SIZE_MAX_PX,
-              Math.max(
-                NOTE_FONT_SIZE_MIN_PX,
-                panelFormat.fontSizePx + delta,
-              ),
-            )
             patchPanelFormat({ fontSizePx: next })
             applyTypingFormat({ fontSizePx: next })
             return
           }
           applySelectionFormat(() => {
-            adjustNoteSelectionFontSize(editorRef.current!, delta)
+            applyNoteFontSizeToSelection(editorRef.current!, next)
           })
         }}
       />
@@ -745,7 +990,7 @@ export function NoteEditor({
 
       <NotePagesEditor
         pages={pages}
-        onPagesChange={setPages}
+        onPagesChange={(nextPages) => { setPages(nextPages); markUnsaved() }}
         pageSize={pageSizeDraft}
         pageNumberEnabled={pageNumberEnabledDraft}
         twoColumns={twoColumnsDraft}
