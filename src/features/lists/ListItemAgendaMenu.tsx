@@ -256,7 +256,7 @@ export function ListItemAgendaMenu({
           role="dialog"
           aria-modal
           className={cn(
-            'bloomora-modal-panel fixed flex max-h-[min(85vh,28rem)] flex-col gap-4 overflow-hidden bg-bloomora-blush/[0.98] shadow-[0_16px_48px_rgba(91,74,140,0.22)] ring-1 ring-bloomora-line/40 backdrop-blur-md',
+            'bloomora-modal-panel fixed flex max-h-[min(85dvh,28rem)] flex-col gap-4 overflow-hidden bg-bloomora-blush/[0.98] shadow-[0_16px_48px_rgba(91,74,140,0.22)] ring-1 ring-bloomora-line/40 backdrop-blur-md',
             isNarrow
               ? 'rounded-[22px] p-5'
               : 'left-1/2 top-1/2 max-w-[min(100vw-2rem,22rem)] -translate-x-1/2 -translate-y-1/2 rounded-2xl p-6',
@@ -340,7 +340,7 @@ export function ListItemAgendaMenu({
           role="dialog"
           aria-modal
           className={cn(
-            'bloomora-modal-panel fixed flex max-h-[min(88vh,32rem)] flex-col gap-4 overflow-hidden bg-bloomora-blush/[0.98] shadow-[0_16px_48px_rgba(91,74,140,0.22)] ring-1 ring-bloomora-line/40 backdrop-blur-md',
+            'bloomora-modal-panel fixed flex max-h-[min(88dvh,32rem)] flex-col gap-4 overflow-hidden bg-bloomora-blush/[0.98] shadow-[0_16px_48px_rgba(91,74,140,0.22)] ring-1 ring-bloomora-line/40 backdrop-blur-md',
             isNarrow
               ? 'rounded-[22px] p-5'
               : 'left-1/2 top-1/2 max-w-[min(100vw-2rem,24rem)] -translate-x-1/2 -translate-y-1/2 rounded-2xl p-6',

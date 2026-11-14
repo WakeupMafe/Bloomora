@@ -98,14 +98,15 @@ export function ListsCard() {
         >
           {lists.map((list, idx) => {
             const gadgetOpen = isListGadgetOpen(list.id)
+            const listHref = `/app/lists?list=${encodeURIComponent(list.id)}`
             return (
               <li
                 key={list.id}
                 className="group flex min-w-0 items-center gap-1 rounded-[1.125rem] border border-bloomora-line bg-bloomora-white pr-1"
               >
                 <Link
-                  to={`/app/lists?list=${encodeURIComponent(list.id)}`}
-                  className="group flex min-h-[4.25rem] min-w-0 flex-1 items-center gap-3.5 rounded-[1.125rem] px-4 py-3 text-left transition-colors hover:bg-bloomora-mist/40"
+                  to={listHref}
+                  className="flex min-h-[4.25rem] min-w-0 flex-1 items-center gap-3.5 rounded-[1.125rem] px-4 py-3 text-left transition-colors hover:bg-bloomora-mist/40"
                 >
                   <span
                     className="grid size-11 shrink-0 place-items-center rounded-[0.875rem] bg-bloomora-mist text-xl"
@@ -117,22 +118,6 @@ export function ListsCard() {
                     <span className="block truncate text-base font-bold text-bloomora-deep">
                       {list.title}
                     </span>
-                  </span>
-                  {canUseGadgets ? (
-                    <span
-                      className={cn(
-                        'hidden shrink-0 rounded-pill bg-bloomora-mist px-3 py-1.5 text-[0.8125rem] font-semibold text-bloomora-violet min-[600px]:inline-flex',
-                        gadgetOpen && 'bg-bloomora-sky/70',
-                      )}
-                    >
-                      📝 Post-it
-                    </span>
-                  ) : null}
-                  <span
-                    className="text-2xl leading-none text-bloomora-text-muted"
-                    aria-hidden
-                  >
-                    ›
                   </span>
                 </Link>
                 {canUseGadgets ? (
@@ -154,15 +139,22 @@ export function ListsCard() {
                       )
                     }}
                     className={cn(
-                      'inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloomora-sky-deep/50 min-[600px]:hidden',
+                      'inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-pill px-3 text-[0.8125rem] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloomora-sky-deep/50',
                       gadgetOpen
-                        ? 'bg-bloomora-sky/80 text-bloomora-violet ring-1 ring-bloomora-sky-deep/45'
-                        : 'bg-bloomora-sky/45 text-bloomora-violet ring-1 ring-bloomora-sky-deep/35 hover:bg-bloomora-sky/70',
+                        ? 'bg-bloomora-sky/70 text-bloomora-violet'
+                        : 'bg-bloomora-mist text-bloomora-violet hover:bg-bloomora-sky/55',
                     )}
                   >
-                    Post-it
+                    📝 Post-it
                   </button>
                 ) : null}
+                <Link
+                  to={listHref}
+                  aria-label={`Abrir lista ${list.title}`}
+                  className="grid size-11 shrink-0 place-items-center rounded-full text-2xl leading-none text-bloomora-text-muted transition hover:bg-bloomora-mist/40"
+                >
+                  <span aria-hidden>›</span>
+                </Link>
                 <button
                   type="button"
                   aria-label={`Eliminar lista ${list.title}`}

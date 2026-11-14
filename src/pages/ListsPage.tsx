@@ -26,11 +26,13 @@ import {
   useDeleteListMutation,
   useListItemsMutations,
   useUpdateListTitleMutation,
+  type UiListItem,
 } from '@/hooks/useBloomoraListItems'
 import { ListItemAgendaMenu } from '@/features/lists/ListItemAgendaMenu'
 import { listAgendaTasks } from '@/services/supabase/agendaRepo'
 import { requireExistingProfileByCedula } from '@/services/supabase/profilesRepo'
 import { requireSupabase } from '@/services/supabase/typedClient'
+import type { DashboardList } from '@/types/dashboardLists'
 import {
   addLocalDays,
   formatMinutes12h,
@@ -40,12 +42,17 @@ import {
 } from '@/utils/agendaTime'
 import { cn } from '@/utils/cn'
 
+/** Referencias estables: `data ?? []` inline crea un array nuevo cada render y dispara efectos. */
+const EMPTY_LISTS: DashboardList[] = []
+const EMPTY_LIST_ITEMS: UiListItem[] = []
+
 export function ListsPage() {
   const { cedula } = useUserPhone()
   const { confirm } = useBloomoraAlert()
   const { openListGadget, closeListGadget, isListGadgetOpen } = useListGadgets()
   const canUseGadgets = useMediaQuery('(min-width: 768px)')
-  const { data: lists = [], isLoading: listsLoading } = useBloomoraLists(cedula)
+  const { data: listsData, isLoading: listsLoading } = useBloomoraLists(cedula)
+  const lists = listsData ?? EMPTY_LISTS
   const addListMut = useAddListMutation(cedula)
   const updateTitleMut = useUpdateListTitleMutation(cedula)
   const deleteListMut = useDeleteListMutation(cedula)
@@ -129,10 +136,11 @@ export function ListsPage() {
     return () => window.cancelAnimationFrame(frame)
   }, [crearParam, setSearchParams])
 
-  const { data: items = [], isLoading: itemsLoading } = useBloomoraListItems(
+  const { data: itemsData, isLoading: itemsLoading } = useBloomoraListItems(
     cedula,
     selectedId,
   )
+  const items = itemsData ?? EMPTY_LIST_ITEMS
   const { addItem, toggleItem, renameItem, removeItem } = useListItemsMutations(
     cedula,
     selectedId,
@@ -182,7 +190,7 @@ export function ListsPage() {
 
   const exitMultiSelectMode = () => {
     setMultiSelectMode(false)
-    setSelectedItemIds([])
+    setSelectedItemIds((prev) => (prev.length === 0 ? prev : []))
     setBulkTaskModalOpen(false)
     setBulkSubtaskModalOpen(false)
     setSelectedBulkTaskId(null)
@@ -277,7 +285,16 @@ export function ListsPage() {
   }
 
   useEffect(() => {
-    setSelectedItemIds((prev) => prev.filter((id) => items.some((it) => it.id === id)))
+    setSelectedItemIds((prev) => {
+      const next = prev.filter((id) => items.some((it) => it.id === id))
+      if (
+        next.length === prev.length &&
+        next.every((id, i) => id === prev[i])
+      ) {
+        return prev
+      }
+      return next
+    })
   }, [items])
 
   useEffect(() => {
@@ -553,7 +570,7 @@ export function ListsPage() {
               <div
                 role="dialog"
                 aria-modal
-                className="bloomora-modal-panel fixed left-1/2 top-1/2 z-[10075] flex max-h-[min(88vh,32rem)] w-[min(100vw-1.5rem,24rem)] -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-hidden rounded-2xl bg-bloomora-blush/[0.98] p-5 shadow-[0_16px_48px_rgba(91,74,140,0.22)] ring-1 ring-bloomora-line/40 backdrop-blur-md sm:p-6"
+                className="bloomora-modal-panel fixed left-1/2 top-1/2 z-[10075] flex max-h-[min(88dvh,32rem)] w-[min(100vw-1.5rem,24rem)] -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-hidden rounded-2xl bg-bloomora-blush/[0.98] p-5 shadow-[0_16px_48px_rgba(91,74,140,0.22)] ring-1 ring-bloomora-line/40 backdrop-blur-md sm:p-6"
               >
                 <div>
                   <p className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-bloomora-text-muted">
@@ -619,7 +636,7 @@ export function ListsPage() {
               <div
                 role="dialog"
                 aria-modal
-                className="bloomora-modal-panel fixed left-1/2 top-1/2 z-[10075] flex max-h-[min(88vh,34rem)] w-[min(100vw-1.5rem,25rem)] -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-hidden rounded-2xl bg-bloomora-blush/[0.98] p-5 shadow-[0_16px_48px_rgba(91,74,140,0.22)] ring-1 ring-bloomora-line/40 backdrop-blur-md sm:p-6"
+                className="bloomora-modal-panel fixed left-1/2 top-1/2 z-[10075] flex max-h-[min(88dvh,34rem)] w-[min(100vw-1.5rem,25rem)] -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-hidden rounded-2xl bg-bloomora-blush/[0.98] p-5 shadow-[0_16px_48px_rgba(91,74,140,0.22)] ring-1 ring-bloomora-line/40 backdrop-blur-md sm:p-6"
               >
                 <div>
                   <p className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-bloomora-text-muted">
