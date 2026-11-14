@@ -5,13 +5,13 @@ export type ButtonSize = 'sm' | 'md' | 'lg'
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    'bg-bloomora-rose text-white font-bold shadow-sm hover:bg-bloomora-rose-deep hover:shadow-md',
+    'font-bold text-[color:var(--bloomora-on-accent)] bg-[linear-gradient(135deg,var(--bloomora-btn-from),var(--bloomora-btn-to))] shadow-[var(--bloomora-btn-shadow)] hover:shadow-[var(--bloomora-btn-shadow-hover)] hover:brightness-[1.03]',
   secondary:
-    'border border-bloomora-line/70 bg-white text-bloomora-deep shadow-sm hover:border-bloomora-lilac/60 hover:bg-bloomora-lavender-50/50 hover:shadow-md',
+    'border border-bloomora-line/70 bg-bloomora-white text-bloomora-deep shadow-sm hover:border-bloomora-lilac/60 hover:bg-bloomora-lavender-50/50 hover:shadow-md',
   ghost:
     'text-bloomora-violet hover:bg-bloomora-lavender-50/95 hover:text-bloomora-deep hover:shadow-[inset_0_0_0_1px_rgba(184,168,232,0.2)] active:bg-bloomora-lavender-100/75',
   outline:
-    'border border-bloomora-line/70 bg-white text-bloomora-violet hover:border-bloomora-lilac/60 hover:bg-bloomora-lavender-50/50',
+    'border border-bloomora-line/70 bg-bloomora-white text-bloomora-violet hover:border-bloomora-lilac/60 hover:bg-bloomora-lavender-50/50',
 }
 
 const sizeStyles: Record<ButtonSize, string> = {

@@ -15,31 +15,15 @@ import {
   useUpdateProfileMutation,
 } from '@/hooks/useBloomoraProfile'
 import { isValidCedula, normalizeCedula } from '@/lib/cedula'
+import { ThemeSelector } from '@/features/profile/ThemeSelector'
 import {
-  applyBloomoraThemeCssVars,
-  resolveAppThemeId,
-  type AppThemeId,
+  applyThemePreference,
+  parseThemePreference,
+  resolveEffectiveThemeId,
+  serializeThemePreference,
+  type ThemePreference,
 } from '@/theme/bloomoraAppThemes'
 import { cn } from '@/utils/cn'
-
-const THEME_SWATCHES = [
-  { id: 'pink', className: 'bg-[#f9a8d4] ring-[#fbcfe8]' },
-  { id: 'lavender', className: 'bg-[#d8b4fe] ring-[#e9d5ff]' },
-  { id: 'violet', className: 'bg-[#c4b5fd] ring-[#ddd6fe]' },
-  { id: 'periwinkle', className: 'bg-[#a5b4fc] ring-[#c7d2fe]' },
-  { id: 'sky', className: 'bg-[#7dd3fc] ring-[#bae6fd]' },
-  { id: 'mint', className: 'bg-[#86efac] ring-[#bbf7d0]' },
-  {
-    id: 'dark',
-    label: 'Oscuro mate, acentos azules',
-    className:
-      'bg-[linear-gradient(145deg,#2d2b33_0%,#1f1d24_55%,#3a5288_100%)] ring-slate-500/60',
-  },
-] as const satisfies readonly {
-  id: AppThemeId
-  className: string
-  label?: string
-}[]
 
 type AvatarOptionId = 'bunny' | 'conejoBoy' | 'conejoLofi' | 'conejitaGirl'
 
@@ -100,12 +84,18 @@ export function EditProfilePage() {
   const [name, setName] = useState('')
   const [cedula, setCedula] = useState('')
   const [email, setEmail] = useState('')
-  const [themeId, setThemeId] = useState<AppThemeId>('pink')
+  const [themePref, setThemePref] = useState<ThemePreference>({
+    kind: 'fixed',
+    themeId: 'pink',
+  })
   const [avatarId, setAvatarId] = useState<AvatarOptionId>('bunny')
   const [saveError, setSaveError] = useState<string | null>(null)
   const [themeSaving, setThemeSaving] = useState(false)
-  /** Tema confirmado en perfil / última mutación exitosa (para restaurar al salir). */
-  const savedThemeRef = useRef<AppThemeId>('pink')
+  /** Preferencia confirmada en perfil / última mutación exitosa (para restaurar al salir). */
+  const savedThemeRef = useRef<ThemePreference>({
+    kind: 'fixed',
+    themeId: 'pink',
+  })
   const themeSaveGen = useRef(0)
 
   useEffect(() => {
@@ -113,42 +103,43 @@ export function EditProfilePage() {
     setName(profile.full_name?.trim() || 'Usuario')
     setCedula(profile.cedula ?? '')
     setEmail(profile.email ?? '')
-    const saved = resolveAppThemeId(profile.preferred_theme)
+    const saved = parseThemePreference(profile.preferred_theme)
     savedThemeRef.current = saved
-    setThemeId(saved)
+    setThemePref(saved)
     setAvatarId(avatarIdFromProfile(profile.avatar_preset))
   }, [profile])
 
   useEffect(() => {
     return () => {
       // Si salió con un preview que no quedó guardado, restaura el del perfil.
-      applyBloomoraThemeCssVars(savedThemeRef.current)
+      applyThemePreference(savedThemeRef.current)
     }
   }, [])
 
   const circleSrc =
     AVATAR_OPTIONS.find((opt) => opt.id === avatarId)?.image ?? conejoAvatar
 
-  const handleThemeSelect = (id: AppThemeId) => {
-    setThemeId(id)
-    applyBloomoraThemeCssVars(id)
+  const handleThemePreference = (next: ThemePreference) => {
+    setThemePref(next)
+    applyThemePreference(next)
     if (!phone) return
-    if (id === savedThemeRef.current) return
+    const raw = serializeThemePreference(next)
+    if (raw === serializeThemePreference(savedThemeRef.current)) return
 
     const gen = ++themeSaveGen.current
     setThemeSaving(true)
     updateMut.mutate(
-      { preferred_theme: id },
+      { preferred_theme: raw },
       {
         onSuccess: () => {
           if (gen !== themeSaveGen.current) return
-          savedThemeRef.current = id
+          savedThemeRef.current = next
           showToast('Tema actualizado')
         },
         onError: (err) => {
           if (gen !== themeSaveGen.current) return
-          applyBloomoraThemeCssVars(savedThemeRef.current)
-          setThemeId(savedThemeRef.current)
+          applyThemePreference(savedThemeRef.current)
+          setThemePref(savedThemeRef.current)
           showToast(
             err instanceof Error ? err.message : 'No se pudo guardar el tema.',
           )
@@ -196,8 +187,8 @@ export function EditProfilePage() {
 
   const handleCancel = () => {
     setSaveError(null)
-    applyBloomoraThemeCssVars(savedThemeRef.current)
-    setThemeId(savedThemeRef.current)
+    applyThemePreference(savedThemeRef.current)
+    setThemePref(savedThemeRef.current)
     navigate('/app')
   }
 
@@ -363,48 +354,18 @@ export function EditProfilePage() {
                   Personalización
                 </h2>
 
-                <fieldset className="mt-5">
-                  <legend className="text-xs font-semibold uppercase tracking-wide text-bloomora-text-muted">
-                    Tema
-                  </legend>
-                  <div
-                    className="mt-3 flex flex-wrap gap-3"
-                    role="radiogroup"
-                    aria-label="Color de tema"
-                  >
-                    {THEME_SWATCHES.map((t) => {
-                      const selected = themeId === t.id
-                      return (
-                        <button
-                          key={t.id}
-                          type="button"
-                          role="radio"
-                          aria-checked={selected}
-                          aria-label={'label' in t && t.label ? t.label : `Tema ${t.id}`}
-                          disabled={themeSaving && themeId !== t.id}
-                          onClick={() => handleThemeSelect(t.id)}
-                          className={cn(
-                            'relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full shadow-sm ring-2 ring-offset-2 ring-offset-bloomora-blush transition hover:scale-105 active:scale-95 sm:h-12 sm:w-12',
-                            t.className,
-                            selected
-                              ? 'ring-bloomora-violet/70'
-                              : 'ring-transparent hover:ring-bloomora-line/40',
-                            themeSaving && themeId !== t.id && 'opacity-60',
-                          )}
-                        >
-                          {selected ? (
-                            <span
-                              className="flex h-5 w-5 items-center justify-center rounded-full bg-bloomora-lavender-100 text-xs font-bold text-bloomora-violet shadow-sm ring-1 ring-bloomora-line/20"
-                              aria-hidden
-                            >
-                              ✓
-                            </span>
-                          ) : null}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </fieldset>
+                <div className="mt-5">
+                  <ThemeSelector
+                    preference={themePref}
+                    effectiveThemeId={resolveEffectiveThemeId(themePref)}
+                    saving={themeSaving}
+                    saved={
+                      serializeThemePreference(themePref) ===
+                      serializeThemePreference(savedThemeRef.current)
+                    }
+                    onChange={handleThemePreference}
+                  />
+                </div>
 
                 <fieldset className="mt-8">
                   <legend className="text-xs font-semibold uppercase tracking-wide text-bloomora-text-muted">

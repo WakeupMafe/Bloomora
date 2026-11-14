@@ -2,7 +2,15 @@
   command = "npm run build"
   publish = "dist"
 
+# Assets hasheados: cache largo. Si falta un hash (post-deploy), no servir index.html.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
 # Misma regla que public/_redirects: recargas en /app/..., /entrar, etc.
+# (assets reales tienen archivo en dist; los que no existen caen al SPA — la app
+# se recupera con reloadOnceForStaleChunk en main/router.)
 [[redirects]]
   from = "/*"
   to = "/index.html"

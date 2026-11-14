@@ -2,17 +2,16 @@ import { useLayoutEffect } from 'react'
 import { useUserPhone } from '@/contexts/UserPhoneContext'
 import { useBloomoraProfile } from '@/hooks/useBloomoraProfile'
 import {
-  applyBloomoraThemeCssVars,
+  applyThemePreference,
   clearBloomoraThemeCssVars,
   clearStoredBloomoraTheme,
-  readStoredBloomoraTheme,
-  resolveAppThemeId,
+  parseThemePreference,
+  readStoredThemePreference,
 } from '@/theme/bloomoraAppThemes'
 
 /**
- * Aplica `preferred_theme` del perfil a las variables CSS.
- * Antes de que llegue el perfil, respeta `localStorage` (boot en index.html).
- * Sin sesión restaura el stylesheet por defecto.
+ * Sincroniza preferred_theme (fijo o auto:claro:oscuro) con CSS vars.
+ * Respeta localStorage mientras llega el perfil; escucha prefers-color-scheme.
  */
 export function BloomoraThemeSync() {
   const { phone } = useUserPhone()
@@ -24,12 +23,25 @@ export function BloomoraThemeSync() {
       clearBloomoraThemeCssVars()
       return
     }
-    if (!profile) {
-      const stored = readStoredBloomoraTheme()
-      if (stored) applyBloomoraThemeCssVars(stored)
-      return
+
+    const pref = profile
+      ? parseThemePreference(profile.preferred_theme)
+      : readStoredThemePreference()
+
+    if (!pref) return
+
+    applyThemePreference(pref)
+
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const onChange = () => {
+      const current = profile
+        ? parseThemePreference(profile.preferred_theme)
+        : (readStoredThemePreference() ?? pref)
+      if (current.kind !== 'auto') return
+      applyThemePreference(current)
     }
-    applyBloomoraThemeCssVars(resolveAppThemeId(profile.preferred_theme))
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
   }, [phone, profile, profile?.preferred_theme])
 
   return null

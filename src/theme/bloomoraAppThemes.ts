@@ -1,6 +1,6 @@
 /**
- * Temas de la app: ids en Editar perfil + legado `bloomora_pastel` → pink.
- * `--color-bloomora-*` para Tailwind; `--bloomora-btn-*` / `--bloomora-list-*` para gradientes fijos.
+ * Temas Bloomora: paletas `--color-bloomora-*`, chrome `--bloomora-*` y preferencia
+ * fija o automática (`auto:pink:noche`).
  */
 
 export const APP_THEME_IDS = [
@@ -10,10 +10,22 @@ export const APP_THEME_IDS = [
   'periwinkle',
   'sky',
   'mint',
+  'bosque',
+  'pizarra',
+  'noche',
   'dark',
 ] as const
 
 export type AppThemeId = (typeof APP_THEME_IDS)[number]
+
+/** Temas oscuros (comparten data-bloomora-mode="dark"). */
+export const DARK_THEME_IDS: readonly AppThemeId[] = ['noche', 'dark']
+
+export function isDarkThemeId(id: AppThemeId): boolean {
+  return (DARK_THEME_IDS as readonly string[]).includes(id)
+}
+
+export const LIGHT_THEME_IDS = APP_THEME_IDS.filter((id) => !isDarkThemeId(id))
 
 const KEYS = [
   'snow',
@@ -35,7 +47,6 @@ const KEYS = [
 ] as const
 
 type BloomoraColorKey = (typeof KEYS)[number]
-
 type Palette = Record<BloomoraColorKey, string>
 
 const CSS_PREFIX = '--color-bloomora-'
@@ -44,12 +55,50 @@ export const BLOOMORA_THEME_CSS_VAR_NAMES = KEYS.map(
   (k) => `${CSS_PREFIX}${k}`,
 ) as readonly string[]
 
-/** Cromado compartido (botón primario + bloques tipo Listas) en temas claros. */
+/** Extras semánticos (también en chrome por tema). */
+export const EXTRA_CHROME_KEYS = [
+  '--bloomora-on-accent',
+  '--bloomora-success',
+  '--bloomora-success-soft',
+  '--bloomora-danger',
+  '--bloomora-danger-soft',
+  '--bloomora-surface-2',
+  '--bloomora-card-shadow',
+  '--bloomora-focus-ring',
+  '--bloomora-overlay',
+  '--bloomora-progress-from',
+  '--bloomora-progress-to',
+  '--bloomora-mascot-halo',
+  '--bloomora-mascot-filter',
+  '--bloomora-scrollbar-thumb',
+  '--bloomora-theme-color',
+] as const
+
+const LIGHT_EXTRAS: Record<(typeof EXTRA_CHROME_KEYS)[number], string> = {
+  '--bloomora-on-accent': '#FFFFFF',
+  '--bloomora-success': '#2F7A52',
+  '--bloomora-success-soft': '#EAF5EE',
+  '--bloomora-danger': '#C2416B',
+  '--bloomora-danger-soft': '#FDECF2',
+  '--bloomora-surface-2': '#FFFFFF',
+  '--bloomora-card-shadow':
+    '0 1px 2px rgba(84,70,135,.04), 0 12px 32px rgba(84,70,135,.08)',
+  '--bloomora-focus-ring': '0 0 0 3px rgba(184,166,240,.45)',
+  '--bloomora-overlay': 'rgba(40,30,60,.35)',
+  '--bloomora-progress-from': '#B8A6F0',
+  '--bloomora-progress-to': '#F080A0',
+  '--bloomora-mascot-halo': 'none',
+  '--bloomora-mascot-filter': 'none',
+  '--bloomora-scrollbar-thumb': 'var(--color-bloomora-line)',
+  '--bloomora-theme-color': '#faf8ff',
+}
+
+/** Cromado rosa (temas pastel claros actuales). Sombras = box-shadow completo. */
 const LIGHT_CHROME: Record<string, string> = {
   '--bloomora-btn-from': '#ff9aab',
   '--bloomora-btn-to': '#ffc2d1',
-  '--bloomora-btn-shadow': 'rgba(255, 154, 171, 0.5)',
-  '--bloomora-btn-shadow-hover': 'rgba(255, 140, 160, 0.58)',
+  '--bloomora-btn-shadow': '0 4px 12px rgba(255, 154, 171, 0.45)',
+  '--bloomora-btn-shadow-hover': '0 6px 18px rgba(255, 140, 160, 0.55)',
   '--bloomora-list-cta-from': '#ff9eb3',
   '--bloomora-list-cta-via': '#e8b4ff',
   '--bloomora-list-cta-to': '#9b86f0',
@@ -58,15 +107,17 @@ const LIGHT_CHROME: Record<string, string> = {
   '--bloomora-list-border-to': '#a89cf0',
   '--bloomora-list-add-from': '#ff8fab',
   '--bloomora-list-add-to': '#f4a8d0',
-  '--bloomora-list-panel-glow': 'rgba(236, 139, 184, 0.35)',
+  '--bloomora-list-panel-glow': '0 8px 24px -6px rgba(236, 139, 184, 0.35)',
+  ...LIGHT_EXTRAS,
 }
 
-/** Botones y listas en oscuro: solo azul cielo / cyan suave (sin azul rey). */
 const DARK_CHROME: Record<string, string> = {
   '--bloomora-btn-from': '#0ea5e9',
   '--bloomora-btn-to': '#bae6fd',
-  '--bloomora-btn-shadow': 'rgba(14, 165, 233, 0.38)',
-  '--bloomora-btn-shadow-hover': 'rgba(125, 211, 252, 0.48)',
+  '--bloomora-btn-shadow':
+    '0 0 0 1px rgba(14,165,233,.30), 0 6px 18px rgba(14,165,233,.22)',
+  '--bloomora-btn-shadow-hover':
+    '0 0 0 1px rgba(125,211,252,.45), 0 8px 26px rgba(125,211,252,.32)',
   '--bloomora-list-cta-from': '#0ea5e9',
   '--bloomora-list-cta-via': '#38bdf8',
   '--bloomora-list-cta-to': '#bae6fd',
@@ -75,14 +126,135 @@ const DARK_CHROME: Record<string, string> = {
   '--bloomora-list-border-to': '#22d3ee',
   '--bloomora-list-add-from': '#0ea5e9',
   '--bloomora-list-add-to': '#7dd3fc',
-  '--bloomora-list-panel-glow': 'rgba(56, 189, 248, 0.42)',
+  '--bloomora-list-panel-glow':
+    '0 0 0 1px rgba(230,228,245,.12), 0 0 48px rgba(56,189,248,.18)',
+  '--bloomora-on-accent': '#15131C',
+  '--bloomora-success': '#7CCB9F',
+  '--bloomora-success-soft': '#1F3329',
+  '--bloomora-danger': '#F2828F',
+  '--bloomora-danger-soft': '#3A2229',
+  '--bloomora-surface-2': '#2A2639',
+  '--bloomora-card-shadow':
+    '0 1px 0 rgba(255,255,255,.03) inset, 0 10px 30px rgba(0,0,0,.35)',
+  '--bloomora-focus-ring': '0 0 0 3px rgba(185,174,245,.50)',
+  '--bloomora-overlay': 'rgba(8,7,12,.66)',
+  '--bloomora-progress-from': '#0EA5E9',
+  '--bloomora-progress-to': '#BAE6FD',
+  '--bloomora-mascot-halo':
+    'radial-gradient(closest-side, rgba(185,174,245,.26), rgba(111,211,195,.08) 62%, transparent 100%)',
+  '--bloomora-mascot-filter':
+    'brightness(.94) drop-shadow(0 0 1px rgba(236,232,246,.55)) drop-shadow(0 0 14px rgba(185,174,245,.30))',
+  '--bloomora-scrollbar-thumb': '#3A3550',
+  '--bloomora-theme-color': '#121212',
+}
+
+const CHROME_NOCHE: Record<string, string> = {
+  '--bloomora-btn-from': '#A99BF5',
+  '--bloomora-btn-to': '#7FD6C8',
+  '--bloomora-btn-shadow':
+    '0 0 0 1px rgba(185,174,245,.30), 0 6px 18px rgba(111,211,195,.16)',
+  '--bloomora-btn-shadow-hover':
+    '0 0 0 1px rgba(185,174,245,.55), 0 8px 26px rgba(111,211,195,.28)',
+  '--bloomora-list-cta-from': '#A99BF5',
+  '--bloomora-list-cta-via': '#94B6EC',
+  '--bloomora-list-cta-to': '#7FD6C8',
+  '--bloomora-list-border-from': 'rgba(185,174,245,.45)',
+  '--bloomora-list-border-via': 'rgba(148,182,236,.30)',
+  '--bloomora-list-border-to': 'rgba(111,211,195,.45)',
+  '--bloomora-list-add-from': '#A99BF5',
+  '--bloomora-list-add-to': '#7FD6C8',
+  '--bloomora-list-panel-glow':
+    '0 0 0 1px #343049, 0 0 48px rgba(169,155,245,.10)',
+  '--bloomora-on-accent': '#15131C',
+  '--bloomora-success': '#7CCB9F',
+  '--bloomora-success-soft': '#1F3329',
+  '--bloomora-danger': '#F2828F',
+  '--bloomora-danger-soft': '#3A2229',
+  '--bloomora-surface-2': '#2A2639',
+  '--bloomora-card-shadow':
+    '0 1px 0 rgba(255,255,255,.03) inset, 0 10px 30px rgba(0,0,0,.35)',
+  '--bloomora-focus-ring': '0 0 0 3px rgba(185,174,245,.50)',
+  '--bloomora-overlay': 'rgba(8,7,12,.66)',
+  '--bloomora-progress-from': '#A99BF5',
+  '--bloomora-progress-to': '#6FD3C3',
+  '--bloomora-mascot-halo':
+    'radial-gradient(closest-side, rgba(185,174,245,.26), rgba(111,211,195,.08) 62%, transparent 100%)',
+  '--bloomora-mascot-filter':
+    'brightness(.94) drop-shadow(0 0 1px rgba(236,232,246,.55)) drop-shadow(0 0 14px rgba(185,174,245,.30))',
+  '--bloomora-scrollbar-thumb': '#3A3550',
+  '--bloomora-theme-color': '#15131C',
+}
+
+const CHROME_BOSQUE: Record<string, string> = {
+  '--bloomora-btn-from': '#2F6B4C',
+  '--bloomora-btn-to': '#3E7A59',
+  '--bloomora-btn-shadow': '0 4px 12px rgba(47,107,76,.22)',
+  '--bloomora-btn-shadow-hover': '0 6px 18px rgba(47,107,76,.32)',
+  '--bloomora-list-cta-from': '#2F6B4C',
+  '--bloomora-list-cta-via': '#3A7454',
+  '--bloomora-list-cta-to': '#3E7A59',
+  '--bloomora-list-border-from': '#CFE0D3',
+  '--bloomora-list-border-via': '#E3DFD5',
+  '--bloomora-list-border-to': '#E8D3C0',
+  '--bloomora-list-add-from': '#2F6B4C',
+  '--bloomora-list-add-to': '#3E7A59',
+  '--bloomora-list-panel-glow': '0 12px 32px rgba(34,55,43,.07)',
+  '--bloomora-on-accent': '#FFFFFF',
+  '--bloomora-success': '#2F7A52',
+  '--bloomora-success-soft': '#EAF5EE',
+  '--bloomora-danger': '#B5473A',
+  '--bloomora-danger-soft': '#F8E6E2',
+  '--bloomora-surface-2': '#FFFFFF',
+  '--bloomora-card-shadow':
+    '0 1px 2px rgba(34,55,43,.04), 0 12px 32px rgba(34,55,43,.07)',
+  '--bloomora-focus-ring': '0 0 0 3px rgba(63,122,90,.35)',
+  '--bloomora-overlay': 'rgba(34,40,36,.40)',
+  '--bloomora-progress-from': '#9DBFA7',
+  '--bloomora-progress-to': '#3F7A5A',
+  '--bloomora-mascot-halo':
+    'radial-gradient(closest-side, rgba(157,191,167,.20), transparent 100%)',
+  '--bloomora-mascot-filter': 'none',
+  '--bloomora-scrollbar-thumb': '#D4CFC3',
+  '--bloomora-theme-color': '#F6F4EF',
+}
+
+const CHROME_PIZARRA: Record<string, string> = {
+  '--bloomora-btn-from': '#34506F',
+  '--bloomora-btn-to': '#4A6A8E',
+  '--bloomora-btn-shadow': '0 4px 12px rgba(52,80,111,.22)',
+  '--bloomora-btn-shadow-hover': '0 6px 18px rgba(52,80,111,.32)',
+  '--bloomora-list-cta-from': '#34506F',
+  '--bloomora-list-cta-via': '#3F5D80',
+  '--bloomora-list-cta-to': '#4A6A8E',
+  '--bloomora-list-border-from': '#CBD6E3',
+  '--bloomora-list-border-via': '#DBE1E9',
+  '--bloomora-list-border-to': '#EBD7AE',
+  '--bloomora-list-add-from': '#34506F',
+  '--bloomora-list-add-to': '#4A6A8E',
+  '--bloomora-list-panel-glow': '0 12px 32px rgba(30,42,57,.07)',
+  '--bloomora-on-accent': '#FFFFFF',
+  '--bloomora-success': '#2F7A52',
+  '--bloomora-success-soft': '#EAF5EE',
+  '--bloomora-danger': '#B5473A',
+  '--bloomora-danger-soft': '#F8E6E2',
+  '--bloomora-surface-2': '#FFFFFF',
+  '--bloomora-card-shadow':
+    '0 1px 2px rgba(30,42,57,.04), 0 12px 32px rgba(30,42,57,.07)',
+  '--bloomora-focus-ring': '0 0 0 3px rgba(62,90,122,.35)',
+  '--bloomora-overlay': 'rgba(20,28,38,.40)',
+  '--bloomora-progress-from': '#A9B8CD',
+  '--bloomora-progress-to': '#D9A23A',
+  '--bloomora-mascot-halo':
+    'radial-gradient(closest-side, rgba(169,184,205,.22), transparent 100%)',
+  '--bloomora-mascot-filter': 'none',
+  '--bloomora-scrollbar-thumb': '#C9D2DD',
+  '--bloomora-theme-color': '#F3F5F8',
 }
 
 export const BLOOMORA_EXTRA_CSS_VAR_NAMES = Object.keys(
   LIGHT_CHROME,
 ) as readonly string[]
 
-/** Valores por defecto (coinciden con `globals.css` @theme). */
 const pink: Palette = {
   snow: '#faf8ff',
   mist: '#f3f0fb',
@@ -197,10 +369,63 @@ const mint: Palette = {
   line: 'rgba(6, 78, 59, 0.12)',
 }
 
-/**
- * Modo oscuro mate: gris plano ~#121212 (página); tarjetas #181818 / #242424;
- * sin “lavanda” en el fondo; acentos y rosa del sistema → azules.
- */
+const bosque: Palette = {
+  snow: '#F6F4EF',
+  mist: '#EEEBE3',
+  'lavender-50': '#F1F4EE',
+  'lavender-100': '#E1E8DE',
+  lilac: '#6E9B7E',
+  violet: '#3F7A5A',
+  deep: '#22372B',
+  rose: '#D39A6A',
+  'rose-deep': '#2F6B4C',
+  blush: '#E4EEE6',
+  sky: '#8DB0C4',
+  'sky-deep': '#3F6C86',
+  text: '#2F3A35',
+  'text-muted': '#5F6B65',
+  white: '#FFFFFF',
+  line: '#E3DFD5',
+}
+
+const pizarra: Palette = {
+  snow: '#F3F5F8',
+  mist: '#E8ECF1',
+  'lavender-50': '#EEF2F7',
+  'lavender-100': '#DCE3EC',
+  lilac: '#7A8DA8',
+  violet: '#3E5A7A',
+  deep: '#1E2A39',
+  rose: '#D9A23A',
+  'rose-deep': '#34506F',
+  blush: '#E3EAF2',
+  sky: '#7FA6C9',
+  'sky-deep': '#3D6D96',
+  text: '#27323F',
+  'text-muted': '#5A6676',
+  white: '#FFFFFF',
+  line: '#DBE1E9',
+}
+
+const noche: Palette = {
+  snow: '#15131C',
+  mist: '#272335',
+  'lavender-50': '#211E2E',
+  'lavender-100': '#2E2A40',
+  lilac: '#8F82D9',
+  violet: '#B9AEF5',
+  deep: '#F1EEFA',
+  rose: '#D7A8C4',
+  'rose-deep': '#C9BEFA',
+  blush: '#2C2840',
+  sky: '#6FD3C3',
+  'sky-deep': '#4FB8A8',
+  text: '#ECE8F6',
+  'text-muted': '#A9A3BF',
+  white: '#1E1B29',
+  line: '#343049',
+}
+
 const dark: Palette = {
   snow: '#121212',
   mist: '#141414',
@@ -227,43 +452,140 @@ export const THEME_PALETTES: Record<AppThemeId, Palette> = {
   periwinkle,
   sky,
   mint,
+  bosque,
+  pizarra,
+  noche,
   dark,
 }
 
-const THEME_CHROME: Record<AppThemeId, Record<string, string>> = {
-  pink: LIGHT_CHROME,
-  lavender: LIGHT_CHROME,
-  violet: LIGHT_CHROME,
-  periwinkle: LIGHT_CHROME,
-  sky: LIGHT_CHROME,
-  mint: LIGHT_CHROME,
+export const THEME_CHROME: Record<AppThemeId, Record<string, string>> = {
+  pink: { ...LIGHT_CHROME, '--bloomora-theme-color': pink.snow },
+  lavender: { ...LIGHT_CHROME, '--bloomora-theme-color': lavender.snow },
+  violet: { ...LIGHT_CHROME, '--bloomora-theme-color': violet.snow },
+  periwinkle: { ...LIGHT_CHROME, '--bloomora-theme-color': periwinkle.snow },
+  sky: { ...LIGHT_CHROME, '--bloomora-theme-color': sky.snow },
+  mint: { ...LIGHT_CHROME, '--bloomora-theme-color': mint.snow },
+  bosque: CHROME_BOSQUE,
+  pizarra: CHROME_PIZARRA,
+  noche: CHROME_NOCHE,
   dark: DARK_CHROME,
 }
 
+export const THEME_META: Record<
+  AppThemeId,
+  { label: string; blurb: string; isNew?: boolean }
+> = {
+  pink: { label: 'Rosa', blurb: 'El clásico de Bloomora.' },
+  lavender: { label: 'Lavanda', blurb: 'Lila suave.' },
+  violet: { label: 'Violeta', blurb: 'Violeta intenso.' },
+  periwinkle: { label: 'Pervinca', blurb: 'Azul lavanda.' },
+  sky: { label: 'Cielo', blurb: 'Celeste fresco.' },
+  mint: { label: 'Menta', blurb: 'Verde menta.' },
+  bosque: {
+    label: 'Bosque',
+    blurb: 'Salvia, arena y verde bosque.',
+    isNew: true,
+  },
+  pizarra: {
+    label: 'Pizarra',
+    blurb: 'Gris pizarra con toque ocre.',
+    isNew: true,
+  },
+  noche: {
+    label: 'Noche',
+    blurb: 'Tinta y lavanda, acentos menta.',
+    isNew: true,
+  },
+  dark: { label: 'Medianoche', blurb: 'Oscuro mate, acentos azules.' },
+}
+
 export const BLOOMORA_THEME_STORAGE_KEY = 'bloomora_theme'
+export const DEFAULT_AUTO_LIGHT: AppThemeId = 'pink'
+export const DEFAULT_AUTO_DARK: AppThemeId = 'noche'
+
+export type ThemePreference =
+  | { kind: 'fixed'; themeId: AppThemeId }
+  | { kind: 'auto'; lightId: AppThemeId; darkId: AppThemeId }
+
+export function isAppThemeId(value: string | null | undefined): value is AppThemeId {
+  return !!value && (APP_THEME_IDS as readonly string[]).includes(value)
+}
 
 export function resolveAppThemeId(db: string | null | undefined): AppThemeId {
   if (!db || db === 'bloomora_pastel') return 'pink'
-  if ((APP_THEME_IDS as readonly string[]).includes(db)) return db as AppThemeId
+  if (db.startsWith('auto:')) {
+    return resolveEffectiveThemeId(parseThemePreference(db))
+  }
+  if (isAppThemeId(db)) return db
   return 'pink'
 }
 
-export function readStoredBloomoraTheme(): AppThemeId | null {
+export function parseThemePreference(
+  raw: string | null | undefined,
+): ThemePreference {
+  if (!raw || raw === 'bloomora_pastel') {
+    return { kind: 'fixed', themeId: 'pink' }
+  }
+  if (raw === 'auto' || raw.startsWith('auto:')) {
+    const parts = raw.split(':')
+    const lightId = isAppThemeId(parts[1]) ? parts[1] : DEFAULT_AUTO_LIGHT
+    const darkId = isAppThemeId(parts[2]) ? parts[2] : DEFAULT_AUTO_DARK
+    return {
+      kind: 'auto',
+      lightId: isDarkThemeId(lightId) ? DEFAULT_AUTO_LIGHT : lightId,
+      darkId: isDarkThemeId(darkId) ? darkId : DEFAULT_AUTO_DARK,
+    }
+  }
+  return { kind: 'fixed', themeId: resolveAppThemeId(raw) }
+}
+
+export function serializeThemePreference(pref: ThemePreference): string {
+  if (pref.kind === 'fixed') return pref.themeId
+  return `auto:${pref.lightId}:${pref.darkId}`
+}
+
+export function getSystemPrefersDark(): boolean {
+  if (typeof window === 'undefined' || !window.matchMedia) return false
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+}
+
+export function resolveEffectiveThemeId(
+  pref: ThemePreference,
+  systemDark = getSystemPrefersDark(),
+): AppThemeId {
+  if (pref.kind === 'fixed') return pref.themeId
+  return systemDark ? pref.darkId : pref.lightId
+}
+
+export function readStoredThemePreference(): ThemePreference | null {
   try {
     const raw = localStorage.getItem(BLOOMORA_THEME_STORAGE_KEY)
     if (!raw) return null
-    return resolveAppThemeId(raw)
+    return parseThemePreference(raw)
   } catch {
     return null
   }
 }
 
-export function persistBloomoraTheme(themeId: AppThemeId): void {
+/** @deprecated Prefer readStoredThemePreference */
+export function readStoredBloomoraTheme(): AppThemeId | null {
+  const pref = readStoredThemePreference()
+  return pref ? resolveEffectiveThemeId(pref) : null
+}
+
+export function persistThemePreference(pref: ThemePreference | string): void {
   try {
-    localStorage.setItem(BLOOMORA_THEME_STORAGE_KEY, themeId)
+    const raw =
+      typeof pref === 'string' ? pref : serializeThemePreference(pref)
+    localStorage.setItem(BLOOMORA_THEME_STORAGE_KEY, raw)
   } catch {
-    /* ignore quota / private mode */
+    /* ignore */
   }
+}
+
+/** @deprecated Prefer persistThemePreference */
+export function persistBloomoraTheme(themeId: AppThemeId): void {
+  persistThemePreference({ kind: 'fixed', themeId })
 }
 
 export function clearStoredBloomoraTheme(): void {
@@ -274,21 +596,34 @@ export function clearStoredBloomoraTheme(): void {
   }
 }
 
-/** Color de barra del navegador / PWA según el fondo del tema. */
 export function applyBloomoraThemeColorMeta(themeId: AppThemeId): void {
-  const snow = THEME_PALETTES[themeId].snow
+  const chrome = THEME_CHROME[themeId]
+  const color = chrome['--bloomora-theme-color'] ?? THEME_PALETTES[themeId].snow
   let meta = document.querySelector('meta[name="theme-color"]')
   if (!meta) {
     meta = document.createElement('meta')
     meta.setAttribute('name', 'theme-color')
     document.head.appendChild(meta)
   }
-  meta.setAttribute('content', snow)
+  meta.setAttribute('content', color)
+}
+
+function applyModeAttributes(themeId: AppThemeId): void {
+  const root = document.documentElement
+  const mode = isDarkThemeId(themeId) ? 'dark' : 'light'
+  root.setAttribute('data-bloomora-mode', mode)
+  root.style.colorScheme = mode
+  // Compat: reglas antiguas que miran data-bloomora-theme="dark"
+  if (mode === 'dark') {
+    root.setAttribute('data-bloomora-theme', 'dark')
+  } else {
+    root.removeAttribute('data-bloomora-theme')
+  }
 }
 
 export function applyBloomoraThemeCssVars(
   themeId: AppThemeId,
-  options?: { persist?: boolean },
+  options?: { persist?: boolean | ThemePreference | string },
 ): void {
   const palette = THEME_PALETTES[themeId]
   const root = document.documentElement
@@ -299,15 +634,31 @@ export function applyBloomoraThemeCssVars(
   for (const name of BLOOMORA_EXTRA_CSS_VAR_NAMES) {
     root.style.setProperty(name, chrome[name] ?? '')
   }
-  if (themeId === 'dark') {
-    root.setAttribute('data-bloomora-theme', 'dark')
-  } else {
-    root.removeAttribute('data-bloomora-theme')
-  }
+  applyModeAttributes(themeId)
   applyBloomoraThemeColorMeta(themeId)
-  if (options?.persist !== false) {
-    persistBloomoraTheme(themeId)
+
+  if (options?.persist === false) return
+  if (typeof options?.persist === 'string') {
+    persistThemePreference(options.persist)
+    return
   }
+  if (options?.persist && typeof options.persist === 'object') {
+    persistThemePreference(options.persist)
+    return
+  }
+  persistThemePreference({ kind: 'fixed', themeId })
+}
+
+/** Aplica la preferencia (fija o auto) según el sistema. */
+export function applyThemePreference(
+  pref: ThemePreference,
+  options?: { persist?: boolean },
+): AppThemeId {
+  const effective = resolveEffectiveThemeId(pref)
+  applyBloomoraThemeCssVars(effective, {
+    persist: options?.persist === false ? false : pref,
+  })
+  return effective
 }
 
 export function clearBloomoraThemeCssVars(): void {
@@ -319,5 +670,7 @@ export function clearBloomoraThemeCssVars(): void {
     root.style.removeProperty(name)
   }
   root.removeAttribute('data-bloomora-theme')
+  root.removeAttribute('data-bloomora-mode')
+  root.style.removeProperty('color-scheme')
   applyBloomoraThemeColorMeta('pink')
 }
