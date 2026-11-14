@@ -125,6 +125,14 @@ type NoteEditorProps = {
   hasSavedNotes?: boolean
   isDraft?: boolean
   onUnsavedChange?: (dirty: boolean) => void
+  /** Móvil: botón atrás a la lista. */
+  showBack?: boolean
+  onBack?: () => void
+  /** Tablet/móvil: abrir panel Esquema. */
+  showOutlineToggle?: boolean
+  outlineOpen?: boolean
+  onToggleOutline?: () => void
+  onShare?: () => void
 }
 
 export function NoteEditor({
@@ -136,6 +144,12 @@ export function NoteEditor({
   hasSavedNotes = false,
   isDraft = false,
   onUnsavedChange,
+  showBack = false,
+  onBack,
+  showOutlineToggle = false,
+  outlineOpen = false,
+  onToggleOutline,
+  onShare,
 }: NoteEditorProps) {
   const { showToast } = useBloomoraToast()
   const { confirm } = useBloomoraAlert()
@@ -174,6 +188,7 @@ export function NoteEditor({
   const [paragraphStyle, setParagraphStyle] = useState<NoteParagraphStyle>('p')
   const [titleDraft, setTitleDraft] = useState('')
   const [categoryDraft, setCategoryDraft] = useState('')
+  const [metaEditorOpen, setMetaEditorOpen] = useState(false)
   const [pageSizeDraft, setPageSizeDraft] = useState<EnglishNotePageSize>('letter')
   const [pageNumberEnabledDraft, setPageNumberEnabledDraft] = useState(false)
   const [twoColumnsDraft, setTwoColumnsDraft] = useState(false)
@@ -813,46 +828,160 @@ export function NoteEditor({
     )
   }
 
-  return (
-    <Card data-note-editor variant="glass" className={cn(bloomoraPanelCardClass, 'mx-auto w-full min-w-0 max-w-full space-y-4 overflow-x-hidden overflow-y-visible p-3 sm:p-5')}>
-      <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
-        <label className="min-w-0 text-xs font-semibold text-bloomora-text-muted">
-          Nombre del apunte
-          <input
-            type="text"
-            value={titleDraft}
-            onChange={(e) => {
-              setTitleDraft(e.target.value)
-              markUnsaved()
-            }}
-            placeholder="Ej. Verbos irregulares"
-            aria-label="Nombre del apunte"
-            className={cn(bloomoraInputClass, 'mt-1 !min-h-10 w-full min-w-0 max-w-full rounded-xl px-3 py-2')}
-          />
-          <span className="mt-1 block text-[0.65rem] font-normal text-bloomora-text-muted/90">
-            Solo identifica el archivo en tu lista. Usa Texto normal o estilos de Título 1, 2 y 3 desde la barra.
-          </span>
-        </label>
-        <label className="min-w-0 text-xs font-semibold text-bloomora-text-muted">
-          Categoria (opcional)
-          <input
-            value={categoryDraft}
-            onChange={(e) => {
-              setCategoryDraft(e.target.value)
-              markUnsaved()
-            }}
-            className={cn(bloomoraInputClass, 'mt-1 !min-h-10 w-full min-w-0 max-w-full rounded-xl px-3 py-2')}
-          />
-        </label>
-      </div>
+  const statusText = isSaving
+    ? 'Guardando…'
+    : hasUnsavedChanges
+      ? 'Sin guardar'
+      : saveLabel === 'Guardado'
+        ? 'Guardado'
+        : saveLabel
 
-      <div className="flex flex-wrap items-center gap-3 text-xs text-bloomora-text-muted">
-        <span>Creado: {new Date(note.createdAt).toLocaleString('es-CO')}</span>
-        <span>Ultima edicion: {new Date(note.updatedAt).toLocaleString('es-CO')}</span>
-        <span role="status" aria-live="polite" className={cn(isSaving ? 'text-bloomora-violet' : hasUnsavedChanges ? 'text-amber-600' : 'text-emerald-600')}>
-          {isSaving ? 'Guardando…' : hasUnsavedChanges ? 'Cambios pendientes de guardar' : saveLabel}
-        </span>
-      </div>
+  return (
+    <Card data-note-editor variant="glass" className={cn(bloomoraPanelCardClass, 'mx-auto w-full min-w-0 max-w-full space-y-3 overflow-x-hidden overflow-y-visible p-0 sm:space-y-4 sm:p-5')}>
+      <header className="notes-editor-header">
+        {showBack ? (
+          <button
+            type="button"
+            className="notes-editor-back"
+            onClick={onBack}
+            aria-label="Volver a la lista de apuntes"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+        ) : null}
+        <div className="notes-editor-title-block">
+          <button
+            type="button"
+            className="notes-editor-title-btn"
+            onClick={() => setMetaEditorOpen(true)}
+            aria-label="Editar nombre y categoría del apunte"
+            title="Toca para editar nombre y categoría"
+          >
+            <span className="notes-editor-title-text">
+              {titleDraft.trim() || 'Sin título'}
+            </span>
+            <svg className="notes-editor-title-edit" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+            </svg>
+          </button>
+          <div className="notes-editor-meta-row">
+            {categoryDraft.trim() ? (
+              <span className="notes-chip">{categoryDraft.trim()}</span>
+            ) : (
+              <span className="notes-chip notes-chip--muted">Sin carpeta</span>
+            )}
+            <span
+              role="status"
+              aria-live="polite"
+              className={cn(
+                'notes-save-state',
+                isSaving && 'notes-save-state--busy',
+                !isSaving && hasUnsavedChanges && 'notes-save-state--dirty',
+                !isSaving && !hasUnsavedChanges && 'notes-save-state--ok',
+              )}
+            >
+              {statusText}
+            </span>
+          </div>
+        </div>
+        <div className="notes-editor-header-actions">
+          {showOutlineToggle ? (
+            <button
+              type="button"
+              className="notes-inspector-toggle"
+              aria-expanded={outlineOpen}
+              aria-controls="notes-inspector-panel"
+              onClick={onToggleOutline}
+            >
+              ☷ <span>Esquema</span>
+            </button>
+          ) : null}
+          {onShare ? (
+            <button
+              type="button"
+              className="notes-icon-btn"
+              onClick={onShare}
+              aria-label="Compartir apunte"
+              title="Compartir"
+            >
+              ♧
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="notes-save-button"
+            disabled={isSaving}
+            onClick={() => void saveNow(true)}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <path d="M17 21v-8H7v8M7 3v5h8" />
+            </svg>
+            <span>Guardar</span>
+          </button>
+        </div>
+      </header>
+
+      {metaEditorOpen ? (
+        <div
+          className="notes-meta-scrim"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setMetaEditorOpen(false)
+          }}
+        >
+          <form
+            className="notes-meta-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="notes-meta-dialog-title"
+            onSubmit={(event) => {
+              event.preventDefault()
+              setMetaEditorOpen(false)
+            }}
+          >
+            <h2 id="notes-meta-dialog-title">Nombre y carpeta</h2>
+            <label className="notes-meta-field">
+              Nombre del apunte
+              <input
+                type="text"
+                value={titleDraft}
+                autoFocus
+                onChange={(e) => {
+                  setTitleDraft(e.target.value)
+                  markUnsaved()
+                }}
+                placeholder="Ej. Verbos irregulares"
+                aria-label="Nombre del apunte"
+                className={cn(bloomoraInputClass, 'mt-1 !min-h-11 w-full rounded-xl px-3')}
+              />
+            </label>
+            <label className="notes-meta-field">
+              Categoría (opcional)
+              <input
+                value={categoryDraft}
+                onChange={(e) => {
+                  setCategoryDraft(e.target.value)
+                  markUnsaved()
+                }}
+                placeholder="Ej. Inglés"
+                aria-label="Categoría del apunte"
+                className={cn(bloomoraInputClass, 'mt-1 !min-h-11 w-full rounded-xl px-3')}
+              />
+            </label>
+            <div className="notes-meta-actions">
+              <button type="button" className="notes-meta-cancel" onClick={() => setMetaEditorOpen(false)}>
+                Cerrar
+              </button>
+              <button type="submit" className="notes-save-button notes-save-button--dialog">
+                Listo
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
 
       <NoteToolbar
         onBeforeControl={() => { if (editorRef.current) toolbarSelectionRef.current = captureEditorSelection(editorRef.current) ?? toolbarSelectionRef.current }}

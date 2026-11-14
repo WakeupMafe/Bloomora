@@ -1,0 +1,55 @@
+<!doctype html><html><head><meta charset="utf-8"><style>*{box-sizing:border-box}body{margin:0;font-family:Quicksand,sans-serif;font-weight:500}
+.wrap{width:390px;padding:18px 14px 28px}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px}
+.logo{font-weight:800;font-size:22px;color:#F4A6C2}.badge{font-size:12px;font-weight:700;padding:5px 12px;border-radius:999px}
+h1{font-size:34px;margin:0;font-weight:800}.sub{margin:6px 0 26px;font-size:14px}
+.panel{border-radius:18px;padding:12px 14px;margin-bottom:26px}.panel p{margin:0 0 8px;font-weight:700;font-size:14px}
+.tab{font:inherit;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;margin-right:6px}
+.row{display:flex;justify-content:space-between;align-items:center;margin-bottom:26px;gap:12px;flex-wrap:wrap}
+.nav{display:inline-flex;border-radius:999px;overflow:hidden;font-size:12px;align-items:stretch}.nav b{font-size:20px;width:44px;display:flex;align-items:center;justify-content:center}
+.nav span{padding:10px 16px;font-weight:700;border-left:1px solid;border-right:1px solid}
+.clear{font:inherit;font-weight:700;font-size:14px;border-radius:999px;padding:8px 16px}
+.card{border-radius:22px;padding:20px;margin-bottom:26px}.ch{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.card h2{margin:0;font-size:18px;font-weight:800}.muted{margin:4px 0 0;font-size:14px}.xs{font-size:12px;font-weight:600}
+.acts{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.prio{display:inline-flex;border-radius:999px;padding:2px;gap:2px}
+.seg{font:inherit;font-weight:700;font-size:12px;border:0;border-radius:999px;padding:6px 12px}
+.chip{font:inherit;font-weight:700;font-size:12px;border-radius:999px;padding:6px 12px;display:inline-flex;gap:6px;align-items:center}.sw{width:14px;height:14px;border-radius:50%}
+.open{font-size:12px;font-weight:700;text-decoration:none}
+.cal{border-radius:20px;padding:12px}.g{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;justify-items:center}
+.wd{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;padding-bottom:4px}
+.d{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}.d.empty{visibility:hidden}
+
+:root{--bg:#15131C;--s1:#1E1B29;--s2:#272335;--s3:#322D45;--text:#ECE8F6;--muted:#B3ADC9;--accent:#C3B8FA;--accentbg:#B9AEF5;--on:#15131C;--pink:#F4A6C2;--pinkbg:#3A2433;--border:#3A3550;--bstrong:#7A7299;--cal:#211E2E;--dayb:#2E2A40;--dayfg:#DCD7EC;--dayborder:#5A5378;--lockfg:#8A84A3;--today:#F4A6C2;--missbg:#2A2232;--missfg:#E9A9BF}
+body{background:var(--bg);color:var(--text)}
+h1{color:var(--text)}.sub{color:var(--muted)}
+.panel{background:var(--s1);border:1px solid var(--border)} .panel p{color:var(--text)}
+.tabs{background:var(--s2);border-radius:999px;padding:4px;display:inline-flex;gap:4px}
+.tab{background:transparent;color:var(--accent);border:1px solid transparent}
+.tab.on{background:var(--accentbg);color:var(--on)}
+.nav{background:var(--s2);border:1px solid var(--bstrong)} .nav b{color:var(--accent)} .nav span{color:var(--text);border-color:var(--border)}
+.clear{background:var(--pinkbg);color:var(--pink);border:1px solid rgba(244,166,194,.55)}
+.card{background:var(--s1);border:1px solid var(--border)} .card h2{color:var(--text)} .muted{color:var(--muted)}
+.prio{background:var(--s2);border:1px solid var(--border)} .seg{color:var(--muted);background:transparent}
+.seg.on{background:var(--accentbg);color:var(--on)}
+.chip{background:var(--s2);color:var(--text);border:1px solid var(--bstrong)} .sw{background:#B9AEF5}
+.open{background:var(--s3);color:var(--text);border:1px solid var(--bstrong);padding:7px 14px;border-radius:999px}
+.cal{background:var(--cal);border:1px solid var(--border)} .wd{color:var(--muted)}
+.d{background:var(--dayb);color:var(--dayfg);box-shadow:inset 0 0 0 1px var(--dayborder)}
+.d.future{background:transparent;color:var(--muted);box-shadow:inset 0 0 0 1px var(--dayborder)}
+.d.locked{background:transparent;color:var(--lockfg);box-shadow:inset 0 0 0 1px dashed;box-shadow:none;border:1px dashed var(--border)}
+.d.missed{background:var(--missbg);color:var(--missfg)}
+.d.today{box-shadow:0 0 0 2px var(--cal),0 0 0 4px var(--today);color:var(--text);font-weight:800}
+.d.done{background:#B9AEF5;color:#15131C}
+.legend{display:flex;gap:16px;margin-top:12px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:-2px;margin-right:6px}
+</style></head><body><div class="wrap"><div class="top"><span class="logo">✿ Bloomora</span><span class="badge" style="background:#B9AEF5;color:#15131C">DESPUÉS · tema Noche</span></div>
+<h1>Todas las metas</h1><p class="sub">Organiza y filtra tus metas como en un mini workspace.</p>
+<section class="panel"><p>Tus metas</p><div class="tabs"><button class="tab">Lista</button><button class="tab">Tablero</button><button class="tab on">Calendario</button></div></section>
+<div class="row"><div class="nav"><b>‹</b><span>Noviembre De 2026</span><b>›</b></div><button class="clear">Limpiar todo</button></div>
+<section class="card"><div class="ch"><div><h2>Productividad</h2><p class="muted">Productividad</p><p class="muted xs">0 / 30 días · 🔥 0 días</p></div>
+<div class="acts"><div class="prio"><button class="seg">Alta</button><button class="seg on">Media</button><button class="seg">Baja</button></div>
+<button class="chip"><span class="sw"></span>Color ▾</button><a class="open">Abrir meta</a></div></div><div class="cal"><div class="g"><div class="wd">Lun</div><div class="wd">Mar</div><div class="wd">Mié</div><div class="wd">Jue</div><div class="wd">Vie</div><div class="wd">Sáb</div><div class="wd">Dom</div><div class="d empty"></div><div class="d empty"></div><div class="d empty"></div><div class="d empty"></div><div class="d empty"></div><div class="d empty"></div><div class="d locked">1</div><div class="d locked">2</div><div class="d locked">3</div><div class="d locked">4</div><div class="d locked">5</div><div class="d locked">6</div><div class="d locked">7</div><div class="d locked">8</div><div class="d locked">9</div><div class="d open">10</div><div class="d open">11</div><div class="d open">12</div><div class="d open today">13</div><div class="d future">14</div><div class="d future">15</div><div class="d future">16</div><div class="d future">17</div><div class="d future">18</div><div class="d future">19</div><div class="d future">20</div><div class="d future">21</div><div class="d future">22</div><div class="d future">23</div><div class="d future">24</div><div class="d future">25</div><div class="d future">26</div><div class="d future">27</div><div class="d future">28</div><div class="d future">29</div><div class="d future">30</div></div></div></section>
+<section class="card"><div class="ch"><div><h2>Leer 20 minutos</h2><p class="muted">Bienestar</p><p class="muted xs">2 / 30 días · 🔥 1 días</p></div>
+<div class="acts"><div class="prio"><button class="seg">Alta</button><button class="seg on">Media</button><button class="seg">Baja</button></div>
+<button class="chip"><span class="sw"></span>Color ▾</button><a class="open">Abrir meta</a></div></div><div class="cal"><div class="g"><div class="wd">Lun</div><div class="wd">Mar</div><div class="wd">Mié</div><div class="wd">Jue</div><div class="wd">Vie</div><div class="wd">Sáb</div><div class="wd">Dom</div><div class="d empty"></div><div class="d empty"></div><div class="d empty"></div><div class="d empty"></div><div class="d empty"></div><div class="d empty"></div><div class="d open">1</div><div class="d open">2</div><div class="d open">3</div><div class="d open">4</div><div class="d open">5</div><div class="d open">6</div><div class="d open">7</div><div class="d open">8</div><div class="d open">9</div><div class="d done">✓</div><div class="d open">11</div><div class="d done">✓</div><div class="d open today">13</div><div class="d future">14</div><div class="d future">15</div><div class="d future">16</div><div class="d future">17</div><div class="d future">18</div><div class="d future">19</div><div class="d future">20</div><div class="d future">21</div><div class="d future">22</div><div class="d future">23</div><div class="d future">24</div><div class="d future">25</div><div class="d future">26</div><div class="d future">27</div><div class="d future">28</div><div class="d future">29</div><div class="d future">30</div></div></div></section>
+<div class="legend"><span><i style="background:#B9AEF5"></i>Hecho</span><span><i style="background:#2E2A40;box-shadow:inset 0 0 0 1px #5A5378"></i>Pendiente</span><span><i style="box-shadow:0 0 0 2px #F4A6C2"></i>Hoy</span><span><i style="border:1px dashed #3A3550"></i>Antes del inicio</span><span><i style="box-shadow:inset 0 0 0 1px #5A5378"></i>Futuro</span></div></div></body></html>
