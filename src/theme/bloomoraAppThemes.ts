@@ -96,7 +96,7 @@ export const EXTRA_CHROME_KEYS = [
 ] as const
 
 /** Tokens de contraste UI (claros: equivalentes actuales vía paleta). */
-const LIGHT_CONTRAST: Record<string, string> = {
+const LIGHT_CONTRAST = {
   '--bloomora-surface-1': '#FFFFFF',
   '--bloomora-surface-2': '#FFFFFF',
   '--bloomora-surface-3': 'var(--color-bloomora-lavender-50)',
@@ -119,7 +119,7 @@ const LIGHT_CONTRAST: Record<string, string> = {
   '--bloomora-day-done-on': '#FFFFFF',
   '--bloomora-toast-bg': '#FFFFFF',
   '--bloomora-toast-fg': 'var(--color-bloomora-text)',
-}
+} satisfies Partial<Record<(typeof EXTRA_CHROME_KEYS)[number], string>>
 
 const LIGHT_EXTRAS: Record<(typeof EXTRA_CHROME_KEYS)[number], string> = {
   '--bloomora-on-accent': '#FFFFFF',

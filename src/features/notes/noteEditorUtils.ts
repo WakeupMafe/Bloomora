@@ -493,15 +493,15 @@ export function insertNoteBlock(editor: HTMLElement): boolean {
   return true
 }
 
-/** Conserva estructura y formato semántico habitual, descarta estilos y etiquetas ajenas. */
+/**
+ * Conserva negrita/cursiva/subrayado, listas y saltos.
+ * Al pegar, elimina color, background-color, font-family y font-size inline
+ * (evita gris/blanco fijos que rompen Noche y Medianoche).
+ */
 export function sanitizePastedNoteHtml(html: string): string {
   const normalizedInput = normalizeSpacing(html)
   const doc = new DOMParser().parseFromString(normalizedInput, 'text/html')
   const allowed = new Set(['P', 'DIV', 'H1', 'H2', 'H3', 'BR', 'STRONG', 'B', 'EM', 'I', 'U', 'S', 'STRIKE', 'UL', 'OL', 'LI', 'BLOCKQUOTE', 'SPAN', 'A'])
-  const safeColors = new Set([
-    ...ENGLISH_NOTE_COLORS.map((color) => color.value.toLowerCase()),
-    '#fef08a', '#bbf7d0', '#fecdd3', '#bfdbfe',
-  ])
 
   const cleanNode = (node: Node): Node[] => {
     if (node.nodeType === Node.TEXT_NODE) return [doc.createTextNode(node.textContent ?? '')]
@@ -520,17 +520,7 @@ export function sanitizePastedNoteHtml(html: string): string {
       if (node.dataset.spacing && ['P', 'H1', 'H2', 'H3', 'LI'].includes(node.tagName)) clean.dataset.spacing = node.dataset.spacing
       const align = node.style.textAlign
       if (['left', 'center', 'right', 'justify'].includes(align)) clean.style.textAlign = align
-      const family = node.style.fontFamily.trim().toLowerCase()
-      const safeFamily = /^(?:"|')?(poppins|quicksand|inter|fraunces|georgia|times new roman|arial)(?:"|')?(?:\s*,.*)?$/i.exec(family)
-      if (safeFamily) {
-        clean.style.fontFamily = node.style.fontFamily
-      }
-      const size = parseFloat(node.style.fontSize)
-      if (node.style.fontSize.endsWith('px') && size >= NOTE_FONT_SIZE_MIN_PX && size <= NOTE_FONT_SIZE_MAX_PX) clean.style.fontSize = `${size}px`
-      const color = cssColorToHex(node.style.color).toLowerCase()
-      if (safeColors.has(color)) clean.style.color = color
-      const background = cssColorToHex(node.style.backgroundColor).toLowerCase()
-      if (safeColors.has(background)) clean.style.backgroundColor = background
+      // Never keep pasted color / background / font-family / font-size.
     }
     if (node.tagName === 'A') {
       const href = node.getAttribute('href')
@@ -642,6 +632,70 @@ export function clearNoteSelectionHighlight(editor: HTMLElement): void {
   editor.focus()
   document.execCommand('hiliteColor', false, 'transparent')
   document.execCommand('backColor', false, 'transparent')
+}
+
+/** Strips pasted presentation styles (color / bg / font) from the current selection or caret block. */
+export function clearNoteInlinePresentationStyles(editor: HTMLElement): void {
+  editor.focus({ preventScroll: true })
+  const selection = window.getSelection()
+  if (!selection || selection.rangeCount === 0) return
+  const range = selection.getRangeAt(0)
+  if (!editor.contains(range.commonAncestorContainer)) return
+
+  const roots: HTMLElement[] = []
+  if (selection.isCollapsed) {
+    let el: HTMLElement | null =
+      range.startContainer.nodeType === Node.TEXT_NODE
+        ? range.startContainer.parentElement
+        : (range.startContainer as HTMLElement)
+    while (el && el !== editor) {
+      if (['P', 'DIV', 'LI', 'H1', 'H2', 'H3', 'BLOCKQUOTE'].includes(el.tagName)) {
+        roots.push(el)
+        break
+      }
+      el = el.parentElement
+    }
+    if (roots.length === 0) roots.push(editor)
+  } else {
+    const walker = document.createTreeWalker(
+      range.commonAncestorContainer,
+      NodeFilter.SHOW_ELEMENT,
+      {
+        acceptNode(node) {
+          if (!(node instanceof HTMLElement)) return NodeFilter.FILTER_REJECT
+          if (!range.intersectsNode(node)) return NodeFilter.FILTER_REJECT
+          return NodeFilter.FILTER_ACCEPT
+        },
+      },
+    )
+    if (range.commonAncestorContainer instanceof HTMLElement) {
+      roots.push(range.commonAncestorContainer)
+    }
+    let current = walker.nextNode()
+    while (current) {
+      if (current instanceof HTMLElement) roots.push(current)
+      current = walker.nextNode()
+    }
+  }
+
+  const seen = new Set<HTMLElement>()
+  for (const root of roots) {
+    const nodes = [root, ...root.querySelectorAll<HTMLElement>('*')]
+    for (const el of nodes) {
+      if (seen.has(el) || !editor.contains(el)) continue
+      seen.add(el)
+      el.style.removeProperty('color')
+      el.style.removeProperty('background-color')
+      el.style.removeProperty('background')
+      el.style.removeProperty('font-family')
+      el.style.removeProperty('font-size')
+      if (el.getAttribute('style')?.trim() === '') el.removeAttribute('style')
+    }
+  }
+
+  document.execCommand('removeFormat', false)
+  document.execCommand('foreColor', false, 'inherit')
+  clearNoteSelectionHighlight(editor)
 }
 
 export function readNoteHighlightColor(editor: HTMLElement): string | null {

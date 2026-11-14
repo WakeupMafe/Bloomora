@@ -484,7 +484,7 @@ export function NoteFormatSheet({
                 <path d="M4 12a8 8 0 108-8 8 8 0 00-6 2.7L4 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                 <path d="M4 4v5h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              Quitar formato del párrafo
+              Quitar formato
             </button>
           ) : null}
         </div>

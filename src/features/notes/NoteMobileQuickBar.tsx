@@ -16,6 +16,7 @@ type NoteMobileQuickBarProps = {
   onOpenFormat: () => void
   onOpenInsert: () => void
   onHideKeyboard: () => void
+  onShowKeyboard: () => void
 }
 
 function keepFocus(event: PointerEvent | MouseEvent) {
@@ -24,12 +25,14 @@ function keepFocus(event: PointerEvent | MouseEvent) {
 
 function QuickBtn({
   label,
+  ariaLabel,
   active = false,
   accent = false,
   onClick,
   children,
 }: {
   label: string
+  ariaLabel?: string
   active?: boolean
   accent?: boolean
   onClick: () => void
@@ -38,9 +41,9 @@ function QuickBtn({
   return (
     <button
       type="button"
-      aria-label={label}
+      aria-label={ariaLabel ?? label}
       aria-pressed={active}
-      title={label}
+      title={ariaLabel ?? label}
       onPointerDown={keepFocus}
       onMouseDown={keepFocus}
       onClick={onClick}
@@ -56,7 +59,7 @@ function QuickBtn({
   )
 }
 
-/** Narrow-only keyboard-docked mini toolbar (~62px) above the soft keyboard. */
+/** Narrow-only mini toolbar: always visible on mobile; docks above soft keyboard when open. */
 export function NoteMobileQuickBar({
   active,
   onUndo,
@@ -66,8 +69,9 @@ export function NoteMobileQuickBar({
   onOpenFormat,
   onOpenInsert,
   onHideKeyboard,
+  onShowKeyboard,
 }: NoteMobileQuickBarProps) {
-  const { bottomOffset } = useVisualViewportDock()
+  const { bottomOffset, keyboardOpen } = useVisualViewportDock()
 
   return createPortal(
     <div
@@ -76,7 +80,7 @@ export function NoteMobileQuickBar({
       data-note-mobile-quickbar
       className="note-mobile-quickbar"
       style={{
-        bottom: `calc(${bottomOffset}px + env(safe-area-inset-bottom, 0px))`,
+        bottom: `${bottomOffset}px`,
       }}
     >
       <QuickBtn label="Deshacer" onClick={onUndo}>
@@ -105,21 +109,29 @@ export function NoteMobileQuickBar({
         </svg>
       </QuickBtn>
       <span className="note-mobile-quickbar__sep" aria-hidden />
-      <QuickBtn label="Formato" onClick={onOpenFormat}>
+      <QuickBtn label="Formato" ariaLabel="Aa Formato" onClick={onOpenFormat}>
         <span className="note-mobile-quickbar__aa" aria-hidden>Aa</span>
       </QuickBtn>
-      <QuickBtn label="Insertar" accent onClick={onOpenInsert}>
+      <QuickBtn label="Insertar" ariaLabel="+ Insertar" accent onClick={onOpenInsert}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
           <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
         </svg>
       </QuickBtn>
-      <QuickBtn label="Ocultar" onClick={onHideKeyboard}>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-          <rect x="2.5" y="4" width="19" height="11" rx="2.5" stroke="currentColor" strokeWidth="2" />
-          <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M7 11.5h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path d="M9 19l3 2.5 3-2.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </QuickBtn>
+      {keyboardOpen ? (
+        <QuickBtn label="Ocultar" ariaLabel="Ocultar teclado" onClick={onHideKeyboard}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <rect x="2.5" y="4" width="19" height="11" rx="2.5" stroke="currentColor" strokeWidth="2" />
+            <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M7 11.5h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <path d="M9 19l3 2.5 3-2.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </QuickBtn>
+      ) : (
+        <QuickBtn label="Teclado" onClick={onShowKeyboard}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path d="M6 15l6-6 6 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </QuickBtn>
+      )}
     </div>,
     document.body,
   )

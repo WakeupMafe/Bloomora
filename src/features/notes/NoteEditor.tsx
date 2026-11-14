@@ -53,6 +53,7 @@ import {
   adjustNoteSelectionFontSize,
   applyTypingDefaultsAtCaret,
   buildNotePrintDocumentHtml,
+  clearNoteInlinePresentationStyles,
   clearNoteSelectionHighlight,
   insertImageInEditor,
   insertNoteBlock,
@@ -1214,6 +1215,9 @@ export function NoteEditor({
               ;(document.activeElement as HTMLElement | null)?.blur?.()
               editorRef.current?.blur?.()
             }}
+            onShowKeyboard={() => {
+              editorRef.current?.focus({ preventScroll: true })
+            }}
           />
           <NoteFormatSheet
             open={mobileSheet === 'format'}
@@ -1321,7 +1325,14 @@ export function NoteEditor({
                 (editor) => { insertNoteBlock(editor); markUnsaved() },
               )
             }}
-            onClearFormat={() => runToolbarCommand('removeFormat')}
+            onClearFormat={() => {
+              const editor = editorRef.current
+              if (!editor) return
+              restoreToolbarSelection(editor)
+              clearNoteInlinePresentationStyles(editor)
+              markUnsaved()
+              requestAnimationFrame(refreshToolbarFormat)
+            }}
           />
           <NoteInsertSheet
             open={mobileSheet === 'insert'}
