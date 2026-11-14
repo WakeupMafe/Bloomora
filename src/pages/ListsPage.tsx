@@ -56,7 +56,12 @@ import { cn } from '@/utils/cn'
 
 const EMPTY_LISTS: DashboardList[] = []
 const EMPTY_ITEMS: UiListItem[] = []
-const SWIPE_THRESHOLD = 64
+/** Ancho de cada acción de swipe (mín. 64px). */
+const SWIPE_ACTION_WIDTH = 72
+const SWIPE_OPEN_OFFSET = -(SWIPE_ACTION_WIDTH * 2)
+const SWIPE_OPEN_RATIO = 0.4
+const SWIPE_AXIS_DEADZONE = 10
+const LONG_PRESS_MS = 480
 
 type PendingUndo = {
   listId: string
@@ -71,6 +76,7 @@ export function ListsPage() {
   const { openListGadget, closeListGadget, isListGadgetOpen } = useListGadgets()
   const [exportBusy, setExportBusy] = useState(false)
   const isWide = useMediaQuery('(min-width: 600px)')
+  const isDesktop = useMediaQuery('(min-width: 1024px)')
   const canUseGadgets = useMediaQuery('(min-width: 768px)')
   const { data: listsData, isLoading: listsLoading } = useBloomoraLists(cedula)
   const lists = listsData ?? EMPTY_LISTS
@@ -98,6 +104,7 @@ export function ListsPage() {
   const [pendingSectionOpen, setPendingSectionOpen] = useState(true)
   const [doneSectionOpen, setDoneSectionOpen] = useState(true)
   const [pendingUndo, setPendingUndo] = useState<PendingUndo | null>(null)
+  const [openSwipeId, setOpenSwipeId] = useState<string | null>(null)
   const [emojiById, setEmojiById] = useState<Record<string, string>>({})
 
   const newListInputRef = useRef<HTMLInputElement>(null)
@@ -268,6 +275,15 @@ export function ListsPage() {
   const showMobileDetail = !isWide && selected != null
   const showListPanel = isWide || !showMobileDetail
   const showDetailPanel = isWide || showMobileDetail
+
+  useEffect(() => {
+    if (!isDesktop && !multiSelectMode) return
+    setOpenSwipeId(null)
+  }, [isDesktop, multiSelectMode])
+
+  const handleSwipeOpenChange = useCallback((id: string | null) => {
+    setOpenSwipeId(id)
+  }, [])
 
   const openCreate = () => {
     setCreatingOpen(true)
@@ -975,7 +991,11 @@ export function ListsPage() {
                             item={it}
                             multiSelectMode={multiSelectMode}
                             selected={selectedItemIds.includes(it.id)}
-                            swipeEnabled={showMobileDetail && !multiSelectMode}
+                            swipeEnabled={!isDesktop && !multiSelectMode}
+                            swipeOpen={openSwipeId === it.id}
+                            onSwipeOpenChange={handleSwipeOpenChange}
+                            showAgenda={isWide && !multiSelectMode}
+                            showHoverActions={isDesktop && !multiSelectMode}
                             onSelectToggle={() => toggleSelectedItem(it.id)}
                             onActivateMultiSelect={() => {
                               setMultiSelectMode(true)
@@ -1018,7 +1038,11 @@ export function ListsPage() {
                             item={it}
                             multiSelectMode={multiSelectMode}
                             selected={selectedItemIds.includes(it.id)}
-                            swipeEnabled={showMobileDetail && !multiSelectMode}
+                            swipeEnabled={!isDesktop && !multiSelectMode}
+                            swipeOpen={openSwipeId === it.id}
+                            onSwipeOpenChange={handleSwipeOpenChange}
+                            showAgenda={isWide && !multiSelectMode}
+                            showHoverActions={isDesktop && !multiSelectMode}
                             onSelectToggle={() => toggleSelectedItem(it.id)}
                             onActivateMultiSelect={() => {
                               setMultiSelectMode(true)
@@ -1266,12 +1290,92 @@ function ItemSection({
   )
 }
 
+function ListItemMoreMenu({
+  onEdit,
+  onDelete,
+}: {
+  onEdit: () => void
+  onDelete: () => void
+}) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onPointerDown = (e: MouseEvent | TouchEvent) => {
+      const target = e.target
+      if (!(target instanceof Node)) return
+      if (rootRef.current?.contains(target)) return
+      setOpen(false)
+    }
+    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('touchstart', onPointerDown, { passive: true })
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('touchstart', onPointerDown)
+    }
+  }, [open])
+
+  return (
+    <div ref={rootRef} className="relative shrink-0">
+      <button
+        type="button"
+        aria-label="Más acciones"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-bloomora-line/40 bg-bloomora-white/90 text-lg font-bold leading-none text-bloomora-deep shadow-sm ring-1 ring-bloomora-line/20 transition hover:bg-bloomora-lavender-50/80"
+        onClick={(e) => {
+          e.stopPropagation()
+          setOpen((v) => !v)
+        }}
+      >
+        ⋯
+      </button>
+      {open ? (
+        <div
+          role="menu"
+          className="absolute right-0 top-[calc(100%+4px)] z-30 min-w-[10.5rem] overflow-hidden rounded-2xl bg-bloomora-white p-1 shadow-[0_12px_32px_-12px_rgba(91,74,140,0.45)] ring-1 ring-bloomora-line/40"
+        >
+          <button
+            type="button"
+            role="menuitem"
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-bloomora-deep transition hover:bg-bloomora-lavender-50"
+            onClick={(e) => {
+              e.stopPropagation()
+              setOpen(false)
+              onEdit()
+            }}
+          >
+            <span aria-hidden>✏️</span> Editar
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[#d64062] transition hover:bg-bloomora-blush"
+            onClick={(e) => {
+              e.stopPropagation()
+              setOpen(false)
+              onDelete()
+            }}
+          >
+            <span aria-hidden>🗑️</span> Quitar
+          </button>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 function ListItemRow({
   cedula,
   item,
   multiSelectMode,
   selected,
   swipeEnabled,
+  swipeOpen,
+  onSwipeOpenChange,
+  showAgenda,
+  showHoverActions,
   onSelectToggle,
   onActivateMultiSelect,
   onToggle,
@@ -1283,6 +1387,10 @@ function ListItemRow({
   multiSelectMode: boolean
   selected: boolean
   swipeEnabled: boolean
+  swipeOpen: boolean
+  onSwipeOpenChange: (id: string | null) => void
+  showAgenda: boolean
+  showHoverActions: boolean
   onSelectToggle: () => void
   onActivateMultiSelect: () => void
   onToggle: (done: boolean) => void
@@ -1292,7 +1400,14 @@ function ListItemRow({
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(item.title)
   const [offset, setOffset] = useState(0)
+  const [dragging, setDragging] = useState(false)
+  const rootRef = useRef<HTMLLIElement | null>(null)
   const startX = useRef<number | null>(null)
+  const startY = useRef<number | null>(null)
+  const startOffset = useRef(0)
+  const offsetRef = useRef(0)
+  const axisLock = useRef<'none' | 'h' | 'v'>('none')
+  const suppressSwipe = useRef(false)
   const longPress = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -1300,21 +1415,66 @@ function ListItemRow({
   }, [item.title])
 
   useEffect(() => {
+    offsetRef.current = offset
+  }, [offset])
+
+  useEffect(() => {
     return () => {
       if (longPress.current) clearTimeout(longPress.current)
     }
   }, [])
 
+  useEffect(() => {
+    if (dragging) return
+    setOffset(swipeOpen ? SWIPE_OPEN_OFFSET : 0)
+  }, [swipeOpen, dragging])
+
+  useEffect(() => {
+    if (!swipeEnabled || !swipeOpen) return
+    const onPointerDown = (e: MouseEvent | TouchEvent) => {
+      const target = e.target
+      if (!(target instanceof Node)) return
+      if (rootRef.current?.contains(target)) return
+      onSwipeOpenChange(null)
+    }
+    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('touchstart', onPointerDown, { passive: true })
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('touchstart', onPointerDown)
+    }
+  }, [swipeEnabled, swipeOpen, onSwipeOpenChange])
+
   const markAsTransferred = () => {
     if (!item.done) onToggle(true)
   }
 
-  const closeSwipe = () => setOffset(0)
+  const clearLongPress = () => {
+    if (!longPress.current) return
+    clearTimeout(longPress.current)
+    longPress.current = null
+  }
+
+  const closeSwipe = () => {
+    setOffset(0)
+    onSwipeOpenChange(null)
+  }
+
+  const beginEdit = () => {
+    closeSwipe()
+    setEditing(true)
+  }
+
+  const beginDelete = () => {
+    closeSwipe()
+    onDelete()
+  }
 
   return (
     <li
+      ref={rootRef}
       className={cn(
-        'relative overflow-hidden rounded-2xl',
+        'group/item relative overflow-hidden rounded-2xl [touch-action:pan-y]',
         multiSelectMode && selected && 'ring-2 ring-bloomora-violet/40',
       )}
       onDoubleClick={() => {
@@ -1322,65 +1482,115 @@ function ListItemRow({
         onActivateMultiSelect()
       }}
       onTouchStart={(e) => {
-        if (!swipeEnabled || editing) return
-        startX.current = e.touches[0]?.clientX ?? null
+        if (!swipeEnabled || editing || multiSelectMode) return
+        const t = e.touches[0]
+        if (!t) return
+        suppressSwipe.current = false
+        axisLock.current = 'none'
+        if (!swipeOpen) onSwipeOpenChange(null)
+        startX.current = t.clientX
+        startY.current = t.clientY
+        startOffset.current = swipeOpen ? SWIPE_OPEN_OFFSET : 0
         longPress.current = setTimeout(() => {
+          suppressSwipe.current = true
+          axisLock.current = 'none'
+          startX.current = null
+          startY.current = null
+          setDragging(false)
+          setOffset(0)
+          onSwipeOpenChange(null)
           onActivateMultiSelect()
-        }, 480)
+        }, LONG_PRESS_MS)
       }}
       onTouchMove={(e) => {
-        if (longPress.current) {
-          clearTimeout(longPress.current)
-          longPress.current = null
+        if (suppressSwipe.current || startX.current == null || startY.current == null) return
+        const t = e.touches[0]
+        if (!t) return
+        const dx = t.clientX - startX.current
+        const dy = t.clientY - startY.current
+
+        if (axisLock.current === 'none') {
+          if (Math.abs(dx) < SWIPE_AXIS_DEADZONE && Math.abs(dy) < SWIPE_AXIS_DEADZONE) return
+          clearLongPress()
+          if (Math.abs(dy) > Math.abs(dx)) {
+            axisLock.current = 'v'
+            startX.current = null
+            startY.current = null
+            setDragging(false)
+            return
+          }
+          axisLock.current = 'h'
+          setDragging(true)
         }
-        if (startX.current == null) return
-        const x = e.touches[0]?.clientX ?? startX.current
-        const dx = Math.min(0, x - startX.current)
-        setOffset(Math.max(dx, -140))
+
+        if (axisLock.current !== 'h') return
+        clearLongPress()
+        const next = Math.min(0, Math.max(startOffset.current + dx, SWIPE_OPEN_OFFSET))
+        offsetRef.current = next
+        setOffset(next)
       }}
       onTouchEnd={() => {
-        if (longPress.current) {
-          clearTimeout(longPress.current)
-          longPress.current = null
-        }
+        clearLongPress()
+        const wasHorizontal = axisLock.current === 'h' && !suppressSwipe.current
         startX.current = null
-        setOffset((v) => (v < -SWIPE_THRESHOLD ? -132 : 0))
+        startY.current = null
+        axisLock.current = 'none'
+        setDragging(false)
+        if (!wasHorizontal) {
+          setOffset(swipeOpen ? SWIPE_OPEN_OFFSET : 0)
+          return
+        }
+        const threshold = Math.abs(SWIPE_OPEN_OFFSET) * SWIPE_OPEN_RATIO
+        const open = Math.abs(offsetRef.current) >= threshold
+        setOffset(open ? SWIPE_OPEN_OFFSET : 0)
+        onSwipeOpenChange(open ? item.id : null)
+      }}
+      onTouchCancel={() => {
+        clearLongPress()
+        startX.current = null
+        startY.current = null
+        axisLock.current = 'none'
+        suppressSwipe.current = false
+        setDragging(false)
+        setOffset(swipeOpen ? SWIPE_OPEN_OFFSET : 0)
       }}
     >
       {swipeEnabled ? (
-        <div className="absolute inset-y-0 right-0 flex w-[132px]">
+        <div
+          className="absolute inset-y-0 right-0 z-0 flex items-stretch"
+          aria-hidden={offset === 0}
+        >
           <button
             type="button"
-            className="flex flex-1 items-center justify-center bg-[#d4c8f0] text-xs font-bold text-bloomora-deep"
-            onClick={() => {
-              closeSwipe()
-              setEditing(true)
-            }}
+            className="flex h-full min-w-[64px] w-[72px] shrink-0 items-center justify-center gap-1 whitespace-nowrap bg-bloomora-lavender-100 text-xs font-bold text-bloomora-deep"
+            onClick={beginEdit}
           >
-            ✏️ Editar
+            <span aria-hidden>✏️</span> Editar
           </button>
           <button
             type="button"
-            className="flex flex-1 items-center justify-center bg-[#e86b8c] text-xs font-bold text-white"
-            onClick={() => {
-              closeSwipe()
-              onDelete()
-            }}
+            className="flex h-full min-w-[64px] w-[72px] shrink-0 items-center justify-center gap-1 whitespace-nowrap bg-bloomora-rose-deep text-xs font-bold text-white"
+            onClick={beginDelete}
           >
-            🗑️ Quitar
+            <span aria-hidden>🗑️</span> Quitar
           </button>
         </div>
       ) : null}
 
       <div
         className={cn(
-          'relative flex gap-3 bg-bloomora-mist/40 p-3 ring-1 ring-bloomora-line/25 sm:p-3.5',
-          item.done && 'bg-bloomora-mist/25',
+          'relative z-10 flex w-full min-w-0 items-start gap-3 p-3 ring-1 ring-bloomora-line/25 sm:p-3.5',
+          swipeEnabled
+            ? cn('bg-bloomora-white', item.done && 'bg-bloomora-mist')
+            : cn('bg-bloomora-mist/40', item.done && 'bg-bloomora-mist/25'),
           selected && multiSelectMode && 'bg-[#ebe4f8]',
         )}
         style={
           swipeEnabled
-            ? { transform: `translateX(${offset}px)`, transition: startX.current == null ? 'transform 160ms ease' : undefined }
+            ? {
+                transform: `translateX(${offset}px)`,
+                transition: dragging ? undefined : 'transform 160ms ease',
+              }
             : undefined
         }
       >
@@ -1442,33 +1652,43 @@ function ListItemRow({
             <div className="min-w-0 flex-1">
               <p
                 className={cn(
-                  'text-[0.95rem] font-semibold leading-snug text-bloomora-deep',
+                  'min-w-0 whitespace-normal font-semibold text-bloomora-deep [overflow-wrap:anywhere] [word-break:break-word]',
                   item.done &&
                     'text-bloomora-text-muted line-through decoration-bloomora-lilac/60',
                 )}
+                style={{
+                  fontSize: 'clamp(14px, 3.8vw, 16px)',
+                  lineHeight: 1.35,
+                }}
               >
                 {item.title}
               </p>
-              {!multiSelectMode && !swipeEnabled ? (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    className="rounded-full bg-bloomora-white px-3 py-1 text-xs font-semibold text-bloomora-violet ring-1 ring-bloomora-line/40"
-                    onClick={() => setEditing(true)}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-full bg-bloomora-white px-3 py-1 text-xs font-semibold text-[#d64062] ring-1 ring-red-200/60"
-                    onClick={onDelete}
-                  >
-                    Quitar
-                  </button>
-                </div>
-              ) : null}
             </div>
-            {!multiSelectMode && !swipeEnabled ? (
+            {showHoverActions ? (
+              <div
+                className="pointer-events-none flex shrink-0 items-center gap-1.5 self-center opacity-0 transition-opacity duration-150 group-hover/item:pointer-events-auto group-hover/item:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100"
+                aria-hidden={false}
+              >
+                <button
+                  type="button"
+                  className="rounded-full bg-bloomora-white px-3 py-1.5 text-xs font-semibold text-bloomora-violet ring-1 ring-bloomora-line/40 transition hover:bg-bloomora-lavender-50"
+                  onClick={beginEdit}
+                >
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  className="rounded-full bg-bloomora-white px-3 py-1.5 text-xs font-semibold text-[#d64062] ring-1 ring-red-200/60 transition hover:bg-bloomora-blush"
+                  onClick={beginDelete}
+                >
+                  Quitar
+                </button>
+              </div>
+            ) : null}
+            {!multiSelectMode ? (
+              <ListItemMoreMenu onEdit={beginEdit} onDelete={beginDelete} />
+            ) : null}
+            {showAgenda ? (
               <ListItemAgendaMenu
                 cedula={cedula}
                 itemTitle={item.title}

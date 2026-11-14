@@ -37,7 +37,7 @@ export function DashboardQuickAction({
     </>
   )
   const classNames = cn(
-    'group flex min-h-[4.25rem] w-full items-center gap-3.5 rounded-[1.125rem] border border-bloomora-line bg-white px-4 py-3 text-left transition-colors',
+    'group flex min-h-[4.25rem] w-full items-center gap-3.5 rounded-[1.125rem] border border-bloomora-line bg-bloomora-white px-4 py-3 text-left transition-colors',
     'hover:border-bloomora-lilac/50 hover:bg-bloomora-mist/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloomora-lilac/50',
     disabled && 'pointer-events-none opacity-50',
     className,
