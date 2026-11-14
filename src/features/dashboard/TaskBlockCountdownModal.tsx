@@ -335,7 +335,7 @@ export function TaskBlockCountdownModal({
   const dragHandleClass = cn(
     "min-w-0 rounded-xl px-1 py-0.5 touch-none select-none",
     !isNarrow &&
-      "cursor-grab active:cursor-grabbing sm:-mx-1 sm:px-2 sm:py-2 sm:hover:bg-bloomora-lavender-50/50",
+      "cursor-grab active:cursor-grabbing sm:-mx-1 sm:px-2 sm:py-2 sm:hover:bg-[color:var(--bloomora-surface-3)]",
     isNarrow && "cursor-grab active:cursor-grabbing",
   );
 
@@ -348,10 +348,10 @@ export function TaskBlockCountdownModal({
       aria-describedby={statusId}
       className={cn(
         "bloomora-modal-panel pointer-events-auto fixed flex flex-col overflow-hidden shadow-[0_20px_56px_rgba(0,0,0,0.2)] ring-1 backdrop-blur-md",
-        "bg-bloomora-white/98 ring-bloomora-line/35",
+        "bg-bloomora-white/98 ring-[color:var(--bloomora-border)]",
         isNarrow
           ? minimizedMobile
-            ? "bloomora-mobile-countdown-chip gap-0 rounded-2xl px-1.5 py-1.5 ring-bloomora-line/40"
+            ? "bloomora-mobile-countdown-chip gap-0 rounded-2xl px-1.5 py-1.5 ring-[color:var(--bloomora-border)]"
             : "gap-4 rounded-[22px] p-5"
           : "max-w-[min(100vw-2rem,24rem)] gap-4 rounded-2xl p-6",
       )}
@@ -379,7 +379,7 @@ export function TaskBlockCountdownModal({
             </p>
             <button
               type="button"
-              className="bloomora-mobile-countdown-expand-btn flex h-10 shrink-0 items-center justify-center rounded-xl px-2.5 text-bloomora-violet ring-1 ring-bloomora-line/40 hover:bg-bloomora-lavender-50/80"
+              className="bloomora-mobile-countdown-expand-btn flex h-10 shrink-0 items-center justify-center rounded-xl px-2.5 text-bloomora-violet ring-1 ring-[color:var(--bloomora-border)] hover:bg-[color:var(--bloomora-surface-3)]"
               aria-label="Expandir panel del cronómetro"
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => {
@@ -425,7 +425,7 @@ export function TaskBlockCountdownModal({
                 {isNarrow ? (
                   <button
                     type="button"
-                    className="rounded-full px-2 py-1 text-[11px] font-semibold text-bloomora-violet ring-1 ring-bloomora-line/40 hover:bg-bloomora-lavender-50/80"
+                    className="rounded-full px-2 py-1 text-[11px] font-semibold text-bloomora-violet ring-1 ring-[color:var(--bloomora-border)] hover:bg-[color:var(--bloomora-surface-3)]"
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -458,8 +458,8 @@ export function TaskBlockCountdownModal({
           <div
             id={statusId}
             className={cn(
-              "bloomora-modal-highlight rounded-2xl px-4 py-6 text-center ring-1 ring-bloomora-line/25",
-              "bg-bloomora-lavender-50/80",
+              "bloomora-modal-highlight rounded-2xl px-4 py-6 text-center ring-1 ring-[color:var(--bloomora-border)]",
+              "bg-[color:var(--bloomora-surface-2)]",
             )}
             aria-live="polite"
           >

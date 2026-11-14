@@ -85,7 +85,7 @@ export function GoalActionsMenu({
           role="menu"
           aria-labelledby={triggerId}
           className={cn(
-            'min-w-[11.5rem] overflow-hidden rounded-xl bg-bloomora-blush/[0.98] py-1 shadow-[0_14px_40px_rgba(91,74,140,0.18)] ring-1 ring-bloomora-line/40 backdrop-blur-sm',
+            'min-w-[11.5rem] overflow-hidden rounded-xl bg-bloomora-blush/[0.98] py-1 shadow-[0_14px_40px_rgba(91,74,140,0.18)] ring-1 ring-[color:var(--bloomora-border)] backdrop-blur-sm',
             isNarrow
               ? 'fixed rounded-[18px] p-1'
               : 'fixed rounded-xl p-1',
@@ -123,7 +123,7 @@ export function GoalActionsMenu({
             <button
               type="button"
               role="menuitem"
-              className="flex w-full items-center rounded-lg px-3 py-2.5 text-left text-sm font-medium text-bloomora-deep transition hover:bg-bloomora-mist/90"
+              className="flex w-full items-center rounded-lg px-3 py-2.5 text-left text-sm font-medium text-bloomora-deep transition hover:bg-[color:var(--bloomora-surface-3)]/90"
               onClick={runShare}
             >
               Compartir mi logro
@@ -132,7 +132,7 @@ export function GoalActionsMenu({
           <button
             type="button"
             role="menuitem"
-            className="flex w-full items-center rounded-lg px-3 py-2.5 text-left text-sm font-medium text-bloomora-deep transition hover:bg-bloomora-mist/90"
+            className="flex w-full items-center rounded-lg px-3 py-2.5 text-left text-sm font-medium text-bloomora-deep transition hover:bg-[color:var(--bloomora-surface-3)]/90"
             onClick={runEdit}
           >
             Ir a la edición
@@ -140,7 +140,7 @@ export function GoalActionsMenu({
           <button
             type="button"
             role="menuitem"
-            className="flex w-full items-center rounded-lg px-3 py-2.5 text-left text-sm font-medium text-red-600 transition hover:bg-bloomora-blush/60"
+            className="flex w-full items-center rounded-lg px-3 py-2.5 text-left text-sm font-medium text-red-600 transition hover:bg-[color:var(--bloomora-surface-3)]"
             onClick={runDelete}
           >
             Borrar todo
@@ -160,7 +160,7 @@ export function GoalActionsMenu({
         aria-haspopup="menu"
         aria-controls={open ? menuId : undefined}
         aria-label={`Opciones de ${goalTitle}`}
-        className="relative z-0 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-bloomora-violet/75 transition hover:bg-white/90 hover:text-bloomora-deep active:scale-95"
+        className="relative z-0 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-bloomora-violet/75 transition hover:bg-[color:var(--bloomora-surface-1)] hover:text-bloomora-deep active:scale-95"
         onClick={(e) => {
           e.stopPropagation()
           onTriggerClick()

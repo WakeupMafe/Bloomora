@@ -156,7 +156,7 @@ export function AgendaTaskSubsteps({
                         value={editDraft}
                         onChange={(e) => setEditDraft(e.target.value)}
                         maxLength={200}
-                        className="w-full rounded-lg border border-bloomora-sky-deep/35 bg-white/95 px-2.5 py-2 text-sm font-semibold text-zinc-900 placeholder:text-zinc-500 outline-none ring-bloomora-sky/30 focus:ring-2"
+                        className="w-full rounded-lg border border-bloomora-sky-deep/35 bg-[color:var(--bloomora-surface-1)] px-2.5 py-2 text-sm font-semibold text-bloomora-deep placeholder:text-bloomora-text-muted/65 outline-none ring-bloomora-sky/30 focus:ring-2"
                         autoFocus
                         aria-label="Editar texto del paso"
                       />
@@ -201,8 +201,8 @@ export function AgendaTaskSubsteps({
                         className={cn(
                           'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition',
                           s.completed
-                            ? 'border-bloomora-sky-deep/70 bg-bloomora-sky-deep text-white'
-                            : 'border-bloomora-sky-deep/45 bg-white/95 hover:border-bloomora-sky-deep/65',
+                            ? 'border-[color:var(--bloomora-accent-bg)] bg-[color:var(--bloomora-accent-bg)] text-[color:var(--bloomora-accent-on)]'
+                            : 'border-bloomora-sky-deep/45 bg-[color:var(--bloomora-surface-1)] hover:border-bloomora-sky-deep/65',
                         )}
                       >
                         {s.completed ? (
@@ -243,7 +243,7 @@ export function AgendaTaskSubsteps({
                           type="button"
                           onClick={() => startEdit(s)}
                           disabled={busyFor(s.id)}
-                          className="rounded-lg px-1.5 py-1 text-[0.65rem] font-semibold text-bloomora-violet transition hover:bg-white/90"
+                          className="rounded-lg px-1.5 py-1 text-[0.65rem] font-semibold text-bloomora-violet transition hover:bg-[color:var(--bloomora-surface-1)]"
                         >
                           Editar
                         </button>
@@ -272,7 +272,7 @@ export function AgendaTaskSubsteps({
                 onChange={(e) => setDraft(e.target.value)}
                 placeholder="Escribe un paso y pulsa Añadir"
                 maxLength={200}
-                className="w-full rounded-xl border border-bloomora-sky-deep/30 bg-white/95 px-3 py-2 text-sm font-semibold text-zinc-900 placeholder:text-zinc-500 outline-none ring-bloomora-sky/35 focus:ring-2 focus:ring-bloomora-sky-deep/30"
+                className="w-full rounded-xl border border-bloomora-sky-deep/30 bg-[color:var(--bloomora-surface-1)] px-3 py-2 text-sm font-semibold text-bloomora-deep placeholder:text-bloomora-text-muted/65 outline-none ring-bloomora-sky/35 focus:ring-2 focus:ring-bloomora-sky-deep/30"
               />
             </label>
             <Button type="submit" size="sm" disabled={!draft.trim() || isAdding}>

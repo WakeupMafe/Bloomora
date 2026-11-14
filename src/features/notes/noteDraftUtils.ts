@@ -21,6 +21,8 @@ export function createDraftEnglishNote(userCedula: string): EnglishNote {
     contentHtml: '<p><br /></p>',
     plainText: '',
     coverImageUrl: null,
+    isFavorite: false,
+    deletedAt: null,
     createdAt: ts,
     updatedAt: ts,
   }
@@ -43,6 +45,9 @@ export function mergeEnglishNotePatch(
     plainText: patch.plainText ?? note.plainText,
     coverImageUrl:
       patch.coverImageUrl !== undefined ? patch.coverImageUrl : note.coverImageUrl,
+    isFavorite:
+      patch.isFavorite !== undefined ? patch.isFavorite : note.isFavorite,
+    deletedAt: patch.deletedAt !== undefined ? patch.deletedAt : note.deletedAt,
     updatedAt: new Date().toISOString(),
   }
 }
@@ -59,5 +64,7 @@ export function englishNoteToInput(note: EnglishNote): EnglishNoteInput {
     contentHtml: note.contentHtml,
     plainText: note.plainText,
     coverImageUrl: note.coverImageUrl,
+    isFavorite: note.isFavorite,
+    deletedAt: note.deletedAt,
   }
 }

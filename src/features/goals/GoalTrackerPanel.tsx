@@ -63,7 +63,7 @@ export function GoalTrackerPanel({
   return (
     <article
       className={cn(
-        'bloomora-goal-tracker-panel relative overflow-visible rounded-[22px] p-5 pb-20 shadow-[0_8px_28px_rgba(91,74,140,0.08)] ring-1 ring-bloomora-line/30 sm:rounded-[26px] sm:p-7 sm:pb-24',
+        'bloomora-goal-tracker-panel relative overflow-visible rounded-[22px] p-5 pb-20 shadow-[0_8px_28px_rgba(91,74,140,0.08)] ring-1 ring-[color:var(--bloomora-border)] sm:rounded-[26px] sm:p-7 sm:pb-24',
         'bg-[linear-gradient(168deg,#FFF9FC_0%,#FDECF5_32%,#f5ecfc_58%,#D6F0FF_100%)]',
       )}
     >
@@ -112,8 +112,8 @@ export function GoalTrackerPanel({
                 className={cn(
                   'bloomora-tracker-streak-pill inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold',
                   vivid
-                    ? 'bg-white/70 text-orange-600 shadow-sm'
-                    : 'bg-white/40 text-bloomora-text-muted',
+                    ? 'bg-[color:var(--bloomora-surface-2)] text-orange-600 shadow-sm'
+                    : 'bg-[color:var(--bloomora-surface-2)] text-[color:var(--bloomora-text-muted)]',
                 )}
               >
                 🔥 {streak} {streak === 1 ? 'día seguido' : 'días seguidos'}
@@ -127,7 +127,7 @@ export function GoalTrackerPanel({
           </div>
           <div
             className={cn(
-              'bloomora-tracker-progress-track h-2.5 overflow-hidden rounded-full bg-white/55 shadow-inner',
+              'bloomora-tracker-progress-track h-2.5 overflow-hidden rounded-full bg-[color:var(--bloomora-surface-2)] shadow-inner',
               vivid && 'ring-1 ring-white/80',
             )}
           >
@@ -173,7 +173,7 @@ export function GoalTrackerPanel({
       >
         <div
           className={cn(
-            'bloomora-tracker-mood-pill mb-1 rounded-full bg-white/75 px-2.5 py-1 text-[11px] font-semibold text-bloomora-deep shadow-sm ring-1 ring-bloomora-line/25 backdrop-blur-sm sm:text-xs',
+            'bloomora-tracker-mood-pill mb-1 rounded-full bg-[color:var(--bloomora-surface-1)] px-2.5 py-1 text-[11px] font-semibold text-bloomora-deep shadow-sm ring-1 ring-[color:var(--bloomora-border)] backdrop-blur-sm sm:text-xs',
             mood === 'celebrate' && 'text-bloomora-violet',
           )}
           aria-hidden

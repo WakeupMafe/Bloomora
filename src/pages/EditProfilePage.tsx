@@ -218,7 +218,7 @@ export function EditProfilePage() {
       <main className="app-shell-padding--dashboard mx-auto w-full max-w-[1184px] pb-8">
         <article
           className={cn(
-            'bloomora-elevated-panel app-principal-card mt-6 overflow-hidden ring-1 ring-bloomora-line/25 max-[599px]:mt-4',
+            'bloomora-elevated-panel app-principal-card mt-6 overflow-hidden ring-1 ring-[color:var(--bloomora-border)] max-[599px]:mt-4',
           )}
         >
           <div className="flex flex-wrap items-center gap-3">
@@ -251,7 +251,7 @@ export function EditProfilePage() {
                 <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-8">
                   <div className="mx-auto shrink-0 sm:mx-0">
                     <div className="relative">
-                      <div className="h-32 w-32 overflow-hidden rounded-full bg-bloomora-lavender-50 ring-4 ring-bloomora-lavender-100 shadow-[0_8px_28px_rgba(124,107,181,0.2)] sm:h-36 sm:w-36">
+                      <div className="h-32 w-32 overflow-hidden rounded-full bg-[color:var(--bloomora-surface-2)] ring-4 ring-bloomora-lavender-100 shadow-[0_8px_28px_rgba(124,107,181,0.2)] sm:h-36 sm:w-36">
                         <BloomoraImage
                           src={circleSrc}
                           alt=""
@@ -275,7 +275,7 @@ export function EditProfilePage() {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         autoComplete="name"
-                        className="bloomora-form-input w-full rounded-full border border-bloomora-line/50 px-4 py-2.5 text-sm font-medium text-bloomora-deep ring-1 ring-bloomora-line/10 transition placeholder:text-bloomora-text-muted/60 focus:border-bloomora-lilac/45 focus:outline-none focus:ring-2 focus:ring-bloomora-lilac/35 sm:py-3 sm:text-[0.9375rem]"
+                        className="bloomora-form-input w-full rounded-full border border-[color:var(--bloomora-border)] px-4 py-2.5 text-sm font-medium text-bloomora-deep ring-1 ring-[color:var(--bloomora-border)] transition placeholder:text-bloomora-text-muted/60 focus:border-bloomora-lilac/45 focus:outline-none focus:ring-2 focus:ring-bloomora-lilac/35 sm:py-3 sm:text-[0.9375rem]"
                       />
                     </div>
                     <div>
@@ -292,7 +292,7 @@ export function EditProfilePage() {
                         value={cedula}
                         onChange={(e) => setCedula(e.target.value)}
                         autoComplete="off"
-                        className="bloomora-form-input w-full rounded-full border border-bloomora-line/50 px-4 py-2.5 text-sm font-medium text-bloomora-deep ring-1 ring-bloomora-line/10 transition placeholder:text-bloomora-text-muted/60 focus:border-bloomora-lilac/45 focus:outline-none focus:ring-2 focus:ring-bloomora-lilac/35 sm:py-3 sm:text-[0.9375rem]"
+                        className="bloomora-form-input w-full rounded-full border border-[color:var(--bloomora-border)] px-4 py-2.5 text-sm font-medium text-bloomora-deep ring-1 ring-[color:var(--bloomora-border)] transition placeholder:text-bloomora-text-muted/60 focus:border-bloomora-lilac/45 focus:outline-none focus:ring-2 focus:ring-bloomora-lilac/35 sm:py-3 sm:text-[0.9375rem]"
                       />
                     </div>
                     <div>
@@ -308,7 +308,7 @@ export function EditProfilePage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         autoComplete="email"
-                        className="bloomora-form-input w-full rounded-full border border-bloomora-line/50 px-4 py-2.5 text-sm font-medium text-bloomora-deep ring-1 ring-bloomora-line/10 transition placeholder:text-bloomora-text-muted/60 focus:border-bloomora-lilac/45 focus:outline-none focus:ring-2 focus:ring-bloomora-lilac/35 sm:py-3 sm:text-[0.9375rem]"
+                        className="bloomora-form-input w-full rounded-full border border-[color:var(--bloomora-border)] px-4 py-2.5 text-sm font-medium text-bloomora-deep ring-1 ring-[color:var(--bloomora-border)] transition placeholder:text-bloomora-text-muted/60 focus:border-bloomora-lilac/45 focus:outline-none focus:ring-2 focus:ring-bloomora-lilac/35 sm:py-3 sm:text-[0.9375rem]"
                       />
                     </div>
 
@@ -322,7 +322,7 @@ export function EditProfilePage() {
                       <Button
                         type="button"
                         variant="outline"
-                        className="order-2 border-bloomora-line/60 text-bloomora-deep hover:bg-bloomora-blush/50 sm:order-1"
+                        className="order-2 border-[color:var(--bloomora-border)] text-bloomora-deep hover:bg-[color:var(--bloomora-surface-3)] sm:order-1"
                         onClick={handleCancel}
                       >
                         Cancelar
@@ -344,7 +344,7 @@ export function EditProfilePage() {
               </section>
 
               <section
-                className="border-t border-bloomora-line/20 pt-8"
+                className="border-t border-[color:var(--bloomora-border)] pt-8"
                 aria-labelledby="profile-custom-heading"
               >
                 <h2
@@ -386,7 +386,7 @@ export function EditProfilePage() {
                             'relative aspect-square w-[3.25rem] overflow-hidden rounded-2xl ring-2 ring-offset-2 ring-offset-bloomora-blush transition hover:scale-[1.03] active:scale-95 sm:w-14',
                             selected
                               ? 'ring-bloomora-violet/70 shadow-md'
-                              : 'ring-bloomora-line/25 hover:ring-bloomora-lilac/40',
+                              : 'ring-[color:var(--bloomora-border)] hover:ring-bloomora-lilac/40',
                           )}
                         >
                           <BloomoraImage
@@ -397,7 +397,7 @@ export function EditProfilePage() {
                           />
                           {selected ? (
                             <span
-                              className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-bloomora-violet text-[10px] font-bold text-white shadow-sm"
+                              className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[color:var(--bloomora-accent-bg)] text-[10px] font-bold text-[color:var(--bloomora-accent-on)] shadow-sm"
                               aria-hidden
                             >
                               ✓
@@ -411,7 +411,7 @@ export function EditProfilePage() {
               </section>
 
               <section
-                className="border-t border-bloomora-line/20 pt-8"
+                className="border-t border-[color:var(--bloomora-border)] pt-8"
                 aria-labelledby="profile-agenda-notify-heading"
               >
                 <h2
@@ -424,7 +424,7 @@ export function EditProfilePage() {
                   Cuando termine un bloque del día de hoy, Bloomora puede vibrar, reproducir un sonido breve,
                   mostrarte un mensaje y, si el navegador lo permite, enviar una notificación.
                 </p>
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-bloomora-lavender-100/85 px-4 py-3.5 ring-1 ring-bloomora-line/35">
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-bloomora-lavender-100/85 px-4 py-3.5 ring-1 ring-[color:var(--bloomora-border)]">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-bloomora-deep">
                       Avisos al terminar un bloque
@@ -467,7 +467,7 @@ export function EditProfilePage() {
                   >
                     <span
                       className={cn(
-                        'absolute top-1 flex h-6 w-6 rounded-full bg-white shadow-sm transition-transform',
+                        'absolute top-1 flex h-6 w-6 rounded-full bg-[color:var(--bloomora-surface-1)] shadow-sm transition-transform',
                         profile.notify_agenda_block_end !== false
                           ? 'left-1 translate-x-[1.35rem]'
                           : 'left-1 translate-x-0',
@@ -500,7 +500,7 @@ export function EditProfilePage() {
             </p>
           )}
 
-          <div className="mt-10 border-t border-bloomora-line/15 pt-6">
+          <div className="mt-10 border-t border-[color:var(--bloomora-border)] pt-6">
             <button
               type="button"
               onClick={handleDeleteAccount}

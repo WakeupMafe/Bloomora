@@ -442,7 +442,14 @@ export function readNoteParagraphStyle(editor: HTMLElement): NoteParagraphStyle 
 export function readActiveNoteMarks(editor: HTMLElement) {
   const selection = window.getSelection()
   if (!selection || selection.rangeCount === 0 || !editor.contains(selection.getRangeAt(0).commonAncestorContainer)) {
-    return { bold: false, italic: false, underline: false, strike: false, align: 'left' as NoteTextAlign }
+    return {
+      bold: false,
+      italic: false,
+      underline: false,
+      strike: false,
+      bulletList: false,
+      align: 'left' as NoteTextAlign,
+    }
   }
   const block = getBlockInEditor(selection.getRangeAt(0).startContainer, editor)
   const alignValue = block ? window.getComputedStyle(block).textAlign : 'left'
@@ -451,6 +458,7 @@ export function readActiveNoteMarks(editor: HTMLElement) {
     italic: document.queryCommandState('italic'),
     underline: document.queryCommandState('underline'),
     strike: document.queryCommandState('strikeThrough'),
+    bulletList: document.queryCommandState('insertUnorderedList'),
     align: (alignValue === 'center' || alignValue === 'right' || alignValue === 'justify' ? alignValue : 'left') as NoteTextAlign,
   }
 }

@@ -6,12 +6,13 @@ import {
   type KeyboardEvent,
   type RefObject,
 } from 'react'
-import { useBloomoraAlert } from '@/contexts/BloomoraAlertContext'
+import { useBloomoraToast } from '@/contexts/BloomoraToastContext'
 import {
   cleanLeadingEmptyNoteBlocks,
   extractOverflowHtml,
   isPageContentOverflowing,
   newNotePageId,
+  splitPageHtmlAtCaret,
   type NotePageSlice,
 } from '@/features/notes/notePageLayoutUtils'
 import {
@@ -62,6 +63,27 @@ function setCaretInBlock(block: HTMLElement, edge: 'start' | 'end') {
   selection?.addRange(range)
 }
 
+function PageBreakIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M6 3v5h12V3" />
+      <path d="M6 21v-5h12v5" />
+      <path d="M2.5 12h2.5M8 12h3M13.5 12h3M19 12h2.5" />
+    </svg>
+  )
+}
+
 type NotePagesEditorProps = {
   pages: NotePageSlice[]
   onPagesChange: (pages: NotePageSlice[]) => void
@@ -89,18 +111,20 @@ export function NotePagesEditor({
   onPageInput,
   onKeyDown,
 }: NotePagesEditorProps) {
-  const { confirm } = useBloomoraAlert()
+  const { showToast } = useBloomoraToast()
   const sheetRefs = useRef<Array<HTMLElement | null>>([])
   const surfaceRefs = useRef<Array<HTMLDivElement | null>>([])
   const hydratedPageIdsRef = useRef<Set<string>>(new Set())
-  const overflowPromptOpenRef = useRef(false)
-  const [overflowDeclinedPages, setOverflowDeclinedPages] = useState<Set<number>>(
+  const overflowBusyRef = useRef(false)
+  const [overflowStuckPages, setOverflowStuckPages] = useState<Set<number>>(
     () => new Set(),
   )
   const [overflowPages, setOverflowPages] = useState<Set<number>>(() => new Set())
   const [focusedPageIndex, setFocusedPageIndex] = useState(0)
   const pendingFocusPageRef = useRef<number | null>(null)
   const checkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pagesRef = useRef(pages)
+  pagesRef.current = pages
 
   const setActiveEditor = useCallback(
     (el: HTMLDivElement | null) => {
@@ -116,12 +140,55 @@ export function NotePagesEditor({
         nextOverflow.add(index)
       }
     })
-    setOverflowPages(nextOverflow)
+    setOverflowPages((prev) => {
+      if (
+        prev.size === nextOverflow.size
+        && [...nextOverflow].every((index) => prev.has(index))
+      ) {
+        return prev
+      }
+      return nextOverflow
+    })
   }, [pageContentRefsRef])
+
+  const snapshotPagesFromDom = useCallback((): NotePageSlice[] => {
+    return pagesRef.current.map((page, index) => ({
+      id: page.id,
+      html:
+        pageContentRefsRef.current[index]?.innerHTML.trim()
+        || page.html
+        || '<p><br /></p>',
+    }))
+  }, [pageContentRefsRef])
+
+  const restorePagesSnapshot = useCallback(
+    (snapshot: NotePageSlice[]) => {
+      hydratedPageIdsRef.current.clear()
+      onPagesChange(snapshot.map((page) => ({ ...page })))
+      setOverflowStuckPages(new Set())
+      pendingFocusPageRef.current = Math.min(
+        focusedPageIndex,
+        Math.max(0, snapshot.length - 1),
+      )
+    },
+    [focusedPageIndex, onPagesChange],
+  )
+
+  const notifyPageBreakInserted = useCallback(
+    (snapshot: NotePageSlice[]) => {
+      showToast('Salto de página insertado', {
+        actionLabel: 'Deshacer',
+        tone: 'deep',
+        duration: 5200,
+        onAction: () => restorePagesSnapshot(snapshot),
+      })
+    },
+    [restorePagesSnapshot, showToast],
+  )
 
   useEffect(() => {
     hydratedPageIdsRef.current.clear()
-    setOverflowDeclinedPages(new Set())
+    setOverflowStuckPages(new Set())
     setOverflowPages(new Set())
   }, [documentKey])
 
@@ -131,6 +198,18 @@ export function NotePagesEditor({
     surfaceRefs.current = surfaceRefs.current.slice(0, pages.length)
     refreshOverflowState()
   }, [pages.length, pageContentRefsRef, refreshOverflowState])
+
+  useEffect(() => {
+    pages.forEach((page, index) => {
+      const el = pageContentRefsRef.current[index]
+      if (!el) return
+      if (!hydratedPageIdsRef.current.has(page.id)) {
+        el.innerHTML = page.html
+        hydratedPageIdsRef.current.add(page.id)
+        enhanceNoteImages(el)
+      }
+    })
+  }, [pages, pageContentRefsRef])
 
   useEffect(() => {
     const cleanups: Array<() => void> = []
@@ -161,7 +240,7 @@ export function NotePagesEditor({
     }
   }, [pages, pageContentRefsRef, setActiveEditor])
 
-  const performPageBreak = useCallback(
+  const performOverflowPageBreak = useCallback(
     (pageIndex: number) => {
       const contentEl = pageContentRefsRef.current[pageIndex]
       const surfaceEl = surfaceRefs.current[pageIndex]
@@ -172,15 +251,17 @@ export function NotePagesEditor({
       if (!overflowHtml) return false
 
       const keptHtml = contentEl.innerHTML
-      const updated: NotePageSlice[] = pages.map((p, i) =>
+      const synced = snapshotPagesFromDom()
+      const updated = synced.map((p, i) =>
         i === pageIndex ? { ...p, html: keptHtml } : p,
       )
       updated.splice(pageIndex + 1, 0, {
         id: newNotePageId(),
         html: overflowHtml,
       })
+      hydratedPageIdsRef.current.add(updated[pageIndex]!.id)
       onPagesChange(updated)
-      setOverflowDeclinedPages((prev) => {
+      setOverflowStuckPages((prev) => {
         const next = new Set(prev)
         next.delete(pageIndex)
         return next
@@ -189,72 +270,86 @@ export function NotePagesEditor({
       refreshOverflowState()
       return true
     },
-    [onPagesChange, pageContentRefsRef, pages, refreshOverflowState],
+    [onPagesChange, pageContentRefsRef, refreshOverflowState, snapshotPagesFromDom],
   )
 
   const insertEmptyPageAfter = useCallback(
     (pageIndex: number) => {
-      const updated = [...pages]
-      updated.splice(pageIndex + 1, 0, {
+      const synced = snapshotPagesFromDom()
+      synced.splice(pageIndex + 1, 0, {
         id: newNotePageId(),
         html: '<p><br /></p>',
       })
-      onPagesChange(updated)
+      onPagesChange(synced)
       pendingFocusPageRef.current = pageIndex + 1
     },
-    [onPagesChange, pages],
+    [onPagesChange, snapshotPagesFromDom],
   )
 
-  const requestPageBreak = useCallback(
-    async (pageIndex: number, skipConfirm = false) => {
+  const insertManualPageBreak = useCallback(
+    (pageIndex: number) => {
       const contentEl = pageContentRefsRef.current[pageIndex]
-      const surfaceEl = surfaceRefs.current[pageIndex]
       if (!contentEl) return
 
-      if (!isPageContentOverflowing(contentEl, surfaceEl)) {
-        insertEmptyPageAfter(pageIndex)
+      const snapshot = snapshotPagesFromDom()
+      const split = splitPageHtmlAtCaret(contentEl)
+      if (split) {
+        const synced = snapshot.map((page, index) =>
+          index === pageIndex
+            ? { ...page, html: split.before }
+            : page,
+        )
+        synced.splice(pageIndex + 1, 0, {
+          id: newNotePageId(),
+          html: split.after,
+        })
+        hydratedPageIdsRef.current.add(synced[pageIndex]!.id)
+        onPagesChange(synced)
+        pendingFocusPageRef.current = pageIndex + 1
+        onPageInput()
+        notifyPageBreakInserted(snapshot)
         return
       }
 
-      if (!skipConfirm) {
-        overflowPromptOpenRef.current = true
-        const ok = await confirm({
-          title: '¿Quieres hacer un salto de hoja?',
-          description:
-            'El texto ya no cabe en esta hoja. El contenido que sobra pasará a una pagina nueva, como en Word.',
-          confirmLabel: 'Si, nueva hoja',
-          cancelLabel: 'No, por ahora',
-          tone: 'default',
-        })
-        overflowPromptOpenRef.current = false
-        if (!ok) {
-          setOverflowDeclinedPages((prev) => new Set(prev).add(pageIndex))
+      const surfaceEl = surfaceRefs.current[pageIndex]
+      if (isPageContentOverflowing(contentEl, surfaceEl)) {
+        if (performOverflowPageBreak(pageIndex)) {
+          onPageInput()
+          notifyPageBreakInserted(snapshot)
           return
         }
       }
 
-      if (!performPageBreak(pageIndex)) {
-        insertEmptyPageAfter(pageIndex)
-      }
+      insertEmptyPageAfter(pageIndex)
+      onPageInput()
+      notifyPageBreakInserted(snapshot)
     },
-    [confirm, insertEmptyPageAfter, pageContentRefsRef, performPageBreak],
+    [
+      insertEmptyPageAfter,
+      notifyPageBreakInserted,
+      onPageInput,
+      onPagesChange,
+      pageContentRefsRef,
+      performOverflowPageBreak,
+      snapshotPagesFromDom,
+    ],
   )
 
   useEffect(() => {
     if (insertPageBreakRef) {
       insertPageBreakRef.current = () => {
-        void requestPageBreak(focusedPageIndex, true)
+        insertManualPageBreak(focusedPageIndex)
       }
     }
     return () => {
       if (insertPageBreakRef) insertPageBreakRef.current = null
     }
-  }, [focusedPageIndex, insertPageBreakRef, requestPageBreak])
+  }, [focusedPageIndex, insertManualPageBreak, insertPageBreakRef])
 
   const checkPageOverflow = useCallback(
-    async (pageIndex: number) => {
-      if (overflowPromptOpenRef.current) return
-      if (overflowDeclinedPages.has(pageIndex)) return
+    (pageIndex: number) => {
+      if (overflowBusyRef.current) return
+      if (overflowStuckPages.has(pageIndex)) return
 
       const contentEl = pageContentRefsRef.current[pageIndex]
       const surfaceEl = surfaceRefs.current[pageIndex]
@@ -262,7 +357,7 @@ export function NotePagesEditor({
 
       refreshOverflowState()
       if (!isPageContentOverflowing(contentEl, surfaceEl)) {
-        setOverflowDeclinedPages((prev) => {
+        setOverflowStuckPages((prev) => {
           if (!prev.has(pageIndex)) return prev
           const next = new Set(prev)
           next.delete(pageIndex)
@@ -271,13 +366,36 @@ export function NotePagesEditor({
         return
       }
 
-      await requestPageBreak(pageIndex, false)
+      overflowBusyRef.current = true
+      const snapshot = snapshotPagesFromDom()
+      const broke = performOverflowPageBreak(pageIndex)
+      overflowBusyRef.current = false
+
+      if (!broke) {
+        setOverflowStuckPages((prev) => new Set(prev).add(pageIndex))
+        return
+      }
+
+      onPageInput()
+      notifyPageBreakInserted(snapshot)
+
+      requestAnimationFrame(() => {
+        const nextEl = pageContentRefsRef.current[pageIndex]
+        const nextSurface = surfaceRefs.current[pageIndex]
+        if (nextEl && isPageContentOverflowing(nextEl, nextSurface)) {
+          setOverflowStuckPages((prev) => new Set(prev).add(pageIndex))
+        }
+        refreshOverflowState()
+      })
     },
     [
-      overflowDeclinedPages,
+      notifyPageBreakInserted,
+      onPageInput,
+      overflowStuckPages,
       pageContentRefsRef,
+      performOverflowPageBreak,
       refreshOverflowState,
-      requestPageBreak,
+      snapshotPagesFromDom,
     ],
   )
 
@@ -286,7 +404,7 @@ export function NotePagesEditor({
       if (checkTimerRef.current) clearTimeout(checkTimerRef.current)
       checkTimerRef.current = setTimeout(() => {
         refreshOverflowState()
-        void checkPageOverflow(pageIndex)
+        checkPageOverflow(pageIndex)
       }, 350)
     },
     [checkPageOverflow, refreshOverflowState],
@@ -302,17 +420,29 @@ export function NotePagesEditor({
     const previousIsEmpty = !previousDoc.body.textContent?.trim() && !previousDoc.body.querySelector('img, [data-note-block="true"]')
     const currentDoc = new DOMParser().parseFromString(currentHtml, 'text/html')
     const currentIsEmpty = !currentDoc.body.textContent?.trim() && !currentDoc.body.querySelector('img, [data-note-block="true"]')
-    const mergedHtml = `${previousIsEmpty ? '' : previousHtml}${currentIsEmpty ? '' : currentHtml}` || '<p><br /></p>'
-    const updated = pages.filter((_, index) => index !== pageIndex).map((page, index) =>
+    const mergedHtml = cleanLeadingEmptyNoteBlocks(
+      `${previousIsEmpty ? '' : previousHtml}${currentIsEmpty ? '' : currentHtml}` || '<p><br /></p>',
+    )
+    const synced = snapshotPagesFromDom()
+    const updated = synced.filter((_, index) => index !== pageIndex).map((page, index) =>
       index === pageIndex - 1
         ? { ...page, html: mergedHtml }
         : page,
     )
+    hydratedPageIdsRef.current.delete(pages[pageIndex - 1]?.id ?? '')
     onPagesChange(updated)
     pendingFocusPageRef.current = pageIndex - 1
     setFocusedPageIndex(pageIndex - 1)
+    onPageInput()
     setTimeout(() => scheduleOverflowCheck(pageIndex - 1), 0)
-  }, [onPagesChange, pageContentRefsRef, pages, scheduleOverflowCheck])
+  }, [
+    onPageInput,
+    onPagesChange,
+    pageContentRefsRef,
+    pages,
+    scheduleOverflowCheck,
+    snapshotPagesFromDom,
+  ])
 
   const moveCaretAcrossPages = (event: KeyboardEvent<HTMLDivElement>, pageIndex: number): boolean => {
     if (!['ArrowUp', 'ArrowDown'].includes(event.key)) return false
@@ -429,22 +559,44 @@ export function NotePagesEditor({
       <div className="english-note-pages-stack">
         {pages.map((page, pageIndex) => {
           const showOverflowHint =
-            overflowPages.has(pageIndex) && overflowDeclinedPages.has(pageIndex)
+            overflowPages.has(pageIndex) && overflowStuckPages.has(pageIndex)
 
           return (
             <div key={page.id} className="english-note-page-block">
               {pageIndex > 0 ? (
-                <div className="english-note-page-gutter">
-                  <span className="english-note-page-gutter__label" aria-hidden>Salto de hoja</span>
+                <div
+                  className="english-note-page-gutter"
+                  role="separator"
+                  aria-label="Salto de página"
+                >
+                  <span className="english-note-page-gutter__line" aria-hidden />
+                  <span className="english-note-page-gutter__label">
+                    <PageBreakIcon />
+                    Salto de página
+                  </span>
+                  <span className="english-note-page-gutter__line" aria-hidden />
                   <button
                     type="button"
                     className="english-note-page-gutter__remove"
-                    aria-label={`Quitar salto antes de la hoja ${pageIndex + 1}`}
-                    title="Quitar salto y unir con la hoja anterior"
+                    aria-label={`Quitar salto antes de la página ${pageIndex + 1}`}
+                    title="Quitar salto y unir con la página anterior"
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => removePageBreak(pageIndex)}
                   >
-                    Quitar salto
+                    <svg
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                    Quitar
                   </button>
                 </div>
               ) : null}
@@ -537,18 +689,33 @@ export function NotePagesEditor({
                     data-placeholder={
                       pageIndex === 0
                         ? 'Escribe aquí tu apunte; usa la barra para crear títulos y listas…'
-                        : 'Continua en esta hoja...'
+                        : 'Continúa en esta página…'
                     }
                   />
                 </div>
                 {showOverflowHint ? (
                   <div className="english-note-page-overflow-bar">
-                    <p>Hay texto que no cabe en esta hoja.</p>
+                    <p>Hay texto que no cabe en esta página.</p>
                     <button
                       type="button"
-                      onClick={() => void requestPageBreak(pageIndex, true)}
+                      onClick={() => {
+                        const snapshot = snapshotPagesFromDom()
+                        if (performOverflowPageBreak(pageIndex)) {
+                          setOverflowStuckPages((prev) => {
+                            const next = new Set(prev)
+                            next.delete(pageIndex)
+                            return next
+                          })
+                          onPageInput()
+                          notifyPageBreakInserted(snapshot)
+                        } else {
+                          insertEmptyPageAfter(pageIndex)
+                          onPageInput()
+                          notifyPageBreakInserted(snapshot)
+                        }
+                      }}
                     >
-                      Continuar en nueva hoja
+                      Continuar en nueva página
                     </button>
                   </div>
                 ) : null}

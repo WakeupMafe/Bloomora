@@ -26,7 +26,7 @@ export function DashboardQuickAction({
 }: DashboardQuickActionProps) {
   const content = (
     <>
-      <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-xl bg-bloomora-lavender-50 text-bloomora-violet ring-1 ring-bloomora-line/35 sm:size-11', iconClassName)} aria-hidden>
+      <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-xl bg-[color:var(--bloomora-surface-2)] text-bloomora-violet ring-1 ring-[color:var(--bloomora-border)] sm:size-11', iconClassName)} aria-hidden>
         {icon}
       </span>
       <span className="min-w-0 flex-1">
@@ -37,8 +37,8 @@ export function DashboardQuickAction({
     </>
   )
   const classNames = cn(
-    'group flex min-h-[4.25rem] w-full items-center gap-3.5 rounded-[1.125rem] border border-bloomora-line bg-bloomora-white px-4 py-3 text-left transition-colors',
-    'hover:border-bloomora-lilac/50 hover:bg-bloomora-mist/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloomora-lilac/50',
+    'group flex min-h-[4.25rem] w-full items-center gap-3.5 rounded-[1.125rem] border border-[color:var(--bloomora-border)] bg-bloomora-white px-4 py-3 text-left transition-colors',
+    'hover:border-bloomora-lilac/50 hover:bg-[color:var(--bloomora-surface-3)]/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloomora-lilac/50',
     disabled && 'pointer-events-none opacity-50',
     className,
   )

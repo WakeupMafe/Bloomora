@@ -14,27 +14,27 @@ function segmentClasses(p: MockGoalRow['prioridad'], active: boolean) {
   if (!active) {
     return cn(
       segmentBase,
-      'bloomora-goal-priority-segment--idle text-bloomora-text-muted hover:bg-bloomora-white/70',
+      'bloomora-goal-priority-segment--idle text-[color:var(--bloomora-text-muted)] hover:bg-[color:var(--bloomora-surface-3)]',
     )
   }
   if (p === 'Alta') {
     return cn(
       segmentBase,
       'bloomora-goal-priority-segment--active bloomora-goal-priority-segment--alta',
-      'bg-rose-100 text-rose-800 ring-1 ring-rose-200/90',
+      'bg-[color:var(--bloomora-danger-soft)] text-[color:var(--bloomora-danger-fg)] ring-1 ring-[color:var(--bloomora-danger-fg)]',
     )
   }
   if (p === 'Baja') {
     return cn(
       segmentBase,
       'bloomora-goal-priority-segment--active bloomora-goal-priority-segment--baja',
-      'bg-sky-100 text-sky-800 ring-1 ring-sky-200/90',
+      'bg-[color:var(--bloomora-surface-3)] text-[color:var(--bloomora-accent)] ring-1 ring-[color:var(--bloomora-border)]',
     )
   }
   return cn(
     segmentBase,
     'bloomora-goal-priority-segment--active bloomora-goal-priority-segment--media',
-    'bg-violet-100 text-violet-800 ring-1 ring-violet-200/90',
+    'bg-[color:var(--bloomora-accent-bg)] text-[color:var(--bloomora-accent-on)] ring-1 ring-[color:var(--bloomora-accent-bg)]',
   )
 }
 
@@ -56,8 +56,7 @@ export function GoalPriorityPicker({
       role="group"
       aria-label="Prioridad de la meta"
       className={cn(
-        'bloomora-goal-priority inline-flex flex-wrap gap-0.5 rounded-full bg-bloomora-mist/75 p-0.5 ring-1 ring-bloomora-line/35',
-        'shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]',
+        'bloomora-goal-priority inline-flex flex-wrap gap-0.5 rounded-full bg-[color:var(--bloomora-surface-2)] p-0.5 ring-1 ring-[color:var(--bloomora-border)]',
         className,
       )}
     >

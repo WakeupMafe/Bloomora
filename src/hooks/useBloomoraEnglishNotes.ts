@@ -5,20 +5,31 @@ import {
   getEnglishNoteById,
   insertEnglishNote,
   listEnglishNotes,
+  purgeExpiredTrashedEnglishNotes,
+  restoreEnglishNote,
   rowToEnglishNote,
   rowToEnglishNoteListItem,
+  softDeleteEnglishNote,
   updateEnglishNote,
 } from '@/services/supabase/englishNotesRepo'
 import { requireExistingProfileByCedula } from '@/services/supabase/profilesRepo'
 import { requireSupabase } from '@/services/supabase/typedClient'
-import type { EnglishNote, EnglishNoteInput } from '@/types/englishNote'
+import type {
+  EnglishNote,
+  EnglishNoteInput,
+  EnglishNotePatch,
+  EnglishNotesListScope,
+} from '@/types/englishNote'
 
 const QUERY_KEY = 'english-notes'
 const DETAIL_KEY = 'english-note-detail'
 
-export function useBloomoraEnglishNotes(cedula: string | null) {
+export function useBloomoraEnglishNotes(
+  cedula: string | null,
+  scope: EnglishNotesListScope = 'active',
+) {
   return useQuery({
-    queryKey: [QUERY_KEY, cedula],
+    queryKey: [QUERY_KEY, cedula, scope],
     enabled: !!cedula,
     staleTime: 30_000,
     refetchOnMount: 'always',
@@ -26,7 +37,14 @@ export function useBloomoraEnglishNotes(cedula: string | null) {
     queryFn: async (): Promise<EnglishNote[]> => {
       const sb = requireSupabase()
       await requireExistingProfileByCedula(sb, cedula!)
-      const rows = await listEnglishNotes(sb, cedula!)
+      if (scope === 'trash') {
+        try {
+          await purgeExpiredTrashedEnglishNotes(sb, cedula!)
+        } catch {
+          /* purge best-effort; listing still proceeds */
+        }
+      }
+      const rows = await listEnglishNotes(sb, cedula!, scope)
       return rows.map(rowToEnglishNoteListItem)
     },
   })
@@ -70,7 +88,7 @@ export function useEnglishNoteMutations(cedula: string | null) {
       patch,
     }: {
       noteId: string
-      patch: Partial<EnglishNoteInput>
+      patch: EnglishNotePatch
     }) => {
       if (!cedula) throw new Error('Sin sesión')
       const id = Number(noteId)
@@ -85,6 +103,26 @@ export function useEnglishNoteMutations(cedula: string | null) {
     },
   })
 
+  const softDeleteMut = useMutation({
+    mutationFn: async (noteId: string) => {
+      if (!cedula) throw new Error('Sin sesión')
+      const id = Number(noteId)
+      if (!Number.isFinite(id)) throw new Error('Apunte no válido')
+      await softDeleteEnglishNote(requireSupabase(), id, cedula)
+    },
+    onSuccess: invalidate,
+  })
+
+  const restoreMut = useMutation({
+    mutationFn: async (noteId: string) => {
+      if (!cedula) throw new Error('Sin sesión')
+      const id = Number(noteId)
+      if (!Number.isFinite(id)) throw new Error('Apunte no válido')
+      await restoreEnglishNote(requireSupabase(), id, cedula)
+    },
+    onSuccess: invalidate,
+  })
+
   const deleteMut = useMutation({
     mutationFn: async (noteId: string) => {
       if (!cedula) throw new Error('Sin sesión')
@@ -95,5 +133,5 @@ export function useEnglishNoteMutations(cedula: string | null) {
     onSuccess: invalidate,
   })
 
-  return { insertMut, updateMut, deleteMut }
+  return { insertMut, updateMut, softDeleteMut, restoreMut, deleteMut }
 }

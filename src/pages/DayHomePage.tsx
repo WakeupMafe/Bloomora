@@ -18,10 +18,12 @@ export function DayHomePage() {
       <DashboardGreeting />
 
       <div className="grid min-w-0 grid-cols-1 gap-4 min-[600px]:gap-6 min-[1024px]:grid-cols-2 min-[1024px]:gap-6">
-        <AgendaCard className="h-full min-h-0 min-w-0 w-full" />
-        <GoalProgressCard className="h-full min-h-0 min-w-0 w-full max-w-full" />
+        <div className="dashboard-day-pair col-span-full grid min-w-0 grid-cols-1 gap-4 min-[600px]:gap-6 min-[1024px]:grid-cols-2 min-[1024px]:items-stretch min-[1024px]:gap-6">
+          <AgendaCard className="dashboard-day-card h-full min-h-0 min-w-0 w-full" />
+          <GoalProgressCard className="dashboard-day-card h-full min-h-0 min-w-0 w-full max-w-full" />
+        </div>
         <ListsCard />
-        <AdditionalToolsPanel className="h-full self-stretch" />
+        <AdditionalToolsPanel className="h-full min-h-0 self-stretch" />
       </div>
     </main>
   );

@@ -5,6 +5,8 @@ import type {
   EnglishNoteColor,
   EnglishNoteInput,
   EnglishNotePageSize,
+  EnglishNotePatch,
+  EnglishNotesListScope,
   EnglishNoteTitleFont,
 } from '@/types/englishNote'
 
@@ -25,6 +27,8 @@ export type EnglishNoteRow = {
   content_html: string
   plain_text: string
   cover_image_url: string | null
+  is_favorite: boolean | null
+  deleted_at: string | null
   created_at: string
   updated_at: string
 }
@@ -33,7 +37,16 @@ export type EnglishNoteRow = {
 export type EnglishNoteListRow = Omit<EnglishNoteRow, 'content_html' | 'plain_text'>
 
 const ENGLISH_NOTE_LIST_COLUMNS =
-  'id, user_cedula, title, category, title_font, title_color, page_size, page_number_enabled, two_columns, cover_image_url, created_at, updated_at'
+  'id, user_cedula, title, category, title_font, title_color, page_size, page_number_enabled, two_columns, cover_image_url, is_favorite, deleted_at, created_at, updated_at'
+
+/** Soft-deleted notes older than this are treated as expired (permanent purge). */
+export const ENGLISH_NOTES_TRASH_RETENTION_DAYS = 30
+
+function trashCutoffIso(now = Date.now()): string {
+  return new Date(
+    now - ENGLISH_NOTES_TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000,
+  ).toISOString()
+}
 
 function trimOrNull(v: string | null | undefined): string | null {
   if (v == null) return null
@@ -41,7 +54,7 @@ function trimOrNull(v: string | null | undefined): string | null {
   return t === '' ? null : t
 }
 
-function toRowPayload(input: Partial<EnglishNoteInput>) {
+function toRowPayload(input: EnglishNotePatch) {
   const patch: Record<string, unknown> = {}
   if (input.title !== undefined) patch.title = input.title
   if (input.category !== undefined) patch.category = trimOrNull(input.category)
@@ -57,6 +70,8 @@ function toRowPayload(input: Partial<EnglishNoteInput>) {
   if (input.coverImageUrl !== undefined) {
     patch.cover_image_url = trimOrNull(input.coverImageUrl)
   }
+  if (input.isFavorite !== undefined) patch.is_favorite = input.isFavorite
+  if (input.deletedAt !== undefined) patch.deleted_at = input.deletedAt
   return patch
 }
 
@@ -71,17 +86,32 @@ const DEFAULT_NOTE_INPUT: EnglishNoteInput = {
   contentHtml: '<p><br /></p>',
   plainText: '',
   coverImageUrl: null,
+  isFavorite: false,
+  deletedAt: null,
 }
 
 export async function listEnglishNotes(
   sb: SupabaseClient,
   userCedula: string,
+  scope: EnglishNotesListScope = 'active',
 ): Promise<EnglishNoteListRow[]> {
-  const { data, error } = await sb
+  const cedula = userCedula.trim()
+  let query = sb
     .from('english_notes')
     .select(ENGLISH_NOTE_LIST_COLUMNS)
-    .eq('user_cedula', userCedula.trim())
-    .order('updated_at', { ascending: false })
+    .eq('user_cedula', cedula)
+
+  if (scope === 'trash') {
+    const cutoff = trashCutoffIso()
+    query = query
+      .not('deleted_at', 'is', null)
+      .gte('deleted_at', cutoff)
+      .order('deleted_at', { ascending: false })
+  } else {
+    query = query.is('deleted_at', null).order('updated_at', { ascending: false })
+  }
+
+  const { data, error } = await query
   if (error) throwRepoError(error)
   return (data ?? []) as EnglishNoteListRow[]
 }
@@ -107,7 +137,7 @@ export async function insertEnglishNote(
   input?: Partial<EnglishNoteInput>,
 ): Promise<number> {
   await requireExistingProfileByCedula(sb, userCedula)
-  const merged = { ...DEFAULT_NOTE_INPUT, ...input }
+  const merged = { ...DEFAULT_NOTE_INPUT, ...input, deletedAt: null }
   const { data, error } = await sb
     .from('english_notes')
     .insert({
@@ -130,7 +160,7 @@ export async function updateEnglishNote(
   sb: SupabaseClient,
   noteId: number,
   userCedula: string,
-  patch: Partial<EnglishNoteInput>,
+  patch: EnglishNotePatch,
 ): Promise<void> {
   const payload = toRowPayload(patch)
   if (Object.keys(payload).length === 0) return
@@ -140,6 +170,24 @@ export async function updateEnglishNote(
     .eq('id', noteId)
     .eq('user_cedula', userCedula.trim())
   if (error) throwRepoError(error)
+}
+
+export async function softDeleteEnglishNote(
+  sb: SupabaseClient,
+  noteId: number,
+  userCedula: string,
+): Promise<void> {
+  await updateEnglishNote(sb, noteId, userCedula, {
+    deletedAt: new Date().toISOString(),
+  })
+}
+
+export async function restoreEnglishNote(
+  sb: SupabaseClient,
+  noteId: number,
+  userCedula: string,
+): Promise<void> {
+  await updateEnglishNote(sb, noteId, userCedula, { deletedAt: null })
 }
 
 export async function deleteEnglishNote(
@@ -153,6 +201,22 @@ export async function deleteEnglishNote(
     .eq('id', noteId)
     .eq('user_cedula', userCedula.trim())
   if (error) throwRepoError(error)
+}
+
+/** Borra de forma permanente apuntes en papelera con más de 30 días. */
+export async function purgeExpiredTrashedEnglishNotes(
+  sb: SupabaseClient,
+  userCedula: string,
+): Promise<number> {
+  const { data, error } = await sb
+    .from('english_notes')
+    .delete()
+    .eq('user_cedula', userCedula.trim())
+    .not('deleted_at', 'is', null)
+    .lt('deleted_at', trashCutoffIso())
+    .select('id')
+  if (error) throwRepoError(error)
+  return data?.length ?? 0
 }
 
 export function rowToEnglishNote(row: EnglishNoteRow) {
@@ -169,6 +233,8 @@ export function rowToEnglishNote(row: EnglishNoteRow) {
     contentHtml: row.content_html,
     plainText: row.plain_text,
     coverImageUrl: row.cover_image_url,
+    isFavorite: !!row.is_favorite,
+    deletedAt: row.deleted_at ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }

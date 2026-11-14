@@ -1,4 +1,4 @@
-import type { EnglishNote, EnglishNoteInput } from '@/types/englishNote'
+import type { EnglishNote, EnglishNoteInput, EnglishNotePatch } from '@/types/englishNote'
 
 const STORAGE_PREFIX = 'bloomora:english-notes:'
 
@@ -9,6 +9,8 @@ function normalizeNote(raw: EnglishNote): EnglishNote {
     pageSize: raw.pageSize ?? 'letter',
     pageNumberEnabled: raw.pageNumberEnabled ?? false,
     twoColumns: raw.twoColumns ?? false,
+    isFavorite: raw.isFavorite ?? false,
+    deletedAt: raw.deletedAt ?? null,
   }
 }
 
@@ -72,6 +74,8 @@ export function createEnglishNoteLocal(
     contentHtml: input?.contentHtml ?? '<p><br /></p>',
     plainText: input?.plainText ?? '',
     coverImageUrl: input?.coverImageUrl ?? null,
+    isFavorite: input?.isFavorite ?? false,
+    deletedAt: null,
     createdAt: ts,
     updatedAt: ts,
   }
@@ -85,7 +89,7 @@ export function createEnglishNoteLocal(
 export function updateEnglishNoteLocal(
   userCedula: string,
   noteId: string,
-  patch: Partial<EnglishNoteInput>,
+  patch: EnglishNotePatch,
 ): EnglishNote | null {
   const curr = listEnglishNotesLocal(userCedula)
   const idx = curr.findIndex((n) => n.id === noteId)
@@ -100,6 +104,8 @@ export function updateEnglishNoteLocal(
         ? patch.category?.trim() || null
         : prev.category,
     titleColor: patch.titleColor ?? prev.titleColor,
+    isFavorite: patch.isFavorite !== undefined ? patch.isFavorite : prev.isFavorite,
+    deletedAt: patch.deletedAt !== undefined ? patch.deletedAt : prev.deletedAt,
     updatedAt: nowIso(),
   }
   curr[idx] = next
@@ -117,4 +123,3 @@ export function deleteEnglishNoteLocal(
     curr.filter((n) => n.id !== noteId),
   )
 }
-

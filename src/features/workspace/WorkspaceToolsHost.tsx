@@ -122,9 +122,9 @@ function ToolFrame({
       }`}
       aria-hidden={minimized}
     >
-      <header className="z-10 flex h-14 min-w-0 shrink-0 items-center justify-between gap-2 border-b border-bloomora-line/40 bg-white/95 px-3 shadow-sm backdrop-blur sm:gap-3 sm:px-6">
+      <header className="z-10 flex h-14 min-w-0 shrink-0 items-center justify-between gap-2 border-b border-[color:var(--bloomora-border)] bg-[color:var(--bloomora-surface-1)] px-3 shadow-sm backdrop-blur sm:gap-3 sm:px-6">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="flex size-8 items-center justify-center rounded-xl bg-bloomora-lavender-50 text-bloomora-violet" aria-hidden>
+          <span className="flex size-8 items-center justify-center rounded-xl bg-[color:var(--bloomora-surface-2)] text-bloomora-violet" aria-hidden>
             ✦
           </span>
           <h1 className="truncate text-sm font-bold text-bloomora-deep">{title}</h1>
@@ -134,7 +134,7 @@ function ToolFrame({
             <button
               type="button"
               onClick={() => window.dispatchEvent(new Event('bloomora:open-notes-shortcuts'))}
-              className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-bloomora-line/50 bg-white text-sm font-bold text-bloomora-violet shadow-sm hover:bg-bloomora-lavender-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-bloomora-lilac"
+              className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-[color:var(--bloomora-border)] bg-[color:var(--bloomora-surface-1)] text-sm font-bold text-bloomora-violet shadow-sm hover:bg-[color:var(--bloomora-surface-3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-bloomora-lilac"
               aria-label="Ver atajos de teclado y controles"
               title="Atajos de teclado"
             >
@@ -144,7 +144,7 @@ function ToolFrame({
           <button
             type="button"
             onClick={onMinimize}
-            className="inline-flex size-11 shrink-0 items-center justify-center gap-2 rounded-full bg-bloomora-lavender-50 px-3 text-xs font-bold text-bloomora-violet ring-1 ring-bloomora-line/40 transition hover:bg-bloomora-lavender-100 sm:min-h-9 sm:w-auto sm:px-4"
+            className="inline-flex size-11 shrink-0 items-center justify-center gap-2 rounded-full bg-[color:var(--bloomora-surface-2)] px-3 text-xs font-bold text-bloomora-violet ring-1 ring-[color:var(--bloomora-border)] transition hover:bg-bloomora-lavender-100 sm:min-h-9 sm:w-auto sm:px-4"
             aria-label={`Minimizar ${title} y seguir trabajando`}
           >
             <span aria-hidden>−</span>
@@ -154,7 +154,7 @@ function ToolFrame({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-white text-lg font-bold text-bloomora-violet ring-1 ring-bloomora-line/40 transition hover:bg-bloomora-mist"
+              className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-[color:var(--bloomora-surface-1)] text-lg font-bold text-bloomora-violet ring-1 ring-[color:var(--bloomora-border)] transition hover:bg-[color:var(--bloomora-surface-3)]"
               aria-label={`Cerrar ${title}`}
             >
               ×
@@ -201,7 +201,7 @@ function FloatingToolWidget({
     <section
       role="region"
       aria-label={`${title} minimizado`}
-      className="fixed z-[10070] w-[min(18rem,calc(100vw-1rem))] overflow-hidden rounded-2xl border border-bloomora-line/50 bg-white/95 shadow-[0_18px_50px_-18px_rgba(53,39,91,0.45)] backdrop-blur"
+      className="fixed z-[10070] w-[min(18rem,calc(100vw-1rem))] overflow-hidden rounded-2xl border border-[color:var(--bloomora-border)] bg-[color:var(--bloomora-surface-1)] shadow-[0_18px_50px_-18px_rgba(53,39,91,0.45)] backdrop-blur"
       style={{ left: drag.position.x, top: drag.position.y }}
       data-floating-tool={tool}
     >
@@ -234,7 +234,7 @@ function FloatingToolWidget({
               tone="neutral"
               onPointerDown={(event) => event.stopPropagation()}
               onClick={onClose}
-              className="size-11 rounded-full bg-white/90"
+              className="size-11 rounded-full bg-[color:var(--bloomora-surface-1)]"
               title="Cerrar"
             >
               <svg
@@ -370,7 +370,7 @@ export function WorkspaceToolsHost() {
                 else if (pomodoro.status === 'running') pomodoro.pause()
                 else void pomodoro.start()
               }}
-              className="flex size-10 shrink-0 items-center justify-center rounded-full bg-bloomora-violet text-white shadow-sm hover:bg-bloomora-deep"
+              className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--bloomora-accent-bg)] text-[color:var(--bloomora-accent-on)] shadow-sm hover:brightness-105"
               aria-label={pomodoro.status === 'running' ? 'Pausar Pomodoro' : pomodoro.status === 'alarm' ? 'Detener alarma' : 'Iniciar Pomodoro'}
             >
               {pomodoro.status === 'running' ? 'Ⅱ' : pomodoro.status === 'alarm' ? '✓' : '▶'}
@@ -383,7 +383,7 @@ export function WorkspaceToolsHost() {
         <section
           role="region"
           aria-label="Tabata"
-          className="fixed bottom-6 right-6 z-[10070] flex max-h-[calc(100vh-3rem)] w-[min(18rem,calc(100vw-3rem))] flex-col overflow-hidden rounded-[1.75rem] border border-bloomora-line/50 bg-white shadow-[0_18px_50px_-18px_rgba(53,39,91,0.45)]"
+          className="fixed bottom-6 right-6 z-[10070] flex max-h-[calc(100vh-3rem)] w-[min(18rem,calc(100vw-3rem))] flex-col overflow-hidden rounded-[1.75rem] border border-[color:var(--bloomora-border)] bg-[color:var(--bloomora-surface-1)] shadow-[0_18px_50px_-18px_rgba(53,39,91,0.45)]"
           data-floating-tool="tabata"
         >
           <TabataPanel
@@ -430,7 +430,7 @@ export function WorkspaceToolsHost() {
           <button
             type="button"
             onClick={() => expandTool('english-notes')}
-            className="mt-2 w-full rounded-xl bg-bloomora-lavender-50 px-3 py-2 text-xs font-bold text-bloomora-violet hover:bg-bloomora-lavender-100"
+            className="mt-2 w-full rounded-xl bg-[color:var(--bloomora-surface-2)] px-3 py-2 text-xs font-bold text-bloomora-violet hover:bg-bloomora-lavender-100"
           >
             Volver a los apuntes
           </button>

@@ -42,7 +42,7 @@ export function FlashcardsCard() {
         : `${count} palabras`
 
   return (
-    <DashboardCard className="overflow-hidden rounded-[clamp(1.25rem,1.05rem+1vw,1.75rem)] border border-bloomora-line/50 bg-white p-5 shadow-[0_5px_18px_rgba(91,74,140,0.06)] ring-0 sm:p-6">
+    <DashboardCard className="overflow-hidden rounded-[clamp(1.25rem,1.05rem+1vw,1.75rem)] border border-[color:var(--bloomora-border)] bg-[color:var(--bloomora-surface-1)] p-5 shadow-[0_5px_18px_rgba(91,74,140,0.06)] ring-0 sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-bloomora-lavender-100/90 text-bloomora-violet ring-1 ring-bloomora-lilac/25">

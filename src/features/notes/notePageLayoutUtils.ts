@@ -151,7 +151,43 @@ export function isPageContentOverflowing(
   return contentEl.scrollHeight > clip.clientHeight + 1
 }
 
-/** Mueve el contenido que no cabe a HTML de desborde (salto de hoja). */
+/**
+ * Parte el contenido de una hoja en el caret (o selección).
+ * Mutates `contentEl` so it only keeps the "before" HTML.
+ */
+export function splitPageHtmlAtCaret(
+  contentEl: HTMLElement,
+): { before: string; after: string } | null {
+  const selection = window.getSelection()
+  if (!selection || selection.rangeCount === 0) return null
+  const live = selection.getRangeAt(0)
+  if (!contentEl.contains(live.commonAncestorContainer)) return null
+
+  if (!live.collapsed) {
+    live.deleteContents()
+  }
+
+  const caret = selection.rangeCount > 0 ? selection.getRangeAt(0) : live
+  if (!contentEl.contains(caret.startContainer)) return null
+
+  const afterRange = document.createRange()
+  afterRange.selectNodeContents(contentEl)
+  afterRange.setStart(caret.startContainer, caret.startOffset)
+
+  const fragment = afterRange.extractContents()
+  const afterWrap = document.createElement('div')
+  afterWrap.appendChild(fragment)
+  const after = cleanLeadingEmptyNoteBlocks(
+    afterWrap.innerHTML.trim() || '<p><br /></p>',
+  )
+  const before = cleanLeadingEmptyNoteBlocks(
+    contentEl.innerHTML.trim() || '<p><br /></p>',
+  )
+  contentEl.innerHTML = before
+  return { before, after }
+}
+
+/** Mueve el contenido que no cabe a HTML de desborde (salto de página). */
 export function extractOverflowHtml(
   contentEl: HTMLElement,
   maxHeight?: number,

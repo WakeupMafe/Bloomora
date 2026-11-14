@@ -91,8 +91,7 @@ export function GoalTrackerGrid({
         'bloomora-goal-tracker-grid w-full',
         variant === 'card' &&
           cn(
-            'rounded-[20px] p-3 shadow-[0_6px_22px_rgba(91,74,140,0.06)] ring-1 ring-bloomora-line/20 sm:rounded-[22px] sm:p-4',
-            'bg-[linear-gradient(145deg,rgba(255,244,250,0.98)_0%,rgba(255,225,240,0.72)_48%,rgba(209,238,255,0.62)_100%)]',
+            'rounded-[20px] bg-[color:var(--bloomora-cal-surface)] p-3 shadow-[0_6px_22px_rgba(91,74,140,0.06)] ring-1 ring-[color:var(--bloomora-border)] sm:rounded-[22px] sm:p-4',
           ),
         variant === 'plain' && 'pt-1',
       )}
@@ -109,7 +108,7 @@ export function GoalTrackerGrid({
             />
           ) : (
             <div className="flex justify-center">
-              <span className="bloomora-tracker-month-staticpill rounded-full bg-white/70 px-4 py-1.5 text-sm font-semibold capitalize tracking-tight text-bloomora-deep shadow-sm ring-1 ring-bloomora-line/15">
+              <span className="bloomora-tracker-month-staticpill rounded-full bg-[color:var(--bloomora-surface-2)] px-4 py-1.5 text-sm font-semibold capitalize tracking-tight text-[color:var(--bloomora-text)] shadow-sm ring-1 ring-[color:var(--bloomora-border)]">
                 {monthLabelEs(year, monthIndex0)}
               </span>
             </div>
@@ -181,18 +180,21 @@ export function GoalTrackerGrid({
                     'scale-[1.02] hover:scale-[1.05] hover:brightness-[1.03] active:scale-95',
                   !complete &&
                     cn(
-                      'bg-bloomora-blush/90 text-bloomora-deep/65 shadow-inner shadow-white/10 ring-1 ring-bloomora-rose/25',
-                      beforeGoalStart && 'opacity-45',
-                      future && 'opacity-75',
+                      'bg-[color:var(--bloomora-day-bg)] text-[color:var(--bloomora-day-fg)] shadow-[inset_0_0_0_1px_var(--bloomora-day-border)]',
+                      beforeGoalStart &&
+                        'border border-dashed border-[color:var(--bloomora-border)] bg-transparent text-[color:var(--bloomora-day-locked-fg)] shadow-none',
+                      future &&
+                        !beforeGoalStart &&
+                        'bg-transparent text-[color:var(--bloomora-text-muted)] shadow-[inset_0_0_0_1px_var(--bloomora-day-border)]',
                       interactive &&
-                        'hover:scale-105 hover:bg-bloomora-rose/20 hover:text-bloomora-deep hover:shadow-md hover:ring-bloomora-rose/35 active:scale-95',
+                        'hover:scale-105 hover:brightness-110 hover:shadow-md active:scale-95',
                     ),
                   today &&
                     !complete &&
-                    'ring-2 ring-bloomora-rose ring-offset-2 ring-offset-bloomora-snow shadow-[0_0_0_3px_rgba(244,184,208,0.25)]',
+                    'font-extrabold shadow-[0_0_0_2px_var(--bloomora-cal-surface),0_0_0_4px_var(--bloomora-day-today)]',
                   today &&
                     complete &&
-                    'ring-2 ring-white/90 ring-offset-2 ring-offset-bloomora-blush',
+                    'ring-2 ring-[color:var(--bloomora-day-today)] ring-offset-2 ring-offset-[color:var(--bloomora-cal-surface)]',
                   readOnly && 'cursor-default opacity-90',
                 )}
                 aria-label={

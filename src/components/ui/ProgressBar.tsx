@@ -21,20 +21,20 @@ export function ProgressBar({
   return (
     <div
       className={cn(
-        'relative h-10 overflow-hidden rounded-full bg-white/60 shadow-inner ring-1 ring-bloomora-line/25',
+        'relative h-10 overflow-hidden rounded-full bg-[color:var(--bloomora-surface-2)] shadow-inner ring-1 ring-[color:var(--bloomora-border)]',
         className,
       )}
     >
       <div
         className={cn(
-          'absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-bloomora-lilac/90 to-bloomora-rose/80 transition-[width] duration-300',
+          'absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[color:var(--bloomora-progress-from)] to-[color:var(--bloomora-progress-to)] transition-[width] duration-300',
           fillClassName,
         )}
         style={{ width: `${pct}%` }}
       />
       <span
         className={cn(
-          'relative z-10 flex h-full items-center justify-center px-3 text-xs font-semibold text-bloomora-deep drop-shadow-[0_1px_0_rgba(255,255,255,0.75)]',
+          'relative z-10 flex h-full items-center justify-center px-3 text-xs font-semibold text-[color:var(--bloomora-text)]',
           labelClassName,
         )}
       >

@@ -173,7 +173,7 @@ function StepperRow({
   return (
     <div
       className={cn(
-        'flex min-h-11 items-center justify-between gap-2 rounded-[18px] px-3 py-1.5 ring-1 ring-bloomora-line/35',
+        'flex min-h-11 items-center justify-between gap-2 rounded-[18px] px-3 py-1.5 ring-1 ring-[color:var(--bloomora-border)]',
         accent,
       )}
     >
@@ -183,7 +183,7 @@ function StepperRow({
       <div className="flex items-center gap-1.5">
         <button
           type="button"
-          className="inline-flex size-11 items-center justify-center rounded-full bg-bloomora-mist text-lg font-bold text-bloomora-violet transition hover:bg-bloomora-lavender-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloomora-lilac"
+          className="inline-flex size-11 items-center justify-center rounded-full bg-bloomora-mist text-lg font-bold text-bloomora-violet transition hover:bg-[color:var(--bloomora-surface-3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloomora-lilac"
           aria-label={`Disminuir ${label}`}
           onClick={() => onChange(Math.max(min, value - step))}
         >
@@ -197,7 +197,7 @@ function StepperRow({
         </span>
         <button
           type="button"
-          className="inline-flex size-11 items-center justify-center rounded-full bg-bloomora-mist text-lg font-bold text-bloomora-violet transition hover:bg-bloomora-lavender-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloomora-lilac"
+          className="inline-flex size-11 items-center justify-center rounded-full bg-bloomora-mist text-lg font-bold text-bloomora-violet transition hover:bg-[color:var(--bloomora-surface-3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloomora-lilac"
           aria-label={`Aumentar ${label}`}
           onClick={() => onChange(value + step)}
         >
@@ -222,7 +222,7 @@ function CountStepper({
   unit: string
 }) {
   return (
-    <div className="flex min-h-11 items-center justify-between gap-2 rounded-[18px] px-3 py-1.5 ring-1 ring-bloomora-line/35">
+    <div className="flex min-h-11 items-center justify-between gap-2 rounded-[18px] px-3 py-1.5 ring-1 ring-[color:var(--bloomora-border)]">
       <span className="text-[0.9375rem] font-semibold text-bloomora-deep">
         {label}
       </span>
@@ -507,13 +507,13 @@ export function TabataPanel({
   return (
     <div
       className={cn(
-        'flex h-full min-h-0 flex-col bg-white',
+        'flex h-full min-h-0 flex-col bg-[color:var(--bloomora-surface-1)]',
         embedded ? 'w-full' : '',
         className,
       )}
     >
       {showChrome ? (
-        <header className="flex shrink-0 items-center justify-between gap-2 border-b border-bloomora-line/40 px-3 py-2.5">
+        <header className="flex shrink-0 items-center justify-between gap-2 border-b border-[color:var(--bloomora-border)] px-3 py-2.5">
           <div className="min-w-0">
             <p className="truncate text-[17px] font-bold text-bloomora-deep">
               {headerTitle}
@@ -532,7 +532,7 @@ export function TabataPanel({
             {view.kind === 'run' ? (
               <button
                 type="button"
-                className="inline-flex size-11 items-center justify-center rounded-full text-bloomora-violet hover:bg-bloomora-mist"
+                className="inline-flex size-11 items-center justify-center rounded-full text-bloomora-violet hover:bg-[color:var(--bloomora-surface-3)]"
                 aria-pressed={timer.muted}
                 aria-label={timer.muted ? 'Activar sonido' : 'Silenciar'}
                 onClick={() => timer.setMuted(!timer.muted)}
@@ -543,7 +543,7 @@ export function TabataPanel({
             {onRequestMinimize ? (
               <button
                 type="button"
-                className="inline-flex size-11 items-center justify-center rounded-full text-xl font-bold text-bloomora-violet hover:bg-bloomora-mist focus-visible:outline focus-visible:outline-2 focus-visible:outline-bloomora-lilac"
+                className="inline-flex size-11 items-center justify-center rounded-full text-xl font-bold text-bloomora-violet hover:bg-[color:var(--bloomora-surface-3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-bloomora-lilac"
                 aria-label="Minimizar"
                 onClick={onRequestMinimize}
               >
@@ -553,7 +553,7 @@ export function TabataPanel({
             {onRequestClose ? (
               <button
                 type="button"
-                className="inline-flex size-11 items-center justify-center rounded-full text-lg font-bold text-bloomora-violet hover:bg-bloomora-mist focus-visible:outline focus-visible:outline-2 focus-visible:outline-bloomora-lilac"
+                className="inline-flex size-11 items-center justify-center rounded-full text-lg font-bold text-bloomora-violet hover:bg-[color:var(--bloomora-surface-3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-bloomora-lilac"
                 aria-label="Cerrar"
                 onClick={() => void handleClose()}
               >
@@ -567,7 +567,7 @@ export function TabataPanel({
       {mobileTip ? (
         <div
           role="status"
-          className="mx-3 mt-3 rounded-2xl bg-bloomora-lavender-50 px-3 py-2.5 text-left text-xs font-medium leading-snug text-bloomora-violet ring-1 ring-bloomora-line/30 min-[600px]:hidden"
+          className="mx-3 mt-3 rounded-2xl bg-[color:var(--bloomora-surface-2)] px-3 py-2.5 text-left text-xs font-medium leading-snug text-bloomora-violet ring-1 ring-[color:var(--bloomora-border)] min-[600px]:hidden"
         >
           <p>
             Esta herramienta está pensada para tablet y computador. Funciona
@@ -575,7 +575,7 @@ export function TabataPanel({
           </p>
           <button
             type="button"
-            className="mt-2 inline-flex min-h-10 items-center rounded-pill bg-white px-3 text-xs font-bold text-bloomora-deep ring-1 ring-bloomora-line/40"
+            className="mt-2 inline-flex min-h-10 items-center rounded-pill bg-[color:var(--bloomora-surface-1)] px-3 text-xs font-bold text-bloomora-deep ring-1 ring-[color:var(--bloomora-border)]"
             onClick={dismissMobileTip}
           >
             Entendido
@@ -620,7 +620,7 @@ export function TabataPanel({
               {tabatas.map((t) => (
                 <li
                   key={t.id}
-                  className="relative flex items-center gap-2 rounded-[18px] bg-bloomora-snow px-3 py-2.5 ring-1 ring-bloomora-line/30"
+                  className="relative flex items-center gap-2 rounded-[18px] bg-bloomora-snow px-3 py-2.5 ring-1 ring-[color:var(--bloomora-border)]"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[0.9375rem] font-bold text-bloomora-deep">
@@ -635,7 +635,7 @@ export function TabataPanel({
                   </div>
                   <button
                     type="button"
-                    className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-bloomora-rose-deep text-white shadow-sm hover:bg-bloomora-rose-deep/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloomora-lilac"
+                    className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-[color:var(--bloomora-accent-bg)] text-[color:var(--bloomora-accent-on)] shadow-sm hover:bg-bloomora-rose-deep/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloomora-lilac"
                     aria-label={`Iniciar ${t.nombre}`}
                     onClick={() => void startTabata(t)}
                   >
@@ -643,7 +643,7 @@ export function TabataPanel({
                   </button>
                   <button
                     type="button"
-                    className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-bloomora-violet hover:bg-bloomora-mist"
+                    className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-bloomora-violet hover:bg-[color:var(--bloomora-surface-3)]"
                     aria-label={`Más opciones de ${t.nombre}`}
                     aria-expanded={menuId === t.id}
                     onClick={() =>
@@ -653,17 +653,17 @@ export function TabataPanel({
                     ⋮
                   </button>
                   {menuId === t.id ? (
-                    <div className="absolute right-2 top-12 z-10 w-40 overflow-hidden rounded-2xl border border-bloomora-line/40 bg-white py-1 shadow-lg">
+                    <div className="absolute right-2 top-12 z-10 w-40 overflow-hidden rounded-2xl border border-[color:var(--bloomora-border)] bg-[color:var(--bloomora-surface-1)] py-1 shadow-lg">
                       <button
                         type="button"
-                        className="block w-full px-3 py-2.5 text-left text-sm font-semibold text-bloomora-deep hover:bg-bloomora-mist"
+                        className="block w-full px-3 py-2.5 text-left text-sm font-semibold text-bloomora-deep hover:bg-[color:var(--bloomora-surface-3)]"
                         onClick={() => openEdit(t)}
                       >
                         Editar
                       </button>
                       <button
                         type="button"
-                        className="block w-full px-3 py-2.5 text-left text-sm font-semibold text-bloomora-deep hover:bg-bloomora-mist"
+                        className="block w-full px-3 py-2.5 text-left text-sm font-semibold text-bloomora-deep hover:bg-[color:var(--bloomora-surface-3)]"
                         onClick={() => {
                           setMenuId(null)
                           void duplicar(t)
@@ -690,7 +690,7 @@ export function TabataPanel({
             <Button
               variant="primary"
               fullWidth
-              className="mt-auto h-[52px] bg-bloomora-rose-deep text-base font-bold text-white hover:bg-bloomora-rose-deep/90"
+              className="mt-auto h-[52px] bg-[color:var(--bloomora-accent-bg)] text-base font-bold text-[color:var(--bloomora-accent-on)] hover:bg-bloomora-rose-deep/90"
               onClick={openCreate}
             >
               + Nueva Tabata
@@ -728,7 +728,7 @@ export function TabataPanel({
                   clearNameError()
                   setNombre(e.target.value)
                 }}
-                className="h-12 w-full rounded-2xl border-2 border-bloomora-lavender-100 bg-white px-3 text-base font-semibold text-bloomora-deep outline-none focus:border-bloomora-rose-deep focus:shadow-[0_0_0_4px_var(--color-bloomora-blush)]"
+                className="h-12 w-full rounded-2xl border-2 border-bloomora-lavender-100 bg-[color:var(--bloomora-surface-1)] px-3 text-base font-semibold text-bloomora-deep outline-none focus:border-bloomora-rose-deep focus:shadow-[0_0_0_4px_var(--color-bloomora-blush)]"
                 placeholder="Ej: Cardio"
                 maxLength={60}
                 required
@@ -746,7 +746,7 @@ export function TabataPanel({
               label="Preparación"
               value={config.preparacion}
               onChange={(preparacion) => setConfig((c) => ({ ...c, preparacion }))}
-              accent="bg-bloomora-lavender-50/60"
+              accent="bg-[color:var(--bloomora-surface-2)]"
             />
             <StepperRow
               label="Trabajo"
@@ -782,7 +782,7 @@ export function TabataPanel({
               }
               accent="bg-bloomora-lavender-100/70"
             />
-            <div className="rounded-[18px] ring-1 ring-bloomora-line/35">
+            <div className="rounded-[18px] ring-1 ring-[color:var(--bloomora-border)]">
               <div className="flex min-h-11 items-center justify-between gap-3 px-3 py-1.5">
                 <div className="min-w-0">
                   <p className="text-[0.9375rem] font-semibold text-bloomora-deep">
@@ -812,7 +812,7 @@ export function TabataPanel({
                 >
                   <span
                     className={cn(
-                      'absolute top-1 size-6 rounded-full bg-white shadow transition',
+                      'absolute top-1 size-6 rounded-full bg-[color:var(--bloomora-surface-1)] shadow transition',
                       config.enfriamiento > 0 ? 'left-7' : 'left-1',
                     )}
                     aria-hidden
@@ -820,7 +820,7 @@ export function TabataPanel({
                 </button>
               </div>
               {config.enfriamiento > 0 ? (
-                <div className="border-t border-bloomora-line/25 px-3 py-2">
+                <div className="border-t border-[color:var(--bloomora-border)] px-3 py-2">
                   <StepperRow
                     label="Duración"
                     value={config.enfriamiento}
@@ -855,7 +855,7 @@ export function TabataPanel({
               <Button
                 type="submit"
                 variant="primary"
-                className="h-[52px] bg-bloomora-rose-deep text-base font-bold text-white hover:bg-bloomora-rose-deep/90"
+                className="h-[52px] bg-[color:var(--bloomora-accent-bg)] text-base font-bold text-[color:var(--bloomora-accent-on)] hover:bg-bloomora-rose-deep/90"
                 disabled={isSaving || !nombre.trim()}
               >
                 Guardar
@@ -883,7 +883,7 @@ export function TabataPanel({
               <Button
                 variant="primary"
                 fullWidth
-                className="h-[52px] bg-bloomora-rose-deep text-base font-bold text-white"
+                className="h-[52px] bg-[color:var(--bloomora-accent-bg)] text-base font-bold text-[color:var(--bloomora-accent-on)]"
                 onClick={() => {
                   const existing = tabatas.find(
                     (t) =>
@@ -959,7 +959,7 @@ export function TabataPanel({
             <div className="mt-1 flex items-end justify-center gap-3">
               <button
                 type="button"
-                className="inline-flex size-14 flex-col items-center justify-center rounded-full bg-bloomora-mist text-[0.65rem] font-bold text-bloomora-violet ring-1 ring-bloomora-line/40"
+                className="inline-flex size-14 flex-col items-center justify-center rounded-full bg-bloomora-mist text-[0.65rem] font-bold text-bloomora-violet ring-1 ring-[color:var(--bloomora-border)]"
                 onClick={() => {
                   timer.stop()
                   setView({ kind: 'list' })
@@ -972,7 +972,7 @@ export function TabataPanel({
               </button>
               <button
                 type="button"
-                className="inline-flex size-[72px] items-center justify-center rounded-full bg-bloomora-rose-deep text-2xl font-bold text-white shadow-[0_8px_20px_rgba(232,155,184,0.4)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloomora-lilac"
+                className="inline-flex size-[72px] items-center justify-center rounded-full bg-[color:var(--bloomora-accent-bg)] text-2xl font-bold text-[color:var(--bloomora-accent-on)] shadow-[0_8px_20px_rgba(232,155,184,0.4)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloomora-lilac"
                 aria-label={
                   timer.status === 'running' ? 'Pausar' : 'Reanudar'
                 }
@@ -985,7 +985,7 @@ export function TabataPanel({
               </button>
               <button
                 type="button"
-                className="inline-flex size-14 flex-col items-center justify-center rounded-full bg-bloomora-mist text-[0.65rem] font-bold text-bloomora-violet ring-1 ring-bloomora-line/40"
+                className="inline-flex size-14 flex-col items-center justify-center rounded-full bg-bloomora-mist text-[0.65rem] font-bold text-bloomora-violet ring-1 ring-[color:var(--bloomora-border)]"
                 onClick={() => timer.skip()}
               >
                 <span className="text-lg" aria-hidden>
@@ -1009,7 +1009,7 @@ export function TabataPanel({
                 </span>
               </div>
               <div
-                className="h-2 overflow-hidden rounded-full bg-bloomora-lavender-50"
+                className="h-2 overflow-hidden rounded-full bg-[color:var(--bloomora-surface-2)]"
                 role="progressbar"
                 aria-valuemin={0}
                 aria-valuemax={100}
@@ -1057,7 +1057,7 @@ export function TabataPanel({
               </Button>
               <Button
                 variant="primary"
-                className="h-[52px] bg-bloomora-rose-deep text-base font-bold text-white"
+                className="h-[52px] bg-[color:var(--bloomora-accent-bg)] text-base font-bold text-[color:var(--bloomora-accent-on)]"
                 onClick={() => void timer.restart()}
               >
                 Repetir
@@ -1104,7 +1104,7 @@ export function TabataMiniWidget({
           else if (timer.status === 'running') timer.pause()
           else void timer.resume()
         }}
-        className="flex size-10 shrink-0 items-center justify-center rounded-full bg-bloomora-violet text-white shadow-sm hover:bg-bloomora-deep"
+        className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--bloomora-accent-bg)] text-[color:var(--bloomora-accent-on)] shadow-sm hover:bg-bloomora-deep"
         aria-label={
           timer.status === 'running'
             ? 'Pausar Tabata'

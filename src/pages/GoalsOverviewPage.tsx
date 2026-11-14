@@ -23,10 +23,15 @@ import {
 type GoalsViewMode = 'lista' | 'tablero' | 'calendario'
 
 function statusClasses(status: MockGoalRow['estado']) {
-  if (status === 'Completada') return 'bg-emerald-100 text-emerald-700 ring-emerald-200'
-  if (status === 'Pausada') return 'bg-amber-100 text-amber-700 ring-amber-200'
-  return 'bg-lime-100 text-lime-700 ring-lime-200'
+  if (status === 'Completada')
+    return 'bg-[color:var(--bloomora-success-soft)] text-[color:var(--bloomora-success)] ring-[color:var(--bloomora-border)]'
+  if (status === 'Pausada')
+    return 'bg-[color:var(--bloomora-surface-2)] text-[color:var(--bloomora-text-muted)] ring-[color:var(--bloomora-border)]'
+  return 'bg-[color:var(--bloomora-surface-2)] text-[color:var(--bloomora-accent)] ring-[color:var(--bloomora-border)]'
 }
+
+const openMetaPill =
+  'inline-flex items-center rounded-full bg-[color:var(--bloomora-surface-3)] px-3 py-1.5 text-xs font-bold text-[color:var(--bloomora-text)] ring-1 ring-[color:var(--bloomora-border-strong)] transition hover:brightness-110'
 
 export function GoalsOverviewPage() {
   const navigate = useNavigate()
@@ -82,9 +87,9 @@ export function GoalsOverviewPage() {
         </p>
       </div>
 
-      <section className="rounded-[18px] bg-white/75 p-3 ring-1 ring-bloomora-line/35">
-        <p className="mb-2 text-sm font-semibold text-bloomora-deep">Tus metas</p>
-        <div className="flex flex-wrap items-center gap-2">
+      <section className="rounded-[18px] bg-[color:var(--bloomora-surface-1)] p-3 ring-1 ring-[color:var(--bloomora-border)]">
+        <p className="mb-2 text-sm font-semibold text-[color:var(--bloomora-text)]">Tus metas</p>
+        <div className="flex flex-wrap items-center gap-2 rounded-full bg-[color:var(--bloomora-surface-2)] p-1">
           {(['lista', 'tablero', 'calendario'] as const).map((mode) => (
             <button
               key={mode}
@@ -92,8 +97,8 @@ export function GoalsOverviewPage() {
               onClick={() => setViewMode(mode)}
               className={`rounded-full px-3 py-1.5 text-sm font-semibold ring-1 transition ${
                 viewMode === mode
-                  ? 'bg-bloomora-violet text-white ring-bloomora-violet'
-                  : 'bg-white/90 text-bloomora-violet ring-bloomora-line/35 hover:bg-bloomora-blush/55'
+                  ? 'bg-[color:var(--bloomora-accent-bg)] text-[color:var(--bloomora-accent-on)] ring-[color:var(--bloomora-accent-bg)]'
+                  : 'bg-transparent text-[color:var(--bloomora-accent)] ring-transparent hover:bg-[color:var(--bloomora-surface-3)]'
               }`}
             >
               {mode[0].toUpperCase() + mode.slice(1)}
@@ -115,7 +120,7 @@ export function GoalsOverviewPage() {
           type="button"
           size="sm"
           variant="outline"
-          className="border-rose-200 text-rose-700 hover:bg-rose-50"
+          className="border-[color:var(--bloomora-danger-fg)] bg-[color:var(--bloomora-danger-soft)] text-[color:var(--bloomora-danger-fg)] hover:brightness-110"
           disabled={isLoading || goals.length === 0 || clearGoalsMut.isPending}
           onClick={handleClearGoals}
         >
@@ -128,17 +133,17 @@ export function GoalsOverviewPage() {
           <p className="text-center text-bloomora-text-muted">Cargando…</p>
         ) : null}
         {!isLoading && goals.length === 0 ? (
-          <section className="mx-auto w-full max-w-2xl rounded-[26px] bg-gradient-to-br from-rose-50/95 via-pink-50/90 to-violet-50/90 p-6 text-center shadow-bloomora-card ring-1 ring-bloomora-line/45 sm:p-8">
+          <section className="mx-auto w-full max-w-2xl rounded-[26px] bg-[color:var(--bloomora-surface-1)] p-6 text-center shadow-bloomora-card ring-1 ring-[color:var(--bloomora-border)] sm:p-8">
             <BloomoraImage
               src={ConejoBoy}
               alt="Conejito Bloomora"
               size="full"
-              className="mx-auto mb-4 h-28 w-28 rounded-full object-cover ring-2 ring-white/75 shadow-[0_10px_30px_rgba(124,107,181,0.2)] sm:h-32 sm:w-32"
+              className="mx-auto mb-4 h-28 w-28 rounded-full object-cover ring-2 ring-[color:var(--bloomora-border)] shadow-[0_10px_30px_rgba(124,107,181,0.2)] sm:h-32 sm:w-32"
             />
-            <h2 className="text-xl font-bold text-bloomora-deep">
+            <h2 className="text-xl font-bold text-[color:var(--bloomora-text)]">
               ¿Estás lista para empezar a progresar?
             </h2>
-            <p className="mt-1.5 text-sm text-bloomora-text-muted">
+            <p className="mt-1.5 text-sm text-[color:var(--bloomora-text-muted)]">
               Crea tu primera meta y empieza a llenar tu calendario.
             </p>
             <div className="mt-5">
@@ -153,16 +158,16 @@ export function GoalsOverviewPage() {
             {goals.map((goal) => (
               <article
                 key={goal.id}
-                className="rounded-[18px] bg-white/90 p-4 shadow-bloomora-card ring-1 ring-bloomora-line/40"
+                className="rounded-[18px] bg-[color:var(--bloomora-surface-1)] p-4 shadow-bloomora-card ring-1 ring-[color:var(--bloomora-border)]"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h2 className="text-lg font-bold text-bloomora-deep">{goal.title}</h2>
-                    <p className="mt-1 text-sm text-bloomora-text-muted">{goal.categoria}</p>
-                    <p className="mt-1 text-sm font-semibold text-bloomora-deep/90">
+                    <h2 className="text-lg font-bold text-[color:var(--bloomora-text)]">{goal.title}</h2>
+                    <p className="mt-1 text-sm text-[color:var(--bloomora-text-muted)]">{goal.categoria}</p>
+                    <p className="mt-1 text-sm font-semibold text-[color:var(--bloomora-text)]">
                       {goal.progreso} / {goal.objetivo} dias
                     </p>
-                    <p className="mt-1 text-xs font-medium text-orange-600">
+                    <p className="mt-1 text-xs font-medium text-[color:var(--bloomora-accent)]">
                       🔥 {goal.streak} {goal.streak === 1 ? 'dia seguido' : 'dias seguidos'}
                     </p>
                   </div>
@@ -180,7 +185,7 @@ export function GoalsOverviewPage() {
                     </span>
                     <Link
                       to={`/app/goals/${goal.id}/tracker`}
-                      className="text-xs font-semibold text-bloomora-violet hover:text-bloomora-deep"
+                      className={openMetaPill}
                     >
                       Ver detalle →
                     </Link>
@@ -196,16 +201,16 @@ export function GoalsOverviewPage() {
             {goals.map((goal) => (
               <article
                 key={goal.id}
-                className="rounded-[20px] bg-gradient-to-br from-white/95 via-bloomora-blush/45 to-bloomora-mist/70 p-4 ring-1 ring-bloomora-line/35"
+                className="rounded-[20px] bg-[color:var(--bloomora-surface-1)] p-4 ring-1 ring-[color:var(--bloomora-border)]"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <h2 className="text-base font-bold text-bloomora-deep">{goal.title}</h2>
+                  <h2 className="text-base font-bold text-[color:var(--bloomora-text)]">{goal.title}</h2>
                   <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ${statusClasses(goal.estado)}`}>
                     {goal.estado}
                   </span>
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <p className="text-sm text-bloomora-text-muted">{goal.categoria}</p>
+                  <p className="text-sm text-[color:var(--bloomora-text-muted)]">{goal.categoria}</p>
                   <GoalPriorityPicker
                     value={goal.prioridad}
                     onChange={(p) => handlePriorityChange(goal.id, p)}
@@ -215,14 +220,14 @@ export function GoalsOverviewPage() {
                     }
                   />
                 </div>
-                <p className="mt-1 text-sm font-semibold text-bloomora-deep">{goal.progreso} / {goal.objetivo} dias</p>
+                <p className="mt-1 text-sm font-semibold text-[color:var(--bloomora-text)]">{goal.progreso} / {goal.objetivo} dias</p>
                 <div className="mt-2 flex items-center justify-between">
-                  <span className="text-xs font-medium text-orange-600">
+                  <span className="text-xs font-medium text-[color:var(--bloomora-accent)]">
                     🔥 {goal.streak} {goal.streak === 1 ? 'dia' : 'dias'} seguidos
                   </span>
                   <Link
                     to={`/app/goals/${goal.id}/tracker`}
-                    className="text-xs font-semibold text-bloomora-violet hover:text-bloomora-deep"
+                    className={openMetaPill}
                   >
                     Abrir →
                   </Link>
@@ -236,15 +241,15 @@ export function GoalsOverviewPage() {
           ? goals.map((goal) => (
               <section
                 key={goal.id}
-                className="rounded-[22px] bg-bloomora-white/90 p-4 shadow-bloomora-card ring-1 ring-bloomora-line/60 sm:p-5"
+                className="rounded-[22px] bg-[color:var(--bloomora-surface-1)] p-4 shadow-bloomora-card ring-1 ring-[color:var(--bloomora-border)] sm:p-5"
               >
                 <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
                   <div>
-                    <h2 className="text-lg font-bold text-bloomora-deep">
+                    <h2 className="text-lg font-bold text-[color:var(--bloomora-text)]">
                       {goal.title}
                     </h2>
-                    <p className="mt-1 text-sm text-bloomora-text-muted">{goal.categoria}</p>
-                    <p className="text-xs font-medium text-bloomora-text-muted">
+                    <p className="mt-1 text-sm text-[color:var(--bloomora-text-muted)]">{goal.categoria}</p>
+                    <p className="text-xs font-medium text-[color:var(--bloomora-text-muted)]">
                       {goal.progreso} / {goal.objetivo} dias · 🔥 {goal.streak}{' '}
                       {goal.streak === 1 ? 'dia' : 'dias'}
                     </p>
@@ -268,9 +273,9 @@ export function GoalsOverviewPage() {
                     />
                     <Link
                       to={`/app/goals/${goal.id}/tracker`}
-                      className="text-xs font-semibold text-bloomora-violet hover:text-bloomora-deep"
+                      className={openMetaPill}
                     >
-                      Abrir solo esta meta →
+                      Abrir meta
                     </Link>
                   </div>
                 </div>

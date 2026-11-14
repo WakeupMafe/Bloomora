@@ -51,7 +51,7 @@ export function ListsCard() {
   return (
     <DashboardCard
       className={cn(
-        'flex h-full min-h-0 flex-col gap-4 self-stretch bg-bloomora-white',
+        'dashboard-panel-card flex h-full min-h-0 flex-col gap-4 self-stretch bg-bloomora-white',
         'p-5 max-[599px]:p-5 min-[600px]:p-7',
       )}
     >
@@ -72,13 +72,13 @@ export function ListsCard() {
         <div className="flex flex-wrap items-center gap-2">
           <Link
             to="/app/lists"
-            className="inline-flex min-h-11 items-center justify-center rounded-pill border-2 border-bloomora-line bg-bloomora-white px-[1.125rem] text-[0.9375rem] font-bold text-bloomora-violet transition hover:bg-bloomora-mist/70"
+            className="inline-flex min-h-11 items-center justify-center rounded-pill border-2 border-[color:var(--bloomora-border)] bg-bloomora-white px-[1.125rem] text-[0.9375rem] font-bold text-bloomora-violet transition hover:bg-[color:var(--bloomora-surface-3)]/70"
           >
             Ver todas
           </Link>
           <Link
             to="/app/lists?crear=1"
-            className="inline-flex min-h-11 items-center justify-center rounded-pill bg-bloomora-rose-deep px-[1.125rem] text-[0.9375rem] font-bold text-white shadow-[0_4px_12px_rgba(232,155,184,0.35)] transition hover:bg-bloomora-rose-deep/90"
+            className="inline-flex min-h-11 items-center justify-center rounded-pill bg-[color:var(--bloomora-accent-bg)] px-[1.125rem] text-[0.9375rem] font-bold text-[color:var(--bloomora-accent-on)] shadow-[0_4px_12px_rgba(232,155,184,0.35)] transition hover:brightness-105"
           >
             + Nueva
           </Link>
@@ -93,7 +93,7 @@ export function ListsCard() {
 
       {!isLoading && count > 0 ? (
         <ul
-          className="grid min-h-0 flex-1 grid-cols-1 content-start gap-3 overflow-y-auto overscroll-contain pr-1"
+          className="dashboard-card-scroll grid min-h-0 flex-1 grid-cols-1 content-start gap-3"
           aria-label="Vista previa de listas"
         >
           {lists.map((list, idx) => {
@@ -102,11 +102,11 @@ export function ListsCard() {
             return (
               <li
                 key={list.id}
-                className="group flex min-w-0 items-center gap-1 rounded-[1.125rem] border border-bloomora-line bg-bloomora-white pr-1"
+                className="group flex min-w-0 items-center gap-1 rounded-[1.125rem] border border-[color:var(--bloomora-border)] bg-bloomora-white pr-1"
               >
                 <Link
                   to={listHref}
-                  className="flex min-h-[4.25rem] min-w-0 flex-1 items-center gap-3.5 rounded-[1.125rem] px-4 py-3 text-left transition-colors hover:bg-bloomora-mist/40"
+                  className="flex min-h-[4.25rem] min-w-0 flex-1 items-center gap-3.5 rounded-[1.125rem] px-4 py-3 text-left transition-colors hover:bg-[color:var(--bloomora-surface-3)]/40"
                 >
                   <span
                     className="grid size-11 shrink-0 place-items-center rounded-[0.875rem] bg-bloomora-mist text-xl"
@@ -151,7 +151,7 @@ export function ListsCard() {
                 <Link
                   to={listHref}
                   aria-label={`Abrir lista ${list.title}`}
-                  className="grid size-11 shrink-0 place-items-center rounded-full text-2xl leading-none text-bloomora-text-muted transition hover:bg-bloomora-mist/40"
+                  className="grid size-11 shrink-0 place-items-center rounded-full text-2xl leading-none text-bloomora-text-muted transition hover:bg-[color:var(--bloomora-surface-3)]/40"
                 >
                   <span aria-hidden>›</span>
                 </Link>
@@ -184,7 +184,7 @@ export function ListsCard() {
           })}
         </ul>
       ) : !isLoading ? (
-        <div className="flex min-h-[5rem] flex-1 items-center rounded-[1.125rem] border border-dashed border-bloomora-line px-4">
+        <div className="flex min-h-[5rem] flex-1 items-center rounded-[1.125rem] border border-dashed border-[color:var(--bloomora-border)] px-4">
           <p className="text-sm text-bloomora-violet">
             Aún no tienes listas. Usa{' '}
             <span className="font-semibold">+ Nueva</span> o una idea de abajo.
@@ -192,7 +192,7 @@ export function ListsCard() {
         </div>
       ) : null}
 
-      <div className="mt-auto rounded-[1.125rem] border-2 border-dashed border-bloomora-line p-4">
+      <div className="mt-auto shrink-0 rounded-[1.125rem] border-2 border-dashed border-[color:var(--bloomora-border)] p-4">
         <p className="text-sm font-semibold text-bloomora-violet">
           Ideas para tu próxima lista
         </p>
@@ -201,7 +201,7 @@ export function ListsCard() {
             <Link
               key={idea.label}
               to="/app/lists?crear=1"
-              className="inline-flex min-h-10 items-center rounded-pill bg-bloomora-mist px-3.5 text-sm font-semibold text-bloomora-deep transition hover:bg-bloomora-lavender-50"
+              className="inline-flex min-h-10 items-center rounded-pill bg-bloomora-mist px-3.5 text-sm font-semibold text-bloomora-deep transition hover:bg-[color:var(--bloomora-surface-3)]"
             >
               <span aria-hidden className="mr-1.5">
                 {idea.emoji}

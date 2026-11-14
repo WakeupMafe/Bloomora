@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bloomora · NoteToolbar preview</title>
+  <style>
+    :root {
+      --color-bloomora-snow: #faf8ff;
+      --color-bloomora-mist: #f3f0fb;
+      --color-bloomora-lavender-50: #ece8f7;
+      --color-bloomora-lilac: #b8a8e8;
+      --color-bloomora-violet: #7c6bb5;
+      --color-bloomora-deep: #5b4a8c;
+      --color-bloomora-rose-deep: #e89bb8;
+      --color-bloomora-blush: #fdeef4;
+      --color-bloomora-text-muted: #8b7fb0;
+      --color-bloomora-white: #ffffff;
+      --color-bloomora-line: rgba(91, 74, 140, 0.12);
+      --notes-border: var(--color-bloomora-line);
+      --notes-paper: #fff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Quicksand, Poppins, system-ui, sans-serif;
+      background: var(--color-bloomora-snow);
+      color: var(--color-bloomora-deep);
+    }
+    .shell {
+      display: grid;
+      grid-template-columns: 264px minmax(0, 1fr) 240px;
+      height: 100dvh;
+    }
+    .shell.panels-closed { grid-template-columns: minmax(0, 1fr); }
+    .shell.tablet { grid-template-columns: 220px minmax(0, 1fr); }
+    .shell.tablet.panels-closed { grid-template-columns: minmax(0, 1fr); }
+    .side, .insp {
+      background: #fff;
+      border-right: 1px solid var(--notes-border);
+      padding: 16px;
+      font-size: 13px;
+      color: var(--color-bloomora-violet);
+    }
+    .insp { border-right: 0; border-left: 1px solid var(--notes-border); }
+    .shell.panels-closed .side,
+    .shell.panels-closed .insp,
+    .shell.tablet .insp { display: none; }
+    .notes-main { min-width: 0; overflow: auto; background: #f7f3f8; }
+    [data-note-editor] { min-height: 100%; }
+    .meta {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 10px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-bloomora-violet);
+    }
+    .meta button {
+      border: 1px solid var(--notes-border);
+      background: #fff;
+      border-radius: 999px;
+      padding: 6px 10px;
+      cursor: pointer;
+      color: var(--color-bloomora-deep);
+      font-weight: 700;
+    }
+    .paper {
+      margin: 12px;
+      min-height: 240px;
+      border-radius: 12px;
+      background: #fff;
+      border: 1px solid var(--notes-border);
+      padding: 24px;
+    }
+
+    /* Copied toolbar rules (scoped same as app) */
+    .notes-main [data-note-editor] [data-note-toolbar].note-toolbar--grouped {
+      --note-toolbar-control: 36px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 8px 12px;
+      padding: 10px 14px;
+      overflow: visible;
+      border: 1px solid var(--notes-border);
+      border-radius: 1.35rem;
+      background: color-mix(in srgb, var(--color-bloomora-white) 94%, transparent);
+      box-shadow: 0 5px 18px -12px rgba(91, 74, 140, 0.3);
+      margin: 0.5rem 0.75rem 0;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      transition: max-height 180ms ease, padding 180ms ease, opacity 160ms ease;
+    }
+    .notes-workspace--compact .notes-main [data-note-editor] [data-note-toolbar].note-toolbar--grouped {
+      --note-toolbar-control: 44px;
+    }
+    .note-toolbar-group { display: flex; flex-direction: column; gap: 3px; flex: 0 0 auto; max-width: 100%; overflow: visible; }
+    .note-toolbar-group__label {
+      display: block; font-size: 10.5px; line-height: 1.2; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-bloomora-text-muted); padding-left: 12px;
+    }
+    .note-toolbar-group__controls {
+      display: flex; align-items: center; gap: 2px; min-height: var(--note-toolbar-control);
+      padding: 4px; border: 1px solid var(--notes-border); border-radius: 999px;
+      background: color-mix(in srgb, var(--color-bloomora-mist) 55%, var(--color-bloomora-white)); overflow: visible;
+    }
+    .note-toolbar-btn {
+      box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; flex: none;
+      width: var(--note-toolbar-control); height: var(--note-toolbar-control);
+      min-width: var(--note-toolbar-control); min-height: var(--note-toolbar-control);
+      padding: 0; border: 0; border-radius: 999px; color: var(--color-bloomora-violet);
+      background: transparent; cursor: pointer; font: inherit; font-weight: 700; line-height: 1;
+    }
+    .note-toolbar-btn--text { width: auto; min-width: var(--note-toolbar-control); gap: 0.35rem; padding: 0 0.65rem; white-space: nowrap; overflow: visible; flex-shrink: 0; }
+    .note-toolbar-btn--pagebreak {
+      width: auto; gap: 0.4rem; padding: 0 0.75rem;
+      border: 1.5px solid color-mix(in srgb, var(--color-bloomora-rose-deep) 70%, var(--color-bloomora-lilac));
+      color: var(--color-bloomora-deep);
+      background: color-mix(in srgb, var(--color-bloomora-blush) 70%, var(--color-bloomora-white));
+      white-space: nowrap;
+    }
+    .note-toolbar-btn--pagebreak-icon { width: var(--note-toolbar-control); min-width: var(--note-toolbar-control); padding: 0; }
+    .note-toolbar-btn--pagebreak-icon span:last-child { display: none; }
+    .note-toolbar-toggle { margin-left: auto; align-self: flex-end; }
+    .note-toolbar-heading {
+      width: 96px; max-width: 96px; height: var(--note-toolbar-control); border-radius: 999px;
+      border: 1px solid var(--notes-border); background: #fff; padding: 0 8px 0 12px;
+      font-size: 13px; font-weight: 700; color: var(--color-bloomora-deep);
+    }
+    .note-toolbar-font {
+      display: inline-flex; align-items: center; justify-content: space-between; gap: 6px;
+      flex: 1 1 110px; width: 110px; max-width: 130px; min-width: 72px;
+      height: var(--note-toolbar-control); border-radius: 999px; border: 1px solid var(--notes-border);
+      background: #fff; padding: 0 8px 0 12px; font-size: 13px; font-weight: 700; color: var(--color-bloomora-deep);
+    }
+    .note-toolbar-font > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .note-toolbar-size {
+      display: inline-flex; align-items: center; height: var(--note-toolbar-control);
+      border-radius: 999px; border: 1px solid var(--notes-border); background: #fff;
+    }
+    .note-toolbar-size > button {
+      width: 28px; height: calc(var(--note-toolbar-control) - 2px); border: 0; border-radius: 999px;
+      background: transparent; color: var(--color-bloomora-violet); font-weight: 700; cursor: pointer;
+    }
+    .note-toolbar-size > select {
+      width: 2.75rem; border: 0; background: transparent; text-align: center; font-size: 13px; font-weight: 700;
+      appearance: none;
+    }
+    .note-toolbar--ribbon-compact {
+      flex-wrap: nowrap; align-items: center; max-height: calc(var(--note-toolbar-control) + 28px); padding: 8px 12px;
+    }
+    .note-toolbar--ribbon-compact .note-toolbar-group__label { display: none; }
+    .note-toolbar--ribbon-compact .note-toolbar-group { gap: 0; }
+    .note-toolbar--ribbon-compact .note-toolbar-group--secondary { display: none; }
+    .note-toolbar--ribbon-compact .note-toolbar-group__controls {
+      background: transparent; border-color: transparent; padding: 0; gap: 2px;
+    }
+    .note-toolbar--ribbon-compact [data-toolbar-compact-hide] { display: none; }
+    .note-toolbar--ribbon-full { max-height: 11rem; }
+    .note-toolbar--ribbon-compact .note-toolbar-btn--pagebreak {
+      width: var(--note-toolbar-control); min-width: var(--note-toolbar-control); padding: 0;
+    }
+    .note-toolbar--ribbon-compact .note-toolbar-btn--pagebreak span:last-child { display: none; }
+    .compact-only { display: none; }
+    .note-toolbar--ribbon-compact .compact-only { display: inline-flex; }
+  </style>
+</head>
+<body>
+  <div id="ws" class="notes-workspace notes-workspace--wide shell">
+    <aside class="side">Mis apuntes<br /><small>panel izq.</small></aside>
+    <main class="notes-main">
+      <div class="meta">
+        <span id="label">preview</span>
+        <button type="button" id="toggleRibbon">Toggle cinta</button>
+        <button type="button" id="togglePanels">Toggle paneles</button>
+      </div>
+      <div data-note-editor>
+        <div id="tb" role="toolbar" data-note-toolbar class="note-toolbar note-toolbar--grouped note-toolbar--ribbon-full" aria-label="Herramientas">
+          <div role="group" aria-label="Editar" class="note-toolbar-group note-toolbar-group--editar">
+            <span class="note-toolbar-group__label">Editar</span>
+            <div class="note-toolbar-group__controls">
+              <button type="button" class="note-toolbar-btn" aria-label="Deshacer">↶</button>
+              <button type="button" class="note-toolbar-btn" aria-label="Rehacer">↷</button>
+            </div>
+          </div>
+          <div role="group" aria-label="Texto" class="note-toolbar-group note-toolbar-group--texto">
+            <span class="note-toolbar-group__label">Texto</span>
+            <div class="note-toolbar-group__controls">
+              <select class="note-toolbar-heading" aria-label="Estilo"><option>Normal</option></select>
+              <div data-toolbar-compact-hide>
+                <button type="button" class="note-toolbar-font"><span>Poppins</span><span>▾</span></button>
+              </div>
+              <div class="note-toolbar-size">
+                <button type="button">−</button>
+                <select aria-label="Tamaño"><option>16</option></select>
+                <button type="button">+</button>
+              </div>
+              <button type="button" class="note-toolbar-btn"><b>B</b></button>
+              <button type="button" class="note-toolbar-btn"><i>I</i></button>
+              <button type="button" class="note-toolbar-btn"><u>U</u></button>
+              <button type="button" class="note-toolbar-btn" aria-label="Color">A</button>
+              <span data-toolbar-compact-hide><button type="button" class="note-toolbar-btn" aria-label="Resaltado">Ab</button></span>
+              <button type="button" class="note-toolbar-btn note-toolbar-btn--text"><span>Aa</span><span>Formato</span></button>
+              <button type="button" class="note-toolbar-btn compact-only" aria-label="Lista">≡</button>
+              <button type="button" class="note-toolbar-btn note-toolbar-btn--pagebreak note-toolbar-btn--pagebreak-icon compact-only" aria-label="Salto de página"><span>📄</span><span>Salto</span></button>
+            </div>
+          </div>
+          <div role="group" aria-label="Párrafo" class="note-toolbar-group note-toolbar-group--parrafo note-toolbar-group--secondary">
+            <span class="note-toolbar-group__label">Párrafo</span>
+            <div class="note-toolbar-group__controls">
+              <button type="button" class="note-toolbar-btn note-toolbar-btn--text">☰ ▾</button>
+              <button type="button" class="note-toolbar-btn note-toolbar-btn--text">1.15 ▾</button>
+              <button type="button" class="note-toolbar-btn">•</button>
+              <button type="button" class="note-toolbar-btn">1.</button>
+            </div>
+          </div>
+          <div role="group" aria-label="Insertar" class="note-toolbar-group note-toolbar-group--insertar note-toolbar-group--secondary">
+            <span class="note-toolbar-group__label">Insertar</span>
+            <div class="note-toolbar-group__controls">
+              <button type="button" class="note-toolbar-btn">🖼</button>
+              <button type="button" class="note-toolbar-btn">🗒</button>
+              <button type="button" class="note-toolbar-btn note-toolbar-btn--pagebreak"><span>📄</span><span>Salto de página</span></button>
+            </div>
+          </div>
+          <div role="group" aria-label="Hoja" class="note-toolbar-group note-toolbar-group--hoja note-toolbar-group--secondary">
+            <span class="note-toolbar-group__label">Hoja</span>
+            <div class="note-toolbar-group__controls">
+              <button type="button" class="note-toolbar-btn note-toolbar-btn--text">Carta ▾</button>
+              <button type="button" class="note-toolbar-btn">⋯</button>
+            </div>
+          </div>
+          <button type="button" class="note-toolbar-btn note-toolbar-toggle" id="chev" aria-label="Mostrar menos">⌃</button>
+        </div>
+        <div class="paper">Hoja de apunte (preview layout)</div>
+      </div>
+    </main>
+    <aside class="insp">Esquema<br /><small>panel der.</small></aside>
+  </div>
+  <script>
+    const ws = document.getElementById('ws')
+    const tb = document.getElementById('tb')
+    const label = document.getElementById('label')
+    const chev = document.getElementById('chev')
+    let compact = false
+    let panels = true
+    function sync() {
+      const w = window.innerWidth
+      const tablet = w < 1280
+      ws.classList.toggle('notes-workspace--wide', !tablet)
+      ws.classList.toggle('notes-workspace--compact', tablet)
+      ws.classList.toggle('tablet', tablet)
+      ws.classList.toggle('panels-closed', !panels)
+      tb.classList.toggle('note-toolbar--ribbon-compact', compact)
+      tb.classList.toggle('note-toolbar--ribbon-full', !compact)
+      chev.textContent = compact ? '⌄' : '⌃'
+      chev.setAttribute('aria-label', compact ? 'Mostrar todas las opciones' : 'Mostrar menos')
+      label.textContent = `${w}px · ${tablet ? 'tablet/44' : 'pc/36'} · cinta ${compact ? 'compact' : 'full'} · paneles ${panels ? 'on' : 'off'}`
+    }
+    document.getElementById('toggleRibbon').onclick = () => { compact = !compact; sync() }
+    document.getElementById('togglePanels').onclick = () => { panels = !panels; sync() }
+    chev.onclick = () => { compact = !compact; sync() }
+    window.addEventListener('resize', sync)
+    const q = new URLSearchParams(location.search)
+    if (q.get('mode') === 'compact') compact = true
+    if (q.get('panels') === '0') panels = false
+    sync()
+  </script>
+</body>
+</html>

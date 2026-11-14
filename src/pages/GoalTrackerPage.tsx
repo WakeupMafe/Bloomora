@@ -148,7 +148,7 @@ export function GoalTrackerPage() {
       </header>
 
       {editingTitle ? (
-        <div className="bloomora-title-edit-strip flex flex-wrap items-end gap-2 rounded-[18px] bg-white/80 p-3 ring-1 ring-bloomora-line/30">
+        <div className="bloomora-title-edit-strip flex flex-wrap items-end gap-2 rounded-[18px] bg-[color:var(--bloomora-surface-2)] p-3 ring-1 ring-[color:var(--bloomora-border)]">
           <label className="min-w-0 flex-1 text-xs font-semibold text-bloomora-text-muted">
             Nombre de la meta
             <input
@@ -193,7 +193,7 @@ export function GoalTrackerPage() {
             className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 transition ${
               isTemplate(goal.id)
                 ? 'bg-bloomora-lavender-50 text-bloomora-deep ring-bloomora-lilac/45'
-                : 'bg-white/85 text-bloomora-violet ring-bloomora-line/40 hover:bg-bloomora-blush/55'
+                : 'bg-[color:var(--bloomora-surface-2)] text-[color:var(--bloomora-accent)] ring-[color:var(--bloomora-border)] hover:bg-[color:var(--bloomora-surface-3)]'
             }`}
           >
             {isTemplate(goal.id)

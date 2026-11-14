@@ -37,7 +37,7 @@ const POSTIT_PALETTES: Record<
     label: 'Cielo',
   },
   lavender: {
-    shell: 'border-bloomora-lilac/50 bg-bloomora-lavender-50/90',
+    shell: 'border-bloomora-lilac/50 bg-[color:var(--bloomora-surface-2)]',
     header: 'from-bloomora-lavender-100 to-bloomora-lavender-50/50',
     accent: 'bg-bloomora-lilac',
     swatch: 'bg-bloomora-lilac',
@@ -279,7 +279,7 @@ export function ListGadget({
           onPointerDown={(event) => event.stopPropagation()}
           onClick={() => setColorPickerOpen((open) => !open)}
           className={cn(
-            'inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/90 ring-1 ring-bloomora-line/50 transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloomora-lilac',
+            'inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-[color:var(--bloomora-surface-1)] ring-1 ring-[color:var(--bloomora-border)] transition hover:bg-[color:var(--bloomora-surface-3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloomora-lilac',
           )}
         >
           <span
@@ -292,7 +292,7 @@ export function ListGadget({
           tone="neutral"
           onPointerDown={(event) => event.stopPropagation()}
           onClick={onClose}
-          className="size-9 rounded-xl bg-white/90"
+          className="size-9 rounded-xl bg-[color:var(--bloomora-surface-1)]"
           title="Cerrar"
         >
           <svg
@@ -312,7 +312,7 @@ export function ListGadget({
 
       {colorPickerOpen ? (
         <div
-          className="flex flex-wrap items-center gap-2 border-b border-bloomora-line/30 bg-white/55 px-3 py-2.5"
+          className="flex flex-wrap items-center gap-2 border-b border-[color:var(--bloomora-border)] bg-[color:var(--bloomora-surface-2)] px-3 py-2.5"
           role="group"
           aria-label="Colores del post-it"
         >
@@ -332,7 +332,7 @@ export function ListGadget({
                   option.swatch,
                   selected
                     ? 'ring-bloomora-deep scale-105'
-                    : 'ring-transparent hover:ring-bloomora-line/80',
+                    : 'ring-transparent hover:ring-[color:var(--bloomora-border)]',
                 )}
               />
             )
@@ -346,7 +346,7 @@ export function ListGadget({
             <li className="px-1 text-xs text-bloomora-violet">Cargando…</li>
           ) : null}
           {!isLoading && items.length === 0 ? (
-            <li className="rounded-xl border border-dashed border-bloomora-line/50 px-3 py-4 text-center text-xs text-bloomora-violet">
+            <li className="rounded-xl border border-dashed border-[color:var(--bloomora-border)] px-3 py-4 text-center text-xs text-bloomora-violet">
               Lista vacía. Añade un ítem abajo.
             </li>
           ) : null}
@@ -355,7 +355,7 @@ export function ListGadget({
             return (
               <li key={item.id}>
                 {isEditing ? (
-                  <div className="flex items-center gap-1.5 rounded-xl bg-white/70 px-1.5 py-1 ring-1 ring-bloomora-lilac/35">
+                  <div className="flex items-center gap-1.5 rounded-xl bg-[color:var(--bloomora-surface-2)] px-1.5 py-1 ring-1 ring-bloomora-lilac/35">
                     <input
                       value={editDraft}
                       onChange={(e) => setEditDraft(e.target.value)}
@@ -371,13 +371,13 @@ export function ListGadget({
                       disabled={renameItem.isPending}
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={saveEdit}
-                      className="grid size-9 shrink-0 place-items-center rounded-lg text-bloomora-violet hover:bg-bloomora-lavender-50"
+                      className="grid size-9 shrink-0 place-items-center rounded-lg text-bloomora-violet hover:bg-[color:var(--bloomora-surface-3)]"
                     >
                       ✓
                     </button>
                   </div>
                 ) : (
-                  <div className="group/item flex items-start gap-1 rounded-xl px-1 py-0.5 transition hover:bg-white/55">
+                  <div className="group/item flex items-start gap-1 rounded-xl px-1 py-0.5 transition hover:bg-[color:var(--bloomora-surface-2)]">
                     <label className="flex min-h-10 min-w-0 flex-1 cursor-pointer items-start gap-2 px-1 py-1.5">
                       <input
                         type="checkbox"
@@ -385,7 +385,7 @@ export function ListGadget({
                         onChange={() =>
                           toggleItem.mutate({ id: item.id, done: !item.done })
                         }
-                        className="mt-0.5 size-4 shrink-0 rounded border-bloomora-line/60 text-bloomora-violet focus:ring-bloomora-lilac/40"
+                        className="mt-0.5 size-4 shrink-0 rounded border-[color:var(--bloomora-border)] text-bloomora-violet focus:ring-bloomora-lilac/40"
                       />
                       <span
                         className={cn(
@@ -403,7 +403,7 @@ export function ListGadget({
                         aria-label={`Editar ${item.title}`}
                         title="Editar"
                         onClick={() => startEdit(item.id, item.title)}
-                        className="grid size-9 place-items-center rounded-lg text-bloomora-violet opacity-80 transition hover:bg-white/80 hover:opacity-100 focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-bloomora-lilac"
+                        className="grid size-9 place-items-center rounded-lg text-bloomora-violet opacity-80 transition hover:bg-[color:var(--bloomora-surface-2)] hover:opacity-100 focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-bloomora-lilac"
                       >
                         <svg
                           width="14"
@@ -452,9 +452,9 @@ export function ListGadget({
 
         <form
           onSubmit={handleAdd}
-          className="shrink-0 border-t border-bloomora-line/30 bg-white/45 p-2.5"
+          className="shrink-0 border-t border-[color:var(--bloomora-border)] bg-white/45 p-2.5"
         >
-          <div className="flex items-center gap-1.5 overflow-hidden rounded-full border border-bloomora-line/45 bg-white">
+          <div className="flex items-center gap-1.5 overflow-hidden rounded-full border border-[color:var(--bloomora-border)] bg-[color:var(--bloomora-surface-1)]">
             <input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
@@ -465,7 +465,7 @@ export function ListGadget({
             <button
               type="submit"
               disabled={!draft.trim() || addItem.isPending}
-              className="m-1 rounded-full bg-bloomora-violet px-3 py-1.5 text-[0.65rem] font-bold text-white disabled:opacity-45"
+              className="m-1 rounded-full bg-bloomora-violet px-3 py-1.5 text-[0.65rem] font-bold text-[color:var(--bloomora-accent-on)] disabled:opacity-45"
             >
               +
             </button>

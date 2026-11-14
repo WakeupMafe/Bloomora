@@ -155,11 +155,11 @@ export function NoteTextOptionsPanel({
       aria-labelledby={titleId}
       data-note-selection-toolbar
       onMouseDown={keepSelection}
-      className="note-text-options-panel flex max-h-[calc(100dvh-1.5rem)] w-full flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_20px_56px_-12px_rgba(91,74,140,0.28)] ring-1 ring-bloomora-line/35 sm:max-h-[min(calc(100dvh-3rem),40rem)]"
+      className="note-text-options-panel flex max-h-[calc(100dvh-1.5rem)] w-full flex-col overflow-hidden rounded-[20px] bg-[color:var(--bloomora-surface-1)] shadow-[0_20px_56px_-12px_rgba(91,74,140,0.28)] ring-1 ring-[color:var(--bloomora-border)] sm:max-h-[min(calc(100dvh-3rem),40rem)]"
     >
-      <header className="relative flex shrink-0 items-start gap-3 border-b border-bloomora-line/20 px-4 pb-3 pt-4 sm:px-5 sm:pt-5">
+      <header className="relative flex shrink-0 items-start gap-3 border-b border-[color:var(--bloomora-border)] px-4 pb-3 pt-4 sm:px-5 sm:pt-5">
         <div
-          className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-bloomora-violet to-[#8b7ed6] text-sm font-bold text-white shadow-[0_6px_16px_-4px_rgba(124,107,181,0.55)]"
+          className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-bloomora-violet to-[#8b7ed6] text-sm font-bold text-[color:var(--bloomora-accent-on)] shadow-[0_6px_16px_-4px_rgba(124,107,181,0.55)]"
           aria-hidden
         >
           Tt
@@ -181,7 +181,7 @@ export function NoteTextOptionsPanel({
           type="button"
           aria-label="Cerrar"
           onClick={onClose}
-          className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full bg-bloomora-lavender-50 text-bloomora-text-muted transition hover:bg-bloomora-lilac/25 hover:text-bloomora-deep sm:right-4 sm:top-4"
+          className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full bg-[color:var(--bloomora-surface-2)] text-bloomora-text-muted transition hover:bg-bloomora-lilac/25 hover:text-bloomora-deep sm:right-4 sm:top-4"
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
             <path
@@ -196,11 +196,11 @@ export function NoteTextOptionsPanel({
 
       <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
         {isTyping && onApplyTextoPreset ? (
-          <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-bloomora-lavender-50/80 px-3 py-2.5 ring-1 ring-bloomora-line/25">
+          <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-[color:var(--bloomora-surface-2)] px-3 py-2.5 ring-1 ring-[color:var(--bloomora-border)]">
             <button
               type="button"
               onClick={onApplyTextoPreset}
-              className="rounded-full bg-gradient-to-r from-bloomora-violet to-[#9b86f0] px-4 py-1.5 text-xs font-bold text-white shadow-[0_8px_20px_-6px_rgba(124,107,181,0.5)] transition hover:brightness-105"
+              className="rounded-full bg-gradient-to-r from-bloomora-violet to-[#9b86f0] px-4 py-1.5 text-xs font-bold text-[color:var(--bloomora-accent-on)] shadow-[0_8px_20px_-6px_rgba(124,107,181,0.5)] transition hover:brightness-105"
             >
               Texto
             </button>
@@ -237,12 +237,12 @@ export function NoteTextOptionsPanel({
                   className={cn(
                     'relative min-w-[4.75rem] shrink-0 rounded-xl border px-3 py-2.5 text-left transition',
                     selected
-                      ? 'border-bloomora-violet bg-bloomora-lavender-50/90 ring-2 ring-bloomora-violet/35'
-                      : 'border-bloomora-line/40 bg-white hover:border-bloomora-lilac/50',
+                      ? 'border-bloomora-violet bg-[color:var(--bloomora-surface-2)] ring-2 ring-bloomora-violet/35'
+                      : 'border-[color:var(--bloomora-border)] bg-[color:var(--bloomora-surface-1)] hover:border-bloomora-lilac/50',
                   )}
                 >
                   {selected ? (
-                    <span className="absolute right-1.5 top-1.5 flex size-4 items-center justify-center rounded-full bg-bloomora-violet text-[0.55rem] text-white">
+                    <span className="absolute right-1.5 top-1.5 flex size-4 items-center justify-center rounded-full bg-bloomora-violet text-[0.55rem] text-[color:var(--bloomora-accent-on)]">
                       ✓
                     </span>
                   ) : null}
@@ -262,7 +262,7 @@ export function NoteTextOptionsPanel({
                 type="button"
                 aria-label="Más fuentes"
                 onClick={() => setShowAllFonts(true)}
-                className="flex min-w-[2.5rem] shrink-0 items-center justify-center rounded-xl border border-bloomora-line/40 text-bloomora-text-muted hover:border-bloomora-lilac/50"
+                className="flex min-w-[2.5rem] shrink-0 items-center justify-center rounded-xl border border-[color:var(--bloomora-border)] text-bloomora-text-muted hover:border-bloomora-lilac/50"
               >
                 …
               </button>
@@ -273,12 +273,12 @@ export function NoteTextOptionsPanel({
         <section className="mb-5">
           <SectionLabel>Tamaño</SectionLabel>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="flex shrink-0 items-center rounded-xl border border-bloomora-line/35 bg-bloomora-snow/80">
+            <div className="flex shrink-0 items-center rounded-xl border border-[color:var(--bloomora-border)] bg-bloomora-snow/80">
               <button
                 type="button"
                 aria-label="Reducir tamaño"
                 onClick={() => stepSize(-1)}
-                className="flex size-9 items-center justify-center text-lg text-bloomora-violet hover:bg-bloomora-lavender-50/80"
+                className="flex size-9 items-center justify-center text-lg text-bloomora-violet hover:bg-[color:var(--bloomora-surface-3)]"
               >
                 −
               </button>
@@ -289,7 +289,7 @@ export function NoteTextOptionsPanel({
                 type="button"
                 aria-label="Aumentar tamaño"
                 onClick={() => stepSize(1)}
-                className="flex size-9 items-center justify-center text-lg text-bloomora-violet hover:bg-bloomora-lavender-50/80"
+                className="flex size-9 items-center justify-center text-lg text-bloomora-violet hover:bg-[color:var(--bloomora-surface-3)]"
               >
                 +
               </button>
@@ -297,7 +297,7 @@ export function NoteTextOptionsPanel({
             <div className="relative min-w-0 flex-1 pt-1">
               {sliderActive ? (
                 <span
-                  className="pointer-events-none absolute -top-1 z-10 -translate-x-1/2 rounded-lg bg-bloomora-violet px-2 py-0.5 text-[0.65rem] font-bold text-white shadow-md"
+                  className="pointer-events-none absolute -top-1 z-10 -translate-x-1/2 rounded-lg bg-bloomora-violet px-2 py-0.5 text-[0.65rem] font-bold text-[color:var(--bloomora-accent-on)] shadow-md"
                   style={{
                     left: `${((values.fontSizePx - NOTE_FONT_SIZE_SLIDER_MIN) / (NOTE_FONT_SIZE_SLIDER_MAX - NOTE_FONT_SIZE_SLIDER_MIN)) * 100}%`,
                   }}
@@ -344,8 +344,8 @@ export function NoteTextOptionsPanel({
                 className={cn(
                   'flex flex-col items-center gap-1 rounded-xl border px-2 py-2.5 transition',
                   values.fontWeight === id
-                    ? 'border-bloomora-violet bg-bloomora-lavender-50/90 ring-2 ring-bloomora-violet/30'
-                    : 'border-bloomora-line/35 hover:border-bloomora-lilac/45',
+                    ? 'border-bloomora-violet bg-[color:var(--bloomora-surface-2)] ring-2 ring-bloomora-violet/30'
+                    : 'border-[color:var(--bloomora-border)] hover:border-bloomora-lilac/45',
                 )}
               >
                 <WeightPreview weight={id} />
@@ -379,7 +379,7 @@ export function NoteTextOptionsPanel({
               type="button"
               title="Cuentagotas"
               aria-label="Cuentagotas"
-              className="flex size-8 items-center justify-center rounded-full border border-bloomora-line/40 bg-bloomora-snow text-bloomora-violet hover:bg-bloomora-lavender-50/80"
+              className="flex size-8 items-center justify-center rounded-full border border-[color:var(--bloomora-border)] bg-bloomora-snow text-bloomora-violet hover:bg-[color:var(--bloomora-surface-3)]"
               onClick={async () => {
                 if (!('EyeDropper' in window)) return
                 try {
@@ -407,9 +407,9 @@ export function NoteTextOptionsPanel({
             <button
               type="button"
               onClick={() => customColorRef.current?.click()}
-              className="flex items-center gap-1.5 rounded-full border border-bloomora-line/35 px-2.5 py-1.5 text-[0.7rem] font-semibold text-bloomora-deep hover:bg-bloomora-lavender-50/60"
+              className="flex items-center gap-1.5 rounded-full border border-[color:var(--bloomora-border)] px-2.5 py-1.5 text-[0.7rem] font-semibold text-bloomora-deep hover:bg-[color:var(--bloomora-surface-3)]"
             >
-              <span className="flex size-6 items-center justify-center rounded-full bg-bloomora-lavender-50 text-bloomora-violet">
+              <span className="flex size-6 items-center justify-center rounded-full bg-[color:var(--bloomora-surface-2)] text-bloomora-violet">
                 +
               </span>
               Color personalizado
@@ -434,8 +434,8 @@ export function NoteTextOptionsPanel({
                 className={cn(
                   'flex h-9 min-w-[2.5rem] items-center justify-center rounded-lg border px-2 text-sm font-semibold text-bloomora-deep transition',
                   !values.highlightColor
-                    ? 'border-bloomora-violet bg-bloomora-lavender-50/90 ring-2 ring-bloomora-violet/30'
-                    : 'border-bloomora-line/35 hover:border-bloomora-lilac/45',
+                    ? 'border-bloomora-violet bg-[color:var(--bloomora-surface-2)] ring-2 ring-bloomora-violet/30'
+                    : 'border-[color:var(--bloomora-border)] hover:border-bloomora-lilac/45',
                 )}
               >
                 <span className="relative">
@@ -455,7 +455,7 @@ export function NoteTextOptionsPanel({
                     'flex h-9 min-w-[2.25rem] items-center justify-center rounded-lg border text-xs font-bold transition hover:scale-105',
                     values.highlightColor === h.color
                       ? 'border-bloomora-violet ring-2 ring-bloomora-violet/30'
-                      : 'border-bloomora-line/30',
+                      : 'border-[color:var(--bloomora-border)]',
                   )}
                   style={{ backgroundColor: h.color }}
                 >
@@ -464,7 +464,7 @@ export function NoteTextOptionsPanel({
               ))}
               <button
                 type="button"
-                className="flex items-center gap-1 rounded-lg border border-dashed border-bloomora-line/45 px-2 py-1.5 text-[0.65rem] font-semibold text-bloomora-text-muted hover:border-bloomora-violet/40"
+                className="flex items-center gap-1 rounded-lg border border-dashed border-[color:var(--bloomora-border)] px-2 py-1.5 text-[0.65rem] font-semibold text-bloomora-text-muted hover:border-bloomora-violet/40"
                 onClick={() => customHighlightRef.current?.click()}
               >
                 + Más colores
@@ -476,7 +476,7 @@ export function NoteTextOptionsPanel({
                 onChange={(e) => onHighlight(e.target.value)}
               />
             </div>
-            <p className="mt-2 flex items-start gap-2 rounded-xl bg-bloomora-lavender-50/70 px-3 py-2 text-[0.7rem] leading-snug text-bloomora-violet">
+            <p className="mt-2 flex items-start gap-2 rounded-xl bg-[color:var(--bloomora-surface-2)] px-3 py-2 text-[0.7rem] leading-snug text-bloomora-violet">
               <span className="mt-0.5 shrink-0 font-bold" aria-hidden>
                 i
               </span>
@@ -487,7 +487,7 @@ export function NoteTextOptionsPanel({
 
         <section className="mb-5">
           <SectionLabel>Alineación</SectionLabel>
-          <div className="inline-flex rounded-xl border border-bloomora-line/30 bg-bloomora-snow/50 p-1">
+          <div className="inline-flex rounded-xl border border-[color:var(--bloomora-border)] bg-bloomora-snow/50 p-1">
             {(
               [
                 ['left', 'Izquierda'],
@@ -506,8 +506,8 @@ export function NoteTextOptionsPanel({
                 className={cn(
                   'flex size-9 items-center justify-center rounded-lg transition',
                   values.align === id
-                    ? 'bg-bloomora-lavender-50 text-bloomora-violet shadow-sm ring-1 ring-bloomora-violet/25'
-                    : 'text-bloomora-text-muted hover:bg-white/80 hover:text-bloomora-deep',
+                    ? 'bg-[color:var(--bloomora-surface-2)] text-bloomora-violet shadow-sm ring-1 ring-bloomora-violet/25'
+                    : 'text-bloomora-text-muted hover:bg-[color:var(--bloomora-surface-2)] hover:text-bloomora-deep',
                 )}
               >
                 <AlignIcon kind={id} />
@@ -519,13 +519,13 @@ export function NoteTextOptionsPanel({
         <div className="grid gap-4 sm:grid-cols-2">
           <section>
             <SectionLabel>Espaciado entre líneas</SectionLabel>
-            <div className="flex items-center rounded-xl border border-bloomora-line/35 bg-bloomora-snow/80">
+            <div className="flex items-center rounded-xl border border-[color:var(--bloomora-border)] bg-bloomora-snow/80">
               <button
                 type="button"
                 aria-label="Reducir interlineado"
                 onMouseDown={keepSelection}
                 onClick={() => stepLineHeight(-0.1)}
-                className="flex size-9 items-center justify-center text-lg text-bloomora-violet hover:bg-bloomora-lavender-50/80"
+                className="flex size-9 items-center justify-center text-lg text-bloomora-violet hover:bg-[color:var(--bloomora-surface-3)]"
               >
                 −
               </button>
@@ -537,7 +537,7 @@ export function NoteTextOptionsPanel({
                 aria-label="Aumentar interlineado"
                 onMouseDown={keepSelection}
                 onClick={() => stepLineHeight(0.1)}
-                className="flex size-9 items-center justify-center text-lg text-bloomora-violet hover:bg-bloomora-lavender-50/80"
+                className="flex size-9 items-center justify-center text-lg text-bloomora-violet hover:bg-[color:var(--bloomora-surface-3)]"
               >
                 +
               </button>
@@ -553,8 +553,8 @@ export function NoteTextOptionsPanel({
                   className={cn(
                     'min-h-9 min-w-10 rounded-full border px-2 text-xs font-semibold transition',
                     Math.abs(values.lineHeight - spacing) < 0.01
-                      ? 'border-bloomora-violet/30 bg-bloomora-lavender-50 text-bloomora-violet'
-                      : 'border-bloomora-line/35 bg-white text-bloomora-text-muted hover:bg-bloomora-lavender-50/60',
+                      ? 'border-bloomora-violet/30 bg-[color:var(--bloomora-surface-2)] text-bloomora-violet'
+                      : 'border-[color:var(--bloomora-border)] bg-[color:var(--bloomora-surface-1)] text-bloomora-text-muted hover:bg-[color:var(--bloomora-surface-3)]',
                   )}
                   title={`Interlineado ${spacing}`}
                 >
@@ -581,8 +581,8 @@ export function NoteTextOptionsPanel({
                   className={cn(
                     'flex items-center gap-2 rounded-xl border px-2.5 py-1.5 text-left text-[0.7rem] transition',
                     values.textCase === id
-                      ? 'border-bloomora-violet bg-bloomora-lavender-50/90 ring-1 ring-bloomora-violet/30'
-                      : 'border-bloomora-line/30 hover:border-bloomora-lilac/40',
+                      ? 'border-bloomora-violet bg-[color:var(--bloomora-surface-2)] ring-1 ring-bloomora-violet/30'
+                      : 'border-[color:var(--bloomora-border)] hover:border-bloomora-lilac/40',
                   )}
                 >
                   <span className="w-6 shrink-0 text-center font-bold text-bloomora-violet">
@@ -601,7 +601,7 @@ export function NoteTextOptionsPanel({
             aria-label="Espaciado entre párrafos"
             value={values.paragraphSpacingPx}
             onChange={(event) => onParagraphSpacingChange(Number(event.target.value))}
-            className="min-h-10 w-full rounded-xl border border-bloomora-line/35 bg-bloomora-snow/80 px-3 text-sm text-bloomora-deep outline-none focus:ring-2 focus:ring-bloomora-lilac/50"
+            className="min-h-10 w-full rounded-xl border border-[color:var(--bloomora-border)] bg-bloomora-snow/80 px-3 text-sm text-bloomora-deep outline-none focus:ring-2 focus:ring-bloomora-lilac/50"
           >
             <option value={0}>Sin espacio</option>
             <option value={6}>Agregar 6 px después</option>

@@ -49,7 +49,7 @@ export function NotesList({
               className={cn(
                 '!min-h-auto flex-col items-start gap-0.5 rounded-2xl px-3 py-2 text-left',
                 n.id === activeId &&
-                  'border-bloomora-violet bg-bloomora-lavender-50 ring-2 ring-bloomora-lilac/30',
+                  'border-bloomora-violet bg-[color:var(--bloomora-surface-2)] ring-2 ring-bloomora-lilac/30',
               )}
               onClick={() => onSelect(n.id)}
             >

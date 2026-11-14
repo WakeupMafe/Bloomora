@@ -22,6 +22,9 @@ export type EnglishNote = {
   contentHtml: string
   plainText: string
   coverImageUrl: string | null
+  isFavorite: boolean
+  /** ISO timestamp when soft-deleted; null = active. Trash keeps ~30 days. */
+  deletedAt: string | null
   createdAt: string
   updatedAt: string
 }
@@ -37,7 +40,14 @@ export type EnglishNoteInput = {
   contentHtml: string
   plainText: string
   coverImageUrl: string | null
+  isFavorite?: boolean
+  deletedAt?: string | null
 }
+
+/** Patch accepted by update mutations (content + favoritos/papelera). */
+export type EnglishNotePatch = Partial<EnglishNoteInput>
+
+export type EnglishNotesListScope = 'active' | 'trash'
 
 export const ENGLISH_NOTE_PAGE_SIZES: Array<{
   id: EnglishNotePageSize

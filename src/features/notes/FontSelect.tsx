@@ -2,15 +2,18 @@ import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { NoteBodyFont } from '@/features/notes/noteTypingDefaults'
 import { NOTE_BODY_FONTS, noteBodyFontFamily } from '@/features/notes/noteFontUtils'
+import { cn } from '@/utils/cn'
 
 export function FontSelect({
   value,
   onChange,
   onPointerDown,
+  variant = 'default',
 }: {
   value: NoteBodyFont
   onChange: (font: NoteBodyFont) => void
   onPointerDown?: () => void
+  variant?: 'default' | 'toolbar'
 }) {
   const [open, setOpen] = useState(false)
   const [position, setPosition] = useState({ top: 8, left: 8, maxHeight: 'calc(100dvh - 1rem)' })
@@ -59,8 +62,10 @@ export function FontSelect({
     }
   }, [open, updatePosition])
 
+  const toolbar = variant === 'toolbar'
+
   return (
-    <div className="shrink-0">
+    <div className={cn('shrink-0', toolbar && 'note-toolbar-font-wrap')} data-toolbar-compact-hide={toolbar ? true : undefined}>
       <button
         ref={triggerRef}
         type="button"
@@ -70,7 +75,11 @@ export function FontSelect({
         title="Elegir fuente"
         onPointerDown={onPointerDown}
         onClick={() => setOpen((current) => !current)}
-        className="flex h-9 w-[clamp(6.25rem,28vw,12rem)] max-w-[9.5rem] items-center justify-between gap-2 rounded-full border border-bloomora-line/50 bg-white px-3 text-xs font-medium text-bloomora-deep shadow-sm transition hover:border-bloomora-lilac/60 hover:bg-bloomora-lavender-50/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-bloomora-lilac sm:max-w-none"
+        className={cn(
+          toolbar
+            ? 'note-toolbar-font'
+            : 'flex h-9 w-[clamp(6.25rem,28vw,12rem)] max-w-[9.5rem] items-center justify-between gap-2 rounded-full border border-[color:var(--bloomora-border)] bg-[color:var(--bloomora-surface-1)] px-3 text-xs font-medium text-bloomora-deep shadow-sm transition hover:border-bloomora-lilac/60 hover:bg-[color:var(--bloomora-surface-3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-bloomora-lilac sm:max-w-none',
+        )}
       >
         <span className="truncate" style={{ fontFamily: noteBodyFontFamily(value) }}>{selectedFont.label}</span>
         <svg viewBox="0 0 16 16" className={`size-3.5 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" aria-hidden>
@@ -83,7 +92,7 @@ export function FontSelect({
           role="listbox"
           aria-label="Fuentes disponibles"
           style={{ position: 'fixed', top: position.top, left: position.left, zIndex: 99999, width: 'min(16rem, calc(100vw - 1.5rem))', maxHeight: position.maxHeight, pointerEvents: 'auto' }}
-          className="overflow-y-auto overscroll-contain rounded-2xl border border-bloomora-line/45 bg-white/95 p-2 shadow-[0_16px_48px_-18px_rgba(67,47,97,0.42)] backdrop-blur"
+          className="overflow-y-auto overscroll-contain rounded-2xl border border-[color:var(--bloomora-border)] bg-[color:var(--bloomora-surface-1)] p-2 shadow-[0_16px_48px_-18px_rgba(67,47,97,0.42)] backdrop-blur"
         >
           <p className="px-2 pb-1 pt-1.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-bloomora-text-muted">Fuente</p>
           <div className="grid gap-1">
@@ -98,7 +107,7 @@ export function FontSelect({
                   setOpen(false)
                   triggerRef.current?.focus()
                 }}
-                className={`flex min-h-10 items-center justify-between rounded-xl px-3 text-left transition ${font.id === value ? 'bg-bloomora-rose/15 text-bloomora-violet ring-1 ring-bloomora-rose/25' : 'text-bloomora-deep hover:bg-bloomora-lavender-50'}`}
+                className={`flex min-h-10 items-center justify-between rounded-xl px-3 text-left transition ${font.id === value ? 'bg-bloomora-rose/15 text-bloomora-violet ring-1 ring-bloomora-rose/25' : 'text-bloomora-deep hover:bg-[color:var(--bloomora-surface-3)]'}`}
               >
                 <span style={{ fontFamily: noteBodyFontFamily(font.id) }} className="text-base">{font.label}</span>
                 <span className="text-[0.62rem] text-bloomora-text-muted">Ag</span>

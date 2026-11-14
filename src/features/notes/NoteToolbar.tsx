@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import textOptionsScreenshot from '@/assets/notes/ctrl-o-opciones-texto.png'
 import { Button } from '@/components/ui/Button'
@@ -8,9 +8,32 @@ import { HeadingSelect } from '@/features/notes/HeadingSelect'
 import { SizeSelect } from '@/features/notes/SizeSelect'
 import { NOTE_HIGHLIGHT_PRESETS } from '@/features/notes/noteTextOptionsConstants'
 import { NOTE_LINE_HEIGHTS } from '@/features/notes/noteSpacingModel.mjs'
+import type { NotesLayoutMode } from '@/features/notes/useNotesLayout'
 import { ENGLISH_NOTE_COLORS, ENGLISH_NOTE_PAGE_SIZES, type EnglishNotePageSize } from '@/types/englishNote'
 import type { NoteBodyFont, NoteParagraphStyle, NoteTextAlign } from '@/features/notes/noteTypingDefaults'
 import { cn } from '@/utils/cn'
+
+const TOOLBAR_PREF_KEY = 'bloomora_notes_toolbar'
+type RibbonMode = 'compact' | 'full'
+
+function readRibbonPref(layoutMode: NotesLayoutMode): RibbonMode {
+  if (typeof window === 'undefined') return layoutMode === 'compact' ? 'compact' : 'full'
+  try {
+    const stored = window.localStorage.getItem(TOOLBAR_PREF_KEY)
+    if (stored === 'compact' || stored === 'full') return stored
+  } catch {
+    /* ignore */
+  }
+  return layoutMode === 'compact' ? 'compact' : 'full'
+}
+
+function writeRibbonPref(mode: RibbonMode) {
+  try {
+    window.localStorage.setItem(TOOLBAR_PREF_KEY, mode)
+  } catch {
+    /* ignore */
+  }
+}
 
 type NoteToolbarProps = {
   onBold: () => void
@@ -56,17 +79,26 @@ type NoteToolbarProps = {
   twoColumns: boolean
   onTwoColumnsChange: (enabled: boolean) => void
   onBeforeControl: () => void
+  layoutMode?: NotesLayoutMode
 }
 
 function ToolbarGroup({
   label,
   children,
+  className,
+  secondary = false,
 }: {
   label: string
   children: ReactNode
+  className?: string
+  secondary?: boolean
 }) {
   return (
-    <div role="group" aria-label={label} className="note-toolbar-group">
+    <div
+      role="group"
+      aria-label={label}
+      className={cn('note-toolbar-group', secondary && 'note-toolbar-group--secondary', className)}
+    >
       <span className="note-toolbar-group__label">{label}</span>
       <div className="note-toolbar-group__controls">{children}</div>
     </div>
@@ -168,6 +200,7 @@ export function NoteShortcutHelpDialog({ onClose }: { onClose: () => void }) {
     ] },
     { group: 'Edición del documento', rows: [
       [['Enter'], 'Crear un párrafo nuevo conservando el formato actual.'],
+      [['Ctrl', 'Enter'], 'Insertar un salto de página en el cursor.'],
       [['Backspace'], 'Al inicio de un párrafo, unirlo con el anterior; si está vacío, eliminarlo.'],
       [['Supr'], 'Al final de un párrafo, unir el siguiente con el actual.'],
       [['Clic derecho'], 'Abrir las opciones del navegador para copiar, pegar y otras acciones.'],
@@ -183,14 +216,14 @@ export function NoteShortcutHelpDialog({ onClose }: { onClose: () => void }) {
 
   return createPortal(
     <div className="fixed inset-0 flex items-center justify-center bg-bloomora-deep/35 p-3 backdrop-blur-sm" style={{ zIndex: 100000 }}>
-      <section role="dialog" aria-modal="true" aria-labelledby="note-shortcuts-title" className="max-h-[min(90dvh,52rem)] w-full max-w-3xl overflow-y-auto rounded-3xl border border-bloomora-line/40 bg-[var(--color-bloomora-white)] p-5 shadow-2xl sm:p-7">
+      <section role="dialog" aria-modal="true" aria-labelledby="note-shortcuts-title" className="max-h-[min(90dvh,52rem)] w-full max-w-3xl overflow-y-auto rounded-3xl border border-[color:var(--bloomora-border)] bg-[var(--color-bloomora-white)] p-5 shadow-2xl sm:p-7">
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-bloomora-rose">Guía rápida</p>
             <h2 id="note-shortcuts-title" className="mt-1 text-xl font-bold text-bloomora-deep">Atajos y controles</h2>
             <p className="mt-1 text-sm text-bloomora-text-muted">Escribe y organiza tus apuntes con movimientos y formato tipo Word.</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar ayuda" className="flex size-9 shrink-0 items-center justify-center rounded-full border border-bloomora-line/40 text-bloomora-violet hover:bg-bloomora-lavender-50">×</button>
+          <button type="button" onClick={onClose} aria-label="Cerrar ayuda" className="flex size-9 shrink-0 items-center justify-center rounded-full border border-[color:var(--bloomora-border)] text-bloomora-violet hover:bg-[color:var(--bloomora-surface-3)]">×</button>
         </div>
         <div className="grid gap-6">
           <section aria-labelledby="note-shortcuts-keys">
@@ -199,8 +232,8 @@ export function NoteShortcutHelpDialog({ onClose }: { onClose: () => void }) {
               {shortcuts.map(({ group, rows }) => <section key={group}>
                 <h4 className="mb-2 text-[0.68rem] font-bold uppercase tracking-[0.1em] text-bloomora-text-muted">{group}</h4>
                 <dl className="grid gap-1.5">
-                  {rows.map(([keys, action]) => <div key={keys.join('+')} className={`grid grid-cols-[minmax(7.5rem,30%)_1fr] items-center gap-3 rounded-xl border p-2.5 ${keys.includes('O') ? 'border-bloomora-lilac/50 bg-bloomora-lavender-50/60' : 'border-bloomora-line/25 bg-[var(--color-bloomora-white)]'}`}>
-                    <dt className="flex flex-wrap gap-1">{keys.map((key, index) => <span key={`${key}-${index}`} className="flex items-center gap-1">{index > 0 ? <span className="text-[0.65rem] text-bloomora-text-muted">+</span> : null}<kbd className="rounded-md border border-bloomora-line/50 bg-bloomora-snow px-1.5 py-1 text-[0.68rem] font-bold text-bloomora-violet shadow-[0_1px_0_rgba(91,74,140,.12)]">{key}</kbd></span>)}</dt>
+                  {rows.map(([keys, action]) => <div key={keys.join('+')} className={`grid grid-cols-[minmax(7.5rem,30%)_1fr] items-center gap-3 rounded-xl border p-2.5 ${keys.includes('O') ? 'border-bloomora-lilac/50 bg-[color:var(--bloomora-surface-2)]' : 'border-[color:var(--bloomora-border)] bg-[var(--color-bloomora-white)]'}`}>
+                    <dt className="flex flex-wrap gap-1">{keys.map((key, index) => <span key={`${key}-${index}`} className="flex items-center gap-1">{index > 0 ? <span className="text-[0.65rem] text-bloomora-text-muted">+</span> : null}<kbd className="rounded-md border border-[color:var(--bloomora-border)] bg-bloomora-snow px-1.5 py-1 text-[0.68rem] font-bold text-bloomora-violet shadow-[0_1px_0_rgba(91,74,140,.12)]">{key}</kbd></span>)}</dt>
                     <dd className="m-0 text-xs leading-relaxed text-bloomora-text-muted">{action}</dd>
                   </div>)}
                 </dl>
@@ -214,7 +247,7 @@ export function NoteShortcutHelpDialog({ onClose }: { onClose: () => void }) {
               <p className="mt-1 text-xs leading-relaxed text-bloomora-text-muted">Selecciona texto y pulsa Ctrl+O para abrir el panel completo. Si no hay selección, el panel configura el texto que escribirás desde el cursor.</p>
             </div>
             <div className="grid items-start gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-              <figure className="m-0 grid justify-items-center gap-2 rounded-xl border border-bloomora-line/40 bg-[var(--color-bloomora-white)] p-2 shadow-sm">
+              <figure className="m-0 grid justify-items-center gap-2 rounded-xl border border-[color:var(--bloomora-border)] bg-[var(--color-bloomora-white)] p-2 shadow-sm">
                 <img src={textOptionsScreenshot} alt="Captura real del panel Opciones de texto abierto con Ctrl+O en Bloomora" className="h-auto max-h-[32rem] max-w-full rounded-lg object-contain object-top" />
                 <figcaption className="text-center text-[0.68rem] text-bloomora-text-muted">Captura real del panel en modo de escritura.</figcaption>
               </figure>
@@ -231,7 +264,7 @@ export function NoteShortcutHelpDialog({ onClose }: { onClose: () => void }) {
                     <dt className="text-xs font-bold text-bloomora-violet">{label}</dt><dd className="m-0 text-xs leading-relaxed text-bloomora-text-muted">{description}</dd>
                   </div>)}
                 </dl>
-                <p className="mt-3 rounded-lg bg-bloomora-lavender-50/70 p-3 text-xs leading-relaxed text-bloomora-text-muted">Con una selección, el formato se aplica a ese texto. Sin selección, Ctrl+O abre el panel para configurar el texto que escribirás desde el cursor. Usa la barra de desplazamiento del panel para ver las opciones inferiores.</p>
+                <p className="mt-3 rounded-lg bg-[color:var(--bloomora-surface-2)] p-3 text-xs leading-relaxed text-bloomora-text-muted">Con una selección, el formato se aplica a ese texto. Sin selección, Ctrl+O abre el panel para configurar el texto que escribirás desde el cursor. Usa la barra de desplazamiento del panel para ver las opciones inferiores.</p>
               </div>
             </div>
           </section>
@@ -323,13 +356,13 @@ function HojaMoreMenu({ props }: { props: NoteToolbarProps }) {
           role="dialog"
           aria-label="Más opciones de hoja"
           style={{ position: 'fixed', top: position.top, left: position.left, zIndex: 99999, width: 'min(18rem, calc(100vw - 1rem))', maxHeight: position.maxHeight, pointerEvents: 'auto' }}
-          className="grid gap-3 overflow-y-auto overscroll-contain rounded-xl border border-bloomora-line/40 bg-[var(--color-bloomora-white)] p-3 shadow-xl"
+          className="grid gap-3 overflow-y-auto overscroll-contain rounded-xl border border-[color:var(--bloomora-border)] bg-[var(--color-bloomora-white)] p-3 shadow-xl"
         >
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant={props.pageNumberEnabled ? 'primary' : 'secondary'} size="sm" onClick={() => props.onPageNumberEnabledChange(!props.pageNumberEnabled)} aria-pressed={props.pageNumberEnabled} title="Mostrar número de página">N.º hoja</Button>
             <Button type="button" variant={props.twoColumns ? 'primary' : 'secondary'} size="sm" onClick={() => props.onTwoColumnsChange(!props.twoColumns)} aria-pressed={props.twoColumns} title="Dividir el texto en dos columnas">2 columnas</Button>
           </div>
-          <div className="flex gap-2 border-t border-bloomora-line/30 pt-3">
+          <div className="flex gap-2 border-t border-[color:var(--bloomora-border)] pt-3">
             <Button type="button" variant="secondary" size="sm" fullWidth onClick={props.onExportPdf} title="Exportar a PDF">PDF</Button>
             <Button type="button" variant="secondary" size="sm" fullWidth onClick={props.onPrint} title="Imprimir">Imprimir</Button>
           </div>
@@ -412,7 +445,7 @@ function AlignMenu({
           role="menu"
           aria-label="Alineación del párrafo"
           style={{ position: 'fixed', top: position.top, left: position.left, zIndex: 99999, width: '11rem' }}
-          className="grid gap-1 rounded-xl border border-bloomora-line/40 bg-[var(--color-bloomora-white)] p-1.5 shadow-xl"
+          className="grid gap-1 rounded-xl border border-[color:var(--bloomora-border)] bg-[var(--color-bloomora-white)] p-1.5 shadow-xl"
         >
           {ALIGN_OPTIONS.map((option) => (
             <button
@@ -421,8 +454,8 @@ function AlignMenu({
               role="menuitemradio"
               aria-checked={value === option.id}
               className={cn(
-                'flex min-h-11 items-center gap-2 rounded-lg px-2.5 text-left text-sm text-bloomora-deep hover:bg-bloomora-lavender-50',
-                value === option.id && 'bg-bloomora-lavender-50 text-bloomora-violet',
+                'flex min-h-11 items-center gap-2 rounded-lg px-2.5 text-left text-sm text-bloomora-deep hover:bg-[color:var(--bloomora-surface-3)]',
+                value === option.id && 'bg-[color:var(--bloomora-surface-2)] text-bloomora-violet',
               )}
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => {
@@ -442,38 +475,108 @@ function AlignMenu({
 }
 
 export function NoteToolbar(props: NoteToolbarProps) {
+  const layoutMode = props.layoutMode === 'compact' ? 'compact' : 'wide'
+  const [ribbonMode, setRibbonMode] = useState<RibbonMode>(() => readRibbonPref(layoutMode))
+  const isCompact = ribbonMode === 'compact'
+
+  const setMode = useCallback((mode: RibbonMode) => {
+    setRibbonMode(mode)
+    writeRibbonPref(mode)
+  }, [])
+
+  const toggleMode = useCallback(() => {
+    setMode(ribbonMode === 'full' ? 'compact' : 'full')
+  }, [ribbonMode, setMode])
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || !event.shiftKey) return
+      if (event.key !== 'F1') return
+      event.preventDefault()
+      setRibbonMode((current) => {
+        const next: RibbonMode = current === 'full' ? 'compact' : 'full'
+        writeRibbonPref(next)
+        return next
+      })
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
+
   const resolvedLineHeight = NOTE_LINE_HEIGHTS.reduce(
     (best, value) => Math.abs(value - props.lineHeight) < Math.abs(best - props.lineHeight) ? value : best,
     NOTE_LINE_HEIGHTS[0],
+  )
+
+  const renderBulletList = (key: string) => (
+    <ToolbarButton key={key} label="Lista con viñetas" onClick={props.onBulletList}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M10 6h11M10 12h11M10 18h11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="5" cy="6" r="1.4" fill="currentColor" />
+        <circle cx="5" cy="12" r="1.4" fill="currentColor" />
+        <circle cx="5" cy="18" r="1.4" fill="currentColor" />
+      </svg>
+    </ToolbarButton>
+  )
+
+  const renderPageBreak = (key: string, iconOnly: boolean) => (
+    <ToolbarButton
+      key={key}
+      label="Salto de página"
+      shortcut="Ctrl+Enter"
+      onClick={props.onInsertPageBreak}
+      className={cn('note-toolbar-btn--pagebreak', iconOnly && 'note-toolbar-btn--pagebreak-icon')}
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M7 3h7l5 5v5" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+        <path d="M14 3v5h5" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+        <path d="M6 21v-5h12v5" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+        <path d="M2.5 12h2.5M8 12h3M13.5 12h3M19 12h2.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+      <span>Salto de página</span>
+    </ToolbarButton>
   )
 
   return (
     <div
       role="toolbar"
       data-note-toolbar
+      data-ribbon-mode={ribbonMode}
       aria-label="Herramientas de edición del apunte"
       onPointerDownCapture={props.onBeforeControl}
-      className="note-toolbar note-toolbar--grouped sticky top-0 z-30"
+      className={cn(
+        'note-toolbar note-toolbar--grouped sticky top-0 z-30',
+        isCompact ? 'note-toolbar--ribbon-compact' : 'note-toolbar--ribbon-full',
+      )}
     >
-      <ToolbarGroup label="Editar">
+      <ToolbarGroup label="Editar" className="note-toolbar-group--editar">
         <ToolbarButton label="Deshacer" shortcut="Ctrl+Z" onClick={props.onUndo}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
             <path d="M9 14L4 9l5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             <path d="M4 9h11a5 5 0 010 10h-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </ToolbarButton>
         <ToolbarButton label="Rehacer" shortcut="Ctrl+Y" onClick={props.onRedo}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
             <path d="M15 14l5-5-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             <path d="M20 9H9a5 5 0 000 10h3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </ToolbarButton>
       </ToolbarGroup>
 
-      <ToolbarGroup label="Texto">
-        <HeadingSelect value={props.paragraphStyle} onChange={props.onParagraphStyleChange} />
-        <FontSelect value={props.font} onChange={props.onFontChange} />
-        <SizeSelect value={props.fontSizePx} onChange={props.onFontSizeChange} onStep={props.onFontSizeStep} />
+      <ToolbarGroup label="Texto" className="note-toolbar-group--texto">
+        <HeadingSelect
+          value={props.paragraphStyle}
+          onChange={props.onParagraphStyleChange}
+          variant="toolbar"
+        />
+        <FontSelect value={props.font} onChange={props.onFontChange} variant="toolbar" />
+        <SizeSelect
+          value={props.fontSizePx}
+          onChange={props.onFontSizeChange}
+          onStep={props.onFontSizeStep}
+          variant="toolbar"
+        />
         <ToolbarButton label="Negrita" shortcut="Ctrl+B" active={props.active.bold} onClick={props.onBold}><b>B</b></ToolbarButton>
         <ToolbarButton label="Cursiva" shortcut="Ctrl+I" active={props.active.italic} onClick={props.onItalic}><i>I</i></ToolbarButton>
         <ToolbarButton label="Subrayado" shortcut="Ctrl+U" active={props.active.underline} onClick={props.onUnderline}><u>U</u></ToolbarButton>
@@ -483,41 +586,45 @@ export function NoteToolbar(props: NoteToolbarProps) {
           onChange={props.onTextColor}
           options={ENGLISH_NOTE_COLORS.map((color) => ({ id: color.id, value: color.value, label: color.label }))}
           display={(
-            <span className="relative flex flex-col items-center text-[15px] font-extrabold leading-none" aria-hidden>
+            <span className="relative flex flex-col items-center text-[14px] font-extrabold leading-none" aria-hidden>
               A
-              <span className="mt-0.5 h-1 w-4 rounded-sm" style={{ backgroundColor: props.textColor }} />
+              <span className="mt-0.5 h-1 w-3.5 rounded-sm" style={{ backgroundColor: props.textColor }} />
             </span>
           )}
         />
-        <ColorSwatchControl
-          label="Resaltador"
-          value={props.highlightColor ?? ''}
-          onChange={(value) => props.onHighlight(value || null)}
-          options={[
-            { id: 'none', value: '', label: 'Sin resaltado' },
-            ...NOTE_HIGHLIGHT_PRESETS.map((color) => ({ id: color.id, value: color.color, label: color.label })),
-          ]}
-          display={(
-            <span className="rounded px-0.5 text-[13px] font-bold" style={{ backgroundColor: props.highlightColor ?? 'transparent' }} aria-hidden>
-              Ab
-            </span>
-          )}
-        />
+        <span data-toolbar-compact-hide="">
+          <ColorSwatchControl
+            label="Resaltador"
+            value={props.highlightColor ?? ''}
+            onChange={(value) => props.onHighlight(value || null)}
+            options={[
+              { id: 'none', value: '', label: 'Sin resaltado' },
+              ...NOTE_HIGHLIGHT_PRESETS.map((color) => ({ id: color.id, value: color.color, label: color.label })),
+            ]}
+            display={(
+              <span className="rounded px-0.5 text-[12px] font-bold" style={{ backgroundColor: props.highlightColor ?? 'transparent' }} aria-hidden>
+                Ab
+              </span>
+            )}
+          />
+        </span>
         <ToolbarButton
           label="Aa Formato"
           shortcut="Ctrl+O"
           onClick={props.onOpenTextOptions}
           className="note-toolbar-btn--text"
         >
-          <span className="text-[15px] font-bold leading-none tracking-tight" aria-hidden>Aa</span>
-          <span className="text-[13px] font-semibold">Formato</span>
+          <span className="text-[14px] font-bold leading-none tracking-tight" aria-hidden>Aa</span>
+          <span className="text-[12px] font-semibold">Formato</span>
         </ToolbarButton>
+        {isCompact ? renderBulletList('compact-list') : null}
+        {isCompact ? renderPageBreak('compact-pagebreak', true) : null}
       </ToolbarGroup>
 
-      <ToolbarGroup label="Párrafo">
+      <ToolbarGroup label="Párrafo" className="note-toolbar-group--parrafo" secondary>
         <AlignMenu value={props.active.align} onChange={props.onAlign} />
         <label className="note-toolbar-btn note-toolbar-btn--text note-toolbar-lineheight" title="Interlineado" aria-label="Interlineado">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
             <path d="M11 6h10M11 12h10M11 18h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             <path d="M5 4v16M3 6l2-2 2 2M3 18l2 2 2-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
@@ -531,56 +638,37 @@ export function NoteToolbar(props: NoteToolbarProps) {
               <option key={spacing} value={spacing}>{spacing}</option>
             ))}
           </select>
-          <span className="text-[13px] font-semibold tabular-nums">{resolvedLineHeight}</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <span className="text-[12px] font-semibold tabular-nums">{resolvedLineHeight}</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
             <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </label>
-        <ToolbarButton label="Lista con viñetas" onClick={props.onBulletList}>
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path d="M10 6h11M10 12h11M10 18h11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            <circle cx="5" cy="6" r="1.4" fill="currentColor" />
-            <circle cx="5" cy="12" r="1.4" fill="currentColor" />
-            <circle cx="5" cy="18" r="1.4" fill="currentColor" />
-          </svg>
-        </ToolbarButton>
+        {renderBulletList('full-list')}
         <ToolbarButton label="Lista numerada" onClick={props.onNumberedList}>
-          <span className="text-[13px] font-bold leading-none">1.</span>
+          <span className="text-[12px] font-bold leading-none">1.</span>
         </ToolbarButton>
       </ToolbarGroup>
 
-      <ToolbarGroup label="Insertar">
+      <ToolbarGroup label="Insertar" className="note-toolbar-group--insertar" secondary>
         <ToolbarButton label="Insertar imagen" onClick={props.onInsertImage}>
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
             <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="2" />
             <path d="M3 15l5-5 4 4 3-3 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             <circle cx="9" cy="9" r="1.5" fill="currentColor" />
           </svg>
         </ToolbarButton>
         <ToolbarButton label="Insertar nota destacada" onClick={props.onInsertNote}>
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
             <path d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
             <path d="M14 3v5h5M9 13h6M9 17h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </ToolbarButton>
-        <ToolbarButton
-          label="Salto de página"
-          onClick={props.onInsertPageBreak}
-          className="note-toolbar-btn--pagebreak"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path d="M7 3h7l5 5v5" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-            <path d="M14 3v5h5" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-            <path d="M6 21v-5h12v5" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-            <path d="M2.5 12h2.5M8 12h3M13.5 12h3M19 12h2.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-          <span>Salto de página</span>
-        </ToolbarButton>
+        {renderPageBreak('full-pagebreak', false)}
       </ToolbarGroup>
 
-      <ToolbarGroup label="Hoja">
+      <ToolbarGroup label="Hoja" className="note-toolbar-group--hoja" secondary>
         <label className="note-toolbar-btn note-toolbar-btn--text note-toolbar-pagesize" title="Tamaño de hoja">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
             <path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
             <path d="M14 3v5h5" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
           </svg>
@@ -594,15 +682,29 @@ export function NoteToolbar(props: NoteToolbarProps) {
               <option key={size.id} value={size.id}>{size.shortLabel}</option>
             ))}
           </select>
-          <span className="text-[13px] font-semibold">
+          <span className="text-[12px] font-semibold">
             {ENGLISH_NOTE_PAGE_SIZES.find((size) => size.id === props.pageSize)?.shortLabel ?? 'Carta'}
           </span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
             <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </label>
         <HojaMoreMenu props={props} />
       </ToolbarGroup>
+
+      <ToolbarButton
+        label={isCompact ? 'Mostrar todas las opciones' : 'Mostrar menos'}
+        onClick={toggleMode}
+        className="note-toolbar-toggle"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+          {isCompact ? (
+            <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          ) : (
+            <path d="M18 15l-6-6-6 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          )}
+        </svg>
+      </ToolbarButton>
     </div>
   )
 }

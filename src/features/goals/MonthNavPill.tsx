@@ -25,7 +25,7 @@ export function MonthNavPill({
     <div className={cn('flex justify-center', className)}>
       <div
         className={cn(
-          'bloomora-month-nav inline-flex max-w-full items-stretch overflow-hidden rounded-full bg-white/75 shadow-sm ring-1 ring-bloomora-line/20 backdrop-blur-[2px]',
+          'bloomora-month-nav inline-flex max-w-full items-stretch overflow-hidden rounded-full bg-[color:var(--bloomora-surface-2)] shadow-sm ring-1 ring-[color:var(--bloomora-border-strong)] backdrop-blur-[2px]',
           compact ? 'text-xs' : 'text-sm',
         )}
       >
@@ -33,13 +33,13 @@ export function MonthNavPill({
           type="button"
           aria-label="Mes anterior"
           onClick={onPrev}
-          className="flex min-h-10 min-w-10 shrink-0 items-center justify-center text-lg font-semibold text-bloomora-violet/80 transition hover:bg-bloomora-lavender-50/60 hover:text-bloomora-deep active:scale-95 sm:min-h-11 sm:min-w-11"
+          className="flex min-h-10 min-w-10 shrink-0 items-center justify-center text-lg font-semibold text-[color:var(--bloomora-accent)] transition hover:bg-[color:var(--bloomora-surface-3)] hover:text-[color:var(--bloomora-text)] active:scale-95 sm:min-h-11 sm:min-w-11"
         >
           ‹
         </button>
         <span
           className={cn(
-            'flex min-w-0 flex-1 items-center justify-center border-x border-bloomora-line/15 px-3 py-2 text-center font-semibold capitalize leading-tight tracking-tight text-bloomora-deep sm:px-4',
+            'flex min-w-0 flex-1 items-center justify-center border-x border-[color:var(--bloomora-border)] px-3 py-2 text-center font-semibold capitalize leading-tight tracking-tight text-[color:var(--bloomora-text)] sm:px-4',
             compact && 'py-1.5',
           )}
         >
@@ -49,7 +49,7 @@ export function MonthNavPill({
           type="button"
           aria-label="Mes siguiente"
           onClick={onNext}
-          className="flex min-h-10 min-w-10 shrink-0 items-center justify-center text-lg font-semibold text-bloomora-violet/80 transition hover:bg-bloomora-lavender-50/60 hover:text-bloomora-deep active:scale-95 sm:min-h-11 sm:min-w-11"
+          className="flex min-h-10 min-w-10 shrink-0 items-center justify-center text-lg font-semibold text-[color:var(--bloomora-accent)] transition hover:bg-[color:var(--bloomora-surface-3)] hover:text-[color:var(--bloomora-text)] active:scale-95 sm:min-h-11 sm:min-w-11"
         >
           ›
         </button>

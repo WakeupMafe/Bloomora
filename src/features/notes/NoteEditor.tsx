@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MutableRefObject,
+} from 'react'
 import { Card } from '@/components/ui/Card'
 import { bloomoraInputClass, bloomoraPanelCardClass } from '@/components/ui/formControls'
 import { useBloomoraAlert } from '@/contexts/BloomoraAlertContext'
@@ -23,6 +30,10 @@ import { isDraftNoteId } from '@/features/notes/noteDraftUtils'
 import { uploadEnglishNoteImage } from '@/services/supabase/englishNoteImageUpload'
 import { requireSupabase } from '@/services/supabase/typedClient'
 import { NoteToolbar } from '@/features/notes/NoteToolbar'
+import { NoteMobileQuickBar } from '@/features/notes/NoteMobileQuickBar'
+import { NoteFormatSheet } from '@/features/notes/NoteFormatSheet'
+import { NoteInsertSheet } from '@/features/notes/NoteInsertSheet'
+import type { NotesLayoutMode } from '@/features/notes/useNotesLayout'
 import {
   BODY_TYPING_DEFAULTS,
   type NoteTypingDefaults,
@@ -125,6 +136,11 @@ type NoteEditorProps = {
   hasSavedNotes?: boolean
   isDraft?: boolean
   onUnsavedChange?: (dirty: boolean) => void
+  /**
+   * Imperative silent flush for leave/switch/tab-hide.
+   * Parent awaits this before changing active note or narrow surface.
+   */
+  flushSaveRef?: MutableRefObject<(() => Promise<boolean>) | null>
   /** Móvil: botón atrás a la lista. */
   showBack?: boolean
   onBack?: () => void
@@ -133,6 +149,8 @@ type NoteEditorProps = {
   outlineOpen?: boolean
   onToggleOutline?: () => void
   onShare?: () => void
+  /** Layout from useNotesLayout (narrow = mobile quick bar + sheets). */
+  layoutMode?: NotesLayoutMode
 }
 
 export function NoteEditor({
@@ -144,12 +162,14 @@ export function NoteEditor({
   hasSavedNotes = false,
   isDraft = false,
   onUnsavedChange,
+  flushSaveRef,
   showBack = false,
   onBack,
   showOutlineToggle = false,
   outlineOpen = false,
   onToggleOutline,
   onShare,
+  layoutMode = 'wide',
 }: NoteEditorProps) {
   const { showToast } = useBloomoraToast()
   const { confirm } = useBloomoraAlert()
@@ -184,8 +204,17 @@ export function NoteEditor({
   const changeVersionRef = useRef(0)
   const savePromiseRef = useRef<Promise<boolean> | null>(null)
   const toolbarSelectionRef = useRef<EditorSelectionBookmark | null>(null)
-  const [activeMarks, setActiveMarks] = useState({ bold: false, italic: false, underline: false, strike: false, align: 'left' as NoteTextAlign })
+  const [activeMarks, setActiveMarks] = useState({
+    bold: false,
+    italic: false,
+    underline: false,
+    strike: false,
+    bulletList: false,
+    align: 'left' as NoteTextAlign,
+  })
   const [paragraphStyle, setParagraphStyle] = useState<NoteParagraphStyle>('p')
+  const [mobileSheet, setMobileSheet] = useState<null | 'format' | 'insert'>(null)
+  const isNarrow = layoutMode === 'narrow'
   const [titleDraft, setTitleDraft] = useState('')
   const [categoryDraft, setCategoryDraft] = useState('')
   const [metaEditorOpen, setMetaEditorOpen] = useState(false)
@@ -353,7 +382,10 @@ export function NoteEditor({
     dismiss: dismissSelectionToolbar,
     preserveSelectionApply,
     prepareSelectionForFormat,
-  } = useNoteSelectionToolbar(editorRef, handleRequestDismissTextOptions)
+  } = useNoteSelectionToolbar(editorRef, handleRequestDismissTextOptions, {
+    suppressed: isNarrow && mobileSheet != null,
+    reserveBottomPx: isNarrow ? 62 : 0,
+  })
 
   useLayoutEffect(() => {
     dismissSelectionToolbarRef.current = dismissSelectionToolbar
@@ -559,6 +591,20 @@ export function NoteEditor({
     return () => window.clearTimeout(timer)
   }, [changeCount, hasUnsavedChanges, isSaving, note?.id, saveNow])
 
+  const flushPendingSave = useCallback(async (): Promise<boolean> => {
+    if (savePromiseRef.current) return savePromiseRef.current
+    if (!dirtyRef.current) return true
+    return saveNow(false)
+  }, [saveNow])
+
+  useEffect(() => {
+    if (!flushSaveRef) return
+    flushSaveRef.current = flushPendingSave
+    return () => {
+      if (flushSaveRef.current === flushPendingSave) flushSaveRef.current = null
+    }
+  }, [flushSaveRef, flushPendingSave])
+
   useEffect(() => {
     if (!note) return
     const onKey = (e: globalThis.KeyboardEvent) => {
@@ -574,14 +620,29 @@ export function NoteEditor({
   }, [note, saveNow])
 
   useEffect(() => {
+    const flushSilent = () => {
+      if (!dirtyRef.current && !savePromiseRef.current) return
+      void flushPendingSave()
+    }
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') flushSilent()
+    }
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (!dirtyRef.current) return
+      if (!dirtyRef.current && !savePromiseRef.current) return
+      flushSilent()
       event.preventDefault()
       event.returnValue = ''
     }
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('pagehide', flushSilent)
     window.addEventListener('beforeunload', onBeforeUnload)
-    return () => window.removeEventListener('beforeunload', onBeforeUnload)
-  }, [])
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('pagehide', flushSilent)
+      window.removeEventListener('beforeunload', onBeforeUnload)
+      flushSilent()
+    }
+  }, [flushPendingSave])
 
   const cmd = (command: string, value?: string) => {
     const editor = editorRef.current
@@ -764,10 +825,28 @@ export function NoteEditor({
     if (e.ctrlKey && !e.altKey && e.key.toLowerCase() === 'o') {
       e.preventDefault()
       if (!editorRef.current) return
+      if (isNarrow) {
+        if (editorRef.current) {
+          toolbarSelectionRef.current = captureEditorSelection(editorRef.current) ?? toolbarSelectionRef.current
+        }
+        ;(document.activeElement as HTMLElement | null)?.blur?.()
+        setMobileSheet('format')
+        return
+      }
       openFormatting('options')
       return
     }
-    if (e.key === 'Enter' && !e.shiftKey && editor) {
+    if (
+      e.key === 'Enter'
+      && (e.ctrlKey || e.metaKey)
+      && !e.altKey
+      && !e.shiftKey
+    ) {
+      e.preventDefault()
+      insertPageBreakRef.current?.()
+      return
+    }
+    if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey && editor) {
       e.preventDefault()
       const activeFormat = readFormatFromEditorCaret(editor)
       const paragraphDefaults = { ...typingDefaultsRef.current, ...activeFormat }
@@ -808,6 +887,11 @@ export function NoteEditor({
     }
   }
 
+  // Must stay above early returns — otherwise loading→ready changes hook count.
+  useEffect(() => {
+    if (!isNarrow) setMobileSheet(null)
+  }, [isNarrow])
+
   if (!note) {
     return (
       <Card variant="glass" className={cn(bloomoraPanelCardClass, 'p-8 text-center text-bloomora-text-muted')}>
@@ -837,7 +921,16 @@ export function NoteEditor({
         : saveLabel
 
   return (
-    <Card data-note-editor variant="glass" className={cn(bloomoraPanelCardClass, 'mx-auto w-full min-w-0 max-w-full space-y-3 overflow-x-hidden overflow-y-visible p-0 sm:space-y-4 sm:p-5')}>
+    <Card
+      data-note-editor
+      data-note-layout={layoutMode}
+      variant="glass"
+      className={cn(
+        bloomoraPanelCardClass,
+        'mx-auto w-full min-w-0 max-w-full space-y-3 overflow-x-hidden overflow-y-visible p-0 sm:space-y-4 sm:p-5',
+        isNarrow && 'note-editor--narrow-mobile',
+      )}
+    >
       <header className="notes-editor-header">
         {showBack ? (
           <button
@@ -983,111 +1076,316 @@ export function NoteEditor({
         </div>
       ) : null}
 
-      <NoteToolbar
-        onBeforeControl={() => { if (editorRef.current) toolbarSelectionRef.current = captureEditorSelection(editorRef.current) ?? toolbarSelectionRef.current }}
-        onBold={() => runToolbarCommand('bold')}
-        onItalic={() => runToolbarCommand('italic')}
-        onUnderline={() => runToolbarCommand('underline')}
-        onStrike={() => runToolbarCommand('strikeThrough')}
-        onBulletList={() => runToolbarCommand('insertUnorderedList')}
-        onNumberedList={() => runToolbarCommand('insertOrderedList')}
-        onAlign={(align) => applyToolbarSelectionOrTyping(
-          (editor) => applyBlockAlign(editor, align),
-          (editor) => { applyTypingFormat({ align }); applyBlockAlign(editor, align) },
-        )}
-        onInsertNote={() => {
-          applyToolbarSelectionOrTyping(
-            (editor) => { insertNoteBlock(editor); markUnsaved() },
-            (editor) => { insertNoteBlock(editor); markUnsaved() },
-          )
-        }}
-        onFontChange={(font: NoteBodyFont) => applyToolbarSelectionOrTyping(
-          (editor) => applyNoteFontToSelection(editor, font),
-          () => applyTypingFormat({ font }),
-        )}
-        onFontSizeChange={(fontSizePx) => applyToolbarSelectionOrTyping(
-          (editor) => applyNoteFontSizeToSelection(editor, fontSizePx),
-          () => applyTypingFormat({ fontSizePx }),
-        )}
-        onFontSizeStep={(direction) => {
-          const next = stepNoteFontSize(panelFormat.fontSizePx, direction)
-          applyToolbarSelectionOrTyping(
-            (editor) => applyNoteFontSizeToSelection(editor, next),
-            () => applyTypingFormat({ fontSizePx: next }),
-          )
-        }}
-        onParagraphStyleChange={(style: NoteParagraphStyle) => applyToolbarSelectionOrTyping(
-          (editor) => { applyNoteParagraphStyle(editor, style); markUnsaved() },
-          (editor) => { applyNoteParagraphStyle(editor, style); markUnsaved() },
-        )}
-        onTextColor={(hex) => applyToolbarSelectionOrTyping(
-          (editor) => runEditorCommand(editor, 'foreColor', hex),
-          () => {
-            const color = ENGLISH_NOTE_COLORS.find((item) => item.value === hex)?.id ?? 'black'
-            applyTypingFormat({ colorHex: hex, color })
-          },
-        )}
-        onHighlight={(hex) => {
-          setHighlightColor(hex)
-          patchPanelFormat({ highlightColor: hex })
-          applyToolbarSelectionOrTyping(
-            (editor) => hex ? runEditorCommand(editor, 'hiliteColor', hex) : clearNoteSelectionHighlight(editor),
-            () => applyTypingFormat({ highlightColor: hex }),
-          )
-        }}
-        onOpenTextOptions={() => {
-          if (!editorRef.current) return
-          openFormatting('options')
-        }}
-        onLineHeightChange={(lineHeight) => {
-          patchPanelFormat({ lineHeight })
-          applyToolbarSelectionOrTyping(
-            (editor) => {
-              applyNoteLineHeightToSelection(editor, lineHeight)
+      {!isNarrow ? (
+        <NoteToolbar
+          layoutMode={layoutMode}
+          onBeforeControl={() => { if (editorRef.current) toolbarSelectionRef.current = captureEditorSelection(editorRef.current) ?? toolbarSelectionRef.current }}
+          onBold={() => runToolbarCommand('bold')}
+          onItalic={() => runToolbarCommand('italic')}
+          onUnderline={() => runToolbarCommand('underline')}
+          onStrike={() => runToolbarCommand('strikeThrough')}
+          onBulletList={() => runToolbarCommand('insertUnorderedList')}
+          onNumberedList={() => runToolbarCommand('insertOrderedList')}
+          onAlign={(align) => applyToolbarSelectionOrTyping(
+            (editor) => applyBlockAlign(editor, align),
+            (editor) => { applyTypingFormat({ align }); applyBlockAlign(editor, align) },
+          )}
+          onInsertNote={() => {
+            applyToolbarSelectionOrTyping(
+              (editor) => { insertNoteBlock(editor); markUnsaved() },
+              (editor) => { insertNoteBlock(editor); markUnsaved() },
+            )
+          }}
+          onFontChange={(font: NoteBodyFont) => applyToolbarSelectionOrTyping(
+            (editor) => applyNoteFontToSelection(editor, font),
+            () => applyTypingFormat({ font }),
+          )}
+          onFontSizeChange={(fontSizePx) => applyToolbarSelectionOrTyping(
+            (editor) => applyNoteFontSizeToSelection(editor, fontSizePx),
+            () => applyTypingFormat({ fontSizePx }),
+          )}
+          onFontSizeStep={(direction) => {
+            const next = stepNoteFontSize(panelFormat.fontSizePx, direction)
+            applyToolbarSelectionOrTyping(
+              (editor) => applyNoteFontSizeToSelection(editor, next),
+              () => applyTypingFormat({ fontSizePx: next }),
+            )
+          }}
+          onParagraphStyleChange={(style: NoteParagraphStyle) => applyToolbarSelectionOrTyping(
+            (editor) => { applyNoteParagraphStyle(editor, style); markUnsaved() },
+            (editor) => { applyNoteParagraphStyle(editor, style); markUnsaved() },
+          )}
+          onTextColor={(hex) => applyToolbarSelectionOrTyping(
+            (editor) => runEditorCommand(editor, 'foreColor', hex),
+            () => {
+              const color = ENGLISH_NOTE_COLORS.find((item) => item.value === hex)?.id ?? 'black'
+              applyTypingFormat({ colorHex: hex, color })
+            },
+          )}
+          onHighlight={(hex) => {
+            setHighlightColor(hex)
+            patchPanelFormat({ highlightColor: hex })
+            applyToolbarSelectionOrTyping(
+              (editor) => hex ? runEditorCommand(editor, 'hiliteColor', hex) : clearNoteSelectionHighlight(editor),
+              () => applyTypingFormat({ highlightColor: hex }),
+            )
+          }}
+          onOpenTextOptions={() => {
+            if (!editorRef.current) return
+            openFormatting('options')
+          }}
+          onLineHeightChange={(lineHeight) => {
+            patchPanelFormat({ lineHeight })
+            applyToolbarSelectionOrTyping(
+              (editor) => {
+                applyNoteLineHeightToSelection(editor, lineHeight)
+                markUnsaved()
+              },
+              (editor) => {
+                applyTypingFormat({ lineHeight })
+                applyNoteLineHeightToSelection(editor, lineHeight)
+              },
+            )
+          }}
+          active={activeMarks}
+          font={panelFormat.font}
+          fontSizePx={panelFormat.fontSizePx}
+          paragraphStyle={paragraphStyle}
+          textColor={ENGLISH_NOTE_COLORS.find((color) => color.id === panelFormat.colorId)?.value ?? '#111111'}
+          highlightColor={highlightColor}
+          lineHeight={panelFormat.lineHeight}
+          onInsertImage={() => imgInputRef.current?.click()}
+          onUndo={() => cmd('undo')}
+          onRedo={() => cmd('redo')}
+          onExportPdf={() => openPrintWindow(true)}
+          onPrint={() => openPrintWindow(false)}
+          onInsertPageBreak={() => insertPageBreakRef.current?.()}
+          pageSize={pageSizeDraft}
+          onPageSizeChange={(v) => {
+            setPageSizeDraft(v)
+            markUnsaved()
+          }}
+          pageNumberEnabled={pageNumberEnabledDraft}
+          onPageNumberEnabledChange={(enabled) => {
+            setPageNumberEnabledDraft(enabled)
+            markUnsaved()
+          }}
+          twoColumns={twoColumnsDraft}
+          onTwoColumnsChange={(enabled) => {
+            setTwoColumnsDraft(enabled)
+            markUnsaved()
+          }}
+          onSave={() => void saveNow(true)}
+        />
+      ) : null}
+
+      {isNarrow ? (
+        <>
+          <NoteMobileQuickBar
+            active={{
+              bold: activeMarks.bold,
+              italic: activeMarks.italic,
+              bulletList: activeMarks.bulletList,
+            }}
+            onUndo={() => {
+              if (editorRef.current) {
+                toolbarSelectionRef.current = captureEditorSelection(editorRef.current) ?? toolbarSelectionRef.current
+              }
+              cmd('undo')
+            }}
+            onBold={() => runToolbarCommand('bold')}
+            onItalic={() => runToolbarCommand('italic')}
+            onBulletList={() => runToolbarCommand('insertUnorderedList')}
+            onOpenFormat={() => {
+              if (editorRef.current) {
+                toolbarSelectionRef.current = captureEditorSelection(editorRef.current) ?? toolbarSelectionRef.current
+              }
+              ;(document.activeElement as HTMLElement | null)?.blur?.()
+              setMobileSheet('format')
+            }}
+            onOpenInsert={() => {
+              if (editorRef.current) {
+                toolbarSelectionRef.current = captureEditorSelection(editorRef.current) ?? toolbarSelectionRef.current
+              }
+              ;(document.activeElement as HTMLElement | null)?.blur?.()
+              setMobileSheet('insert')
+            }}
+            onHideKeyboard={() => {
+              ;(document.activeElement as HTMLElement | null)?.blur?.()
+              editorRef.current?.blur?.()
+            }}
+          />
+          <NoteFormatSheet
+            open={mobileSheet === 'format'}
+            onClose={() => setMobileSheet(null)}
+            values={panelFormat}
+            paragraphStyle={paragraphStyle}
+            active={{
+              underline: activeMarks.underline,
+              strike: activeMarks.strike,
+              align: activeMarks.align,
+            }}
+            onParagraphStyleChange={(style) => applyToolbarSelectionOrTyping(
+              (editor) => { applyNoteParagraphStyle(editor, style); markUnsaved() },
+              (editor) => { applyNoteParagraphStyle(editor, style); markUnsaved() },
+            )}
+            onFontChange={(font) => applyToolbarSelectionOrTyping(
+              (editor) => applyNoteFontToSelection(editor, font),
+              () => applyTypingFormat({ font }),
+            )}
+            onFontSizeChange={(fontSizePx) => {
+              patchPanelFormat({ fontSizePx })
+              applyToolbarSelectionOrTyping(
+                (editor) => applyNoteFontSizeToSelection(editor, fontSizePx),
+                () => applyTypingFormat({ fontSizePx }),
+              )
+            }}
+            onFontWeight={(weight) => {
+              patchPanelFormat({ fontWeight: weight })
+              applyToolbarSelectionOrTyping(
+                (editor) => applyNoteFontWeightToSelection(editor, weight),
+                () => applyTypingFormat({ fontWeight: weight }),
+              )
+            }}
+            onUnderline={() => runToolbarCommand('underline')}
+            onStrike={() => runToolbarCommand('strikeThrough')}
+            onTextCase={(textCase) => {
+              patchPanelFormat({ textCase })
+              applyToolbarSelectionOrTyping(
+                (editor) => applyNoteTextCaseToSelection(editor, textCase),
+                () => applyTypingFormat({ textCase }),
+              )
+            }}
+            onTextColor={(hex, colorId) => {
+              patchPanelFormat({ colorId })
+              applyToolbarSelectionOrTyping(
+                (editor) => runEditorCommand(editor, 'foreColor', hex),
+                () => applyTypingFormat({ colorHex: hex, color: colorId }),
+              )
+            }}
+            onCustomTextColor={(hex) => {
+              patchPanelFormat({ colorId: 'black' })
+              applyToolbarSelectionOrTyping(
+                (editor) => runEditorCommand(editor, 'foreColor', hex),
+                () => applyTypingFormat({ colorHex: hex, color: 'black' }),
+              )
+            }}
+            onHighlight={(hex) => {
+              setHighlightColor(hex)
+              patchPanelFormat({ highlightColor: hex })
+              applyToolbarSelectionOrTyping(
+                (editor) => runEditorCommand(editor, 'hiliteColor', hex),
+                () => applyTypingFormat({ highlightColor: hex }),
+              )
+            }}
+            onClearHighlight={() => {
+              setHighlightColor(null)
+              patchPanelFormat({ highlightColor: null })
+              applyToolbarSelectionOrTyping(
+                (editor) => clearNoteSelectionHighlight(editor),
+                () => applyTypingFormat({ highlightColor: null }),
+              )
+            }}
+            onAlign={(align) => {
+              patchPanelFormat({ align })
+              applyToolbarSelectionOrTyping(
+                (editor) => applyBlockAlign(editor, align),
+                (editor) => { applyTypingFormat({ align }); applyBlockAlign(editor, align) },
+              )
+            }}
+            onLineHeight={(lineHeight) => {
+              patchPanelFormat({ lineHeight })
+              applyToolbarSelectionOrTyping(
+                (editor) => {
+                  applyNoteLineHeightToSelection(editor, lineHeight)
+                  markUnsaved()
+                },
+                (editor) => {
+                  applyTypingFormat({ lineHeight })
+                  applyNoteLineHeightToSelection(editor, lineHeight)
+                },
+              )
+            }}
+            onParagraphSpacingChange={(spacingPx) => {
+              patchPanelFormat({ paragraphSpacingPx: spacingPx })
+              applyToolbarSelectionOrTyping(
+                (editor) => { applyNoteParagraphSpacing(editor, spacingPx); markUnsaved() },
+                () => applyTypingFormat({ paragraphSpacingPx: spacingPx }),
+              )
+            }}
+            onBulletList={() => runToolbarCommand('insertUnorderedList')}
+            onNumberedList={() => runToolbarCommand('insertOrderedList')}
+            onInsertNote={() => {
+              applyToolbarSelectionOrTyping(
+                (editor) => { insertNoteBlock(editor); markUnsaved() },
+                (editor) => { insertNoteBlock(editor); markUnsaved() },
+              )
+            }}
+            onClearFormat={() => runToolbarCommand('removeFormat')}
+          />
+          <NoteInsertSheet
+            open={mobileSheet === 'insert'}
+            onClose={() => setMobileSheet(null)}
+            onInsertPageBreak={() => insertPageBreakRef.current?.()}
+            onInsertImage={() => imgInputRef.current?.click()}
+            onInsertNote={() => {
+              applyToolbarSelectionOrTyping(
+                (editor) => { insertNoteBlock(editor); markUnsaved() },
+                (editor) => { insertNoteBlock(editor); markUnsaved() },
+              )
+            }}
+            onBulletList={() => runToolbarCommand('insertUnorderedList')}
+            onNumberedList={() => runToolbarCommand('insertOrderedList')}
+            pageSize={pageSizeDraft}
+            onPageSizeChange={(v) => {
+              setPageSizeDraft(v)
               markUnsaved()
-            },
-            (editor) => {
-              applyTypingFormat({ lineHeight })
-              applyNoteLineHeightToSelection(editor, lineHeight)
-            },
-          )
-        }}
-        active={activeMarks}
-        font={panelFormat.font}
-        fontSizePx={panelFormat.fontSizePx}
-        paragraphStyle={paragraphStyle}
-        textColor={ENGLISH_NOTE_COLORS.find((color) => color.id === panelFormat.colorId)?.value ?? '#111111'}
-        highlightColor={highlightColor}
-        lineHeight={panelFormat.lineHeight}
-        onInsertImage={() => imgInputRef.current?.click()}
-        onUndo={() => cmd('undo')}
-        onRedo={() => cmd('redo')}
-        onExportPdf={() => openPrintWindow(true)}
-        onPrint={() => openPrintWindow(false)}
-        onInsertPageBreak={() => insertPageBreakRef.current?.()}
-        pageSize={pageSizeDraft}
-        onPageSizeChange={(v) => {
-          setPageSizeDraft(v)
-          markUnsaved()
-        }}
-        pageNumberEnabled={pageNumberEnabledDraft}
-        onPageNumberEnabledChange={(enabled) => {
-          setPageNumberEnabledDraft(enabled)
-          markUnsaved()
-        }}
-        twoColumns={twoColumnsDraft}
-        onTwoColumnsChange={(enabled) => {
-          setTwoColumnsDraft(enabled)
-          markUnsaved()
-        }}
-        onSave={() => void saveNow(true)}
-      />
+            }}
+            pageNumberEnabled={pageNumberEnabledDraft}
+            onPageNumberEnabledChange={(enabled) => {
+              setPageNumberEnabledDraft(enabled)
+              markUnsaved()
+            }}
+            twoColumns={twoColumnsDraft}
+            onTwoColumnsChange={(enabled) => {
+              setTwoColumnsDraft(enabled)
+              markUnsaved()
+            }}
+            onExportPdf={() => openPrintWindow(true)}
+            onPrint={() => openPrintWindow(false)}
+          />
+        </>
+      ) : null}
 
       <NoteSelectionToolbar
         coords={selectionCoords}
         mode={selectionMode}
         formatTarget={formatTarget}
         optionValues={optionValues}
+        active={{
+          bold: activeMarks.bold,
+          italic: activeMarks.italic,
+          underline: activeMarks.underline,
+        }}
+        textColor={ENGLISH_NOTE_COLORS.find((color) => color.id === panelFormat.colorId)?.value ?? '#111111'}
+        highlightColor={highlightColor}
+        onBold={() => runToolbarCommand('bold')}
+        onItalic={() => runToolbarCommand('italic')}
+        onUnderline={() => runToolbarCommand('underline')}
+        onOpenMore={() => {
+          if (editorRef.current) {
+            toolbarSelectionRef.current =
+              captureEditorSelection(editorRef.current) ?? toolbarSelectionRef.current
+          }
+          prepareSelectionForFormat()
+          if (isNarrow) {
+            dismissSelectionToolbar()
+            ;(document.activeElement as HTMLElement | null)?.blur?.()
+            setMobileSheet('format')
+            return
+          }
+          openFormatting('options')
+        }}
         onClose={() => {
           void handleRequestDismissTextOptions()
         }}

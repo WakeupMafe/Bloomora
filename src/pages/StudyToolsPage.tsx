@@ -171,7 +171,7 @@ export function StudyToolsPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="study-tool-choice-title"
-            className="w-full max-w-sm rounded-3xl border border-bloomora-line/50 bg-white p-6 shadow-2xl"
+            className="w-full max-w-sm rounded-3xl border border-[color:var(--bloomora-border)] bg-[color:var(--bloomora-surface-1)] p-6 shadow-2xl"
           >
             <h2
               id="study-tool-choice-title"

@@ -553,7 +553,7 @@ export function ListsPage() {
       {creatingOpen ? (
         <form
           onSubmit={handleCreateList}
-          className="flex flex-col gap-2 rounded-[1.25rem] border border-bloomora-line bg-bloomora-white p-3 shadow-sm sm:flex-row sm:items-center"
+          className="flex flex-col gap-2 rounded-[1.25rem] border border-[color:var(--bloomora-border)] bg-bloomora-white p-3 shadow-sm sm:flex-row sm:items-center"
         >
           <input
             ref={newListInputRef}
@@ -561,7 +561,7 @@ export function ListsPage() {
             onChange={(e) => setNewListTitle(e.target.value)}
             placeholder="Nombre de la nueva lista…"
             aria-label="Nombre de la nueva lista"
-            className="bloomora-form-input min-h-11 min-w-0 flex-1 rounded-xl border border-bloomora-line/50 px-3 text-sm font-semibold outline-none ring-bloomora-lilac/20 focus:ring-2"
+            className="bloomora-form-input min-h-11 min-w-0 flex-1 rounded-xl border border-[color:var(--bloomora-border)] px-3 text-sm font-semibold outline-none ring-bloomora-lilac/20 focus:ring-2"
           />
           <div className="flex gap-2">
             <Button
@@ -605,7 +605,7 @@ export function ListsPage() {
               className={cn(
                 'min-w-0',
                 isWide
-                  ? 'rounded-[1.5rem] border border-bloomora-line bg-bloomora-white p-4 shadow-[0_10px_30px_-18px_rgba(91,74,140,0.28)] sm:p-5'
+                  ? 'rounded-[1.5rem] border border-[color:var(--bloomora-border)] bg-bloomora-white p-4 shadow-[0_10px_30px_-18px_rgba(91,74,140,0.28)] sm:p-5'
                   : 'p-0',
               )}
             >
@@ -628,7 +628,7 @@ export function ListsPage() {
                   value={listQuery}
                   onChange={(e) => setListQuery(e.target.value)}
                   placeholder="Buscar lista"
-                  className="bloomora-form-input min-h-11 w-full rounded-pill border border-bloomora-line/50 bg-bloomora-white py-2.5 pl-10 pr-4 text-sm font-semibold shadow-sm outline-none ring-bloomora-lilac/20 focus:ring-2"
+                  className="bloomora-form-input min-h-11 w-full rounded-pill border border-[color:var(--bloomora-border)] bg-bloomora-white py-2.5 pl-10 pr-4 text-sm font-semibold shadow-sm outline-none ring-bloomora-lilac/20 focus:ring-2"
                 />
               </label>
 
@@ -654,8 +654,8 @@ export function ListsPage() {
                             active
                               ? 'bg-bloomora-blush/80 ring-2 ring-bloomora-rose/45'
                               : isWide
-                                ? 'bg-bloomora-mist/35 ring-1 ring-bloomora-line/35 hover:bg-bloomora-mist/70'
-                                : 'bg-bloomora-white shadow-[0_6px_18px_-10px_rgba(91,74,140,0.28)] ring-1 ring-bloomora-line/30',
+                                ? 'bg-bloomora-mist/35 ring-1 ring-[color:var(--bloomora-border)] hover:bg-[color:var(--bloomora-surface-3)]/70'
+                                : 'bg-bloomora-white shadow-[0_6px_18px_-10px_rgba(91,74,140,0.28)] ring-1 ring-[color:var(--bloomora-border)]',
                             !isWide && 'pr-2',
                           )}
                         >
@@ -709,7 +709,7 @@ export function ListsPage() {
                         type="button"
                         disabled={addListMut.isPending}
                         onClick={() => createFromIdea(idea.title, idea.emoji)}
-                        className="inline-flex min-h-10 items-center gap-1.5 rounded-pill bg-bloomora-white px-3 text-sm font-bold text-bloomora-violet ring-1 ring-bloomora-line/40"
+                        className="inline-flex min-h-10 items-center gap-1.5 rounded-pill bg-bloomora-white px-3 text-sm font-bold text-bloomora-violet ring-1 ring-[color:var(--bloomora-border)]"
                       >
                         <span aria-hidden>{idea.emoji}</span>
                         {idea.label}
@@ -722,7 +722,7 @@ export function ListsPage() {
           ) : null}
 
           {showDetailPanel ? (
-            <section className="min-w-0 rounded-[1.5rem] border border-bloomora-line bg-bloomora-white p-4 shadow-[0_10px_30px_-18px_rgba(91,74,140,0.28)] sm:p-5 max-[599px]:rounded-none max-[599px]:border-0 max-[599px]:bg-transparent max-[599px]:p-0 max-[599px]:shadow-none">
+            <section className="min-w-0 rounded-[1.5rem] border border-[color:var(--bloomora-border)] bg-bloomora-white p-4 shadow-[0_10px_30px_-18px_rgba(91,74,140,0.28)] sm:p-5 max-[599px]:rounded-none max-[599px]:border-0 max-[599px]:bg-transparent max-[599px]:p-0 max-[599px]:shadow-none">
               {!selected ? (
                 <p className="text-sm text-bloomora-text-muted">
                   Elige una lista o crea una nueva.
@@ -760,7 +760,7 @@ export function ListsPage() {
                         <button
                           type="button"
                           aria-label="Salir de selección"
-                          className="grid size-9 place-items-center rounded-full bg-bloomora-white text-bloomora-deep ring-1 ring-bloomora-line/40"
+                          className="grid size-9 place-items-center rounded-full bg-bloomora-white text-bloomora-deep ring-1 ring-[color:var(--bloomora-border)]"
                           onClick={exitMultiSelect}
                         >
                           ✕
@@ -787,7 +787,7 @@ export function ListsPage() {
                   <div
                     className={cn(
                       'rounded-[1.25rem] bg-bloomora-mist/45 p-3 sm:p-4',
-                      showMobileDetail && 'bg-bloomora-white ring-1 ring-bloomora-line/35',
+                      showMobileDetail && 'bg-bloomora-white ring-1 ring-[color:var(--bloomora-border)]',
                     )}
                   >
                     <div className="flex flex-wrap items-start gap-3">
@@ -804,7 +804,7 @@ export function ListsPage() {
                               ref={renameInputRef}
                               value={listTitleEdit}
                               onChange={(e) => setListTitleEdit(e.target.value)}
-                              className="bloomora-form-input min-h-10 min-w-0 flex-1 rounded-xl border border-bloomora-line/50 px-3 text-base font-bold outline-none ring-bloomora-lilac/25 focus:ring-2"
+                              className="bloomora-form-input min-h-10 min-w-0 flex-1 rounded-xl border border-[color:var(--bloomora-border)] px-3 text-base font-bold outline-none ring-bloomora-lilac/25 focus:ring-2"
                             />
                             <Button type="submit" size="sm">
                               Guardar
@@ -871,7 +871,7 @@ export function ListsPage() {
                           <button
                             type="button"
                             aria-label="Más acciones"
-                            className="grid size-10 place-items-center rounded-full text-lg text-bloomora-deep ring-1 ring-bloomora-line/40"
+                            className="grid size-10 place-items-center rounded-full text-lg text-bloomora-deep ring-1 ring-[color:var(--bloomora-border)]"
                             onClick={() => setActionsOpen(true)}
                           >
                             ⋮
@@ -909,7 +909,7 @@ export function ListsPage() {
                   {!showMobileDetail ? (
                     <form
                       onSubmit={handleAddItem}
-                      className="mt-4 flex items-center gap-2 rounded-pill bg-bloomora-blush/70 p-1.5 ring-1 ring-bloomora-line/30"
+                      className="mt-4 flex items-center gap-2 rounded-pill bg-bloomora-blush/70 p-1.5 ring-1 ring-[color:var(--bloomora-border)]"
                     >
                       <span className="pl-3 text-bloomora-rose-deep" aria-hidden>
                         +
@@ -932,7 +932,7 @@ export function ListsPage() {
                         type="submit"
                         disabled={!newItem.trim() || addItem.isPending}
                         aria-label="Agregar ítem"
-                        className="grid size-11 shrink-0 place-items-center rounded-full bg-bloomora-rose-deep text-lg font-bold text-white shadow-sm disabled:opacity-45"
+                        className="grid size-11 shrink-0 place-items-center rounded-full bg-[color:var(--bloomora-accent-bg)] text-lg font-bold text-[color:var(--bloomora-accent-on)] shadow-sm disabled:opacity-45"
                       >
                         +
                       </button>
@@ -1066,7 +1066,7 @@ export function ListsPage() {
                   {showMobileDetail ? (
                     <form
                       onSubmit={handleAddItem}
-                      className="sticky bottom-0 z-10 mt-4 flex items-center gap-2 rounded-pill bg-bloomora-white p-1.5 shadow-[0_8px_28px_-10px_rgba(91,74,140,0.35)] ring-1 ring-bloomora-line/40"
+                      className="sticky bottom-0 z-10 mt-4 flex items-center gap-2 rounded-pill bg-bloomora-white p-1.5 shadow-[0_8px_28px_-10px_rgba(91,74,140,0.35)] ring-1 ring-[color:var(--bloomora-border)]"
                     >
                       <span className="pl-3 text-bloomora-rose-deep" aria-hidden>
                         +
@@ -1082,7 +1082,7 @@ export function ListsPage() {
                         type="submit"
                         disabled={!newItem.trim() || addItem.isPending}
                         aria-label="Agregar ítem"
-                        className="grid size-12 shrink-0 place-items-center rounded-full bg-bloomora-rose-deep text-xl font-bold text-white shadow-md disabled:opacity-45"
+                        className="grid size-12 shrink-0 place-items-center rounded-full bg-[color:var(--bloomora-accent-bg)] text-xl font-bold text-[color:var(--bloomora-accent-on)] shadow-md disabled:opacity-45"
                       >
                         +
                       </button>
@@ -1104,14 +1104,14 @@ export function ListsPage() {
               </span>
               <button
                 type="button"
-                className="ml-auto inline-flex min-h-10 items-center gap-1.5 rounded-pill bg-white px-3 text-sm font-bold text-bloomora-deep"
+                className="ml-auto inline-flex min-h-10 items-center gap-1.5 rounded-pill bg-[color:var(--bloomora-surface-1)] px-3 text-sm font-bold text-bloomora-deep"
                 onClick={markSelectedDone}
               >
                 ✓ Marcar como hechos
               </button>
               <button
                 type="button"
-                className="inline-flex min-h-10 items-center gap-1 rounded-pill bg-[#e86b8c] px-3 text-sm font-bold text-white"
+                className="inline-flex min-h-10 items-center gap-1 rounded-pill bg-[color:var(--bloomora-danger-fg)] px-3 text-sm font-bold text-[color:var(--bloomora-accent-on)]"
                 onClick={() => void deleteSelected()}
               >
                 🗑️ Eliminar
@@ -1129,7 +1129,7 @@ export function ListsPage() {
               </span>
               <button
                 type="button"
-                className="ml-auto inline-flex min-h-10 items-center gap-1.5 rounded-pill bg-white px-3 text-sm font-bold text-bloomora-deep"
+                className="ml-auto inline-flex min-h-10 items-center gap-1.5 rounded-pill bg-[color:var(--bloomora-surface-1)] px-3 text-sm font-bold text-bloomora-deep"
                 onClick={undoRemove}
               >
                 ↩️ Deshacer
@@ -1177,7 +1177,7 @@ export function ListsPage() {
                     <button
                       key={em}
                       type="button"
-                      className="grid aspect-square place-items-center rounded-2xl bg-bloomora-mist text-2xl hover:bg-bloomora-blush"
+                      className="grid aspect-square place-items-center rounded-2xl bg-bloomora-mist text-2xl hover:bg-[color:var(--bloomora-surface-3)]"
                       onClick={() => {
                         setListEmoji(selected.id, em)
                         setEmojiTick((n) => n + 1)
@@ -1207,7 +1207,7 @@ function EmptyListsState({
   busy: boolean
 }) {
   return (
-    <div className="flex flex-col items-center rounded-[1.75rem] border border-bloomora-line bg-bloomora-white px-6 py-10 text-center shadow-sm">
+    <div className="flex flex-col items-center rounded-[1.75rem] border border-[color:var(--bloomora-border)] bg-bloomora-white px-6 py-10 text-center shadow-sm">
       <BloomyPose pose="wave" sizePx={160} priority />
       <h2 className="mt-4 text-xl font-bold text-bloomora-deep">
         Aún no tienes listas
@@ -1230,7 +1230,7 @@ function EmptyListsState({
             type="button"
             disabled={busy}
             onClick={() => onIdea(idea.title, idea.emoji)}
-            className="inline-flex min-h-10 items-center gap-1.5 rounded-pill bg-bloomora-mist px-3 text-sm font-bold text-bloomora-violet ring-1 ring-bloomora-line/40"
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-pill bg-bloomora-mist px-3 text-sm font-bold text-bloomora-violet ring-1 ring-[color:var(--bloomora-border)]"
           >
             <span aria-hidden>{idea.emoji}</span>
             {idea.label}
@@ -1323,7 +1323,7 @@ function ListItemMoreMenu({
         aria-label="Más acciones"
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-bloomora-line/40 bg-bloomora-white/90 text-lg font-bold leading-none text-bloomora-deep shadow-sm ring-1 ring-bloomora-line/20 transition hover:bg-bloomora-lavender-50/80"
+        className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-[color:var(--bloomora-border)] bg-bloomora-white/90 text-lg font-bold leading-none text-bloomora-deep shadow-sm ring-1 ring-[color:var(--bloomora-border)] transition hover:bg-[color:var(--bloomora-surface-3)]"
         onClick={(e) => {
           e.stopPropagation()
           setOpen((v) => !v)
@@ -1334,12 +1334,12 @@ function ListItemMoreMenu({
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 top-[calc(100%+4px)] z-30 min-w-[10.5rem] overflow-hidden rounded-2xl bg-bloomora-white p-1 shadow-[0_12px_32px_-12px_rgba(91,74,140,0.45)] ring-1 ring-bloomora-line/40"
+          className="absolute right-0 top-[calc(100%+4px)] z-30 min-w-[10.5rem] overflow-hidden rounded-2xl bg-bloomora-white p-1 shadow-[0_12px_32px_-12px_rgba(91,74,140,0.45)] ring-1 ring-[color:var(--bloomora-border)]"
         >
           <button
             type="button"
             role="menuitem"
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-bloomora-deep transition hover:bg-bloomora-lavender-50"
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-bloomora-deep transition hover:bg-[color:var(--bloomora-surface-3)]"
             onClick={(e) => {
               e.stopPropagation()
               setOpen(false)
@@ -1351,7 +1351,7 @@ function ListItemMoreMenu({
           <button
             type="button"
             role="menuitem"
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[#d64062] transition hover:bg-bloomora-blush"
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[#d64062] transition hover:bg-[color:var(--bloomora-surface-3)]"
             onClick={(e) => {
               e.stopPropagation()
               setOpen(false)
@@ -1569,7 +1569,7 @@ function ListItemRow({
           </button>
           <button
             type="button"
-            className="flex h-full min-w-[64px] w-[72px] shrink-0 items-center justify-center gap-1 whitespace-nowrap bg-bloomora-rose-deep text-xs font-bold text-white"
+            className="flex h-full min-w-[64px] w-[72px] shrink-0 items-center justify-center gap-1 whitespace-nowrap bg-[color:var(--bloomora-accent-bg)] text-xs font-bold text-[color:var(--bloomora-accent-on)]"
             onClick={beginDelete}
           >
             <span aria-hidden>🗑️</span> Quitar
@@ -1579,7 +1579,7 @@ function ListItemRow({
 
       <div
         className={cn(
-          'relative z-10 flex w-full min-w-0 items-start gap-3 p-3 ring-1 ring-bloomora-line/25 sm:p-3.5',
+          'relative z-10 flex w-full min-w-0 items-start gap-3 p-3 ring-1 ring-[color:var(--bloomora-border)] sm:p-3.5',
           swipeEnabled
             ? cn('bg-bloomora-white', item.done && 'bg-bloomora-mist')
             : cn('bg-bloomora-mist/40', item.done && 'bg-bloomora-mist/25'),
@@ -1606,7 +1606,7 @@ function ListItemRow({
             <input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              className="bloomora-form-input min-h-10 w-full rounded-xl border border-bloomora-line/50 px-3 text-sm font-semibold outline-none focus:ring-2"
+              className="bloomora-form-input min-h-10 w-full rounded-xl border border-[color:var(--bloomora-border)] px-3 text-sm font-semibold outline-none focus:ring-2"
               autoFocus
             />
             <div className="flex gap-2">
@@ -1640,11 +1640,11 @@ function ListItemRow({
                 'mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-[0.7rem] border-2 text-sm font-bold transition',
                 multiSelectMode
                   ? selected
-                    ? 'border-bloomora-violet bg-bloomora-violet text-white'
-                    : 'border-bloomora-lilac/50 bg-white'
+                    ? 'border-bloomora-violet bg-[color:var(--bloomora-accent-bg)] text-[color:var(--bloomora-accent-on)]'
+                    : 'border-[color:var(--bloomora-border)] bg-[color:var(--bloomora-surface-1)]'
                   : item.done
-                    ? 'border-emerald-500 bg-emerald-500 text-white'
-                    : 'border-bloomora-lilac/45 bg-white',
+                    ? 'border-[color:var(--bloomora-success)] bg-[color:var(--bloomora-success)] text-[color:var(--bloomora-accent-on)]'
+                    : 'border-[color:var(--bloomora-border)] bg-[color:var(--bloomora-surface-1)]',
               )}
             >
               {(multiSelectMode ? selected : item.done) ? '✓' : ''}
@@ -1671,14 +1671,14 @@ function ListItemRow({
               >
                 <button
                   type="button"
-                  className="rounded-full bg-bloomora-white px-3 py-1.5 text-xs font-semibold text-bloomora-violet ring-1 ring-bloomora-line/40 transition hover:bg-bloomora-lavender-50"
+                  className="rounded-full bg-bloomora-white px-3 py-1.5 text-xs font-semibold text-bloomora-violet ring-1 ring-[color:var(--bloomora-border)] transition hover:bg-[color:var(--bloomora-surface-3)]"
                   onClick={beginEdit}
                 >
                   Editar
                 </button>
                 <button
                   type="button"
-                  className="rounded-full bg-bloomora-white px-3 py-1.5 text-xs font-semibold text-[#d64062] ring-1 ring-red-200/60 transition hover:bg-bloomora-blush"
+                  className="rounded-full bg-bloomora-white px-3 py-1.5 text-xs font-semibold text-[#d64062] ring-1 ring-red-200/60 transition hover:bg-[color:var(--bloomora-surface-3)]"
                   onClick={beginDelete}
                 >
                   Quitar

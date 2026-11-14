@@ -160,7 +160,7 @@ function GoalListRow({
   return (
     <div
       className={cn(
-        "flex w-full min-w-0 items-stretch gap-1 rounded-2xl border border-bloomora-line/40 bg-bloomora-white px-2.5 py-2.5 sm:px-3 sm:py-3",
+        "flex w-full min-w-0 items-stretch gap-1 rounded-2xl border border-[color:var(--bloomora-border)] bg-bloomora-white px-2.5 py-2.5 sm:px-3 sm:py-3",
       )}
     >
       <button
@@ -170,7 +170,7 @@ function GoalListRow({
         disabled={marking}
         title="Doble clic para marcar como hecha hoy"
         aria-label={`Meta ${name}. Progreso: ${caption}, ${Math.round(pct)} por ciento. Clic para abrir. Doble clic para marcar como hecha hoy.`}
-        className="flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-xl px-1 py-1 text-left outline-none transition hover:bg-bloomora-lavender-50/50 focus-visible:ring-2 focus-visible:ring-bloomora-lilac/60 focus-visible:ring-offset-1 disabled:opacity-60"
+        className="flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-xl px-1 py-1 text-left outline-none transition hover:bg-[color:var(--bloomora-surface-3)] focus-visible:ring-2 focus-visible:ring-bloomora-lilac/60 focus-visible:ring-offset-1 disabled:opacity-60"
       >
         <span
           className="grid size-11 shrink-0 place-items-center rounded-[0.875rem] bg-bloomora-blush text-[1.375rem]"
@@ -193,7 +193,7 @@ function GoalListRow({
             </span>
           </div>
           <div
-            className="mt-2 h-2 overflow-hidden rounded-full bg-bloomora-lavender-50 ring-1 ring-bloomora-line/25"
+            className="mt-2 h-2 overflow-hidden rounded-full bg-[color:var(--bloomora-surface-2)] ring-1 ring-[color:var(--bloomora-border)]"
             role="progressbar"
             aria-valuenow={Math.round(pct)}
             aria-valuemin={0}
@@ -356,7 +356,7 @@ export function GoalProgressCard({ className }: GoalProgressCardProps) {
   return (
     <DashboardCard
       className={cn(
-        "h-full min-h-0 min-w-0 max-w-full bg-bloomora-white p-5 max-[599px]:p-5 min-[600px]:p-7",
+        "dashboard-panel-card dashboard-day-card h-full min-h-0 min-w-0 max-w-full bg-bloomora-white p-5 max-[599px]:p-5 min-[600px]:p-7",
         className,
       )}
     >
@@ -373,7 +373,7 @@ export function GoalProgressCard({ className }: GoalProgressCardProps) {
           <Link
             to="/app/goals/overview"
             aria-label="Calendarios"
-            className="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-bloomora-line bg-bloomora-white text-bloomora-deep transition hover:bg-bloomora-mist focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloomora-lilac"
+            className="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-[color:var(--bloomora-border)] bg-bloomora-white text-bloomora-deep transition hover:bg-[color:var(--bloomora-surface-3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloomora-lilac"
           >
             <span className="relative inline-flex size-6 items-center justify-center" aria-hidden>
               <svg
@@ -397,7 +397,7 @@ export function GoalProgressCard({ className }: GoalProgressCardProps) {
               variant: "primary",
               size: "sm",
               className:
-                "min-h-11 bg-bloomora-rose-deep px-[1.125rem] font-bold text-white shadow-[0_4px_12px_rgba(232,155,184,0.35)] hover:bg-bloomora-rose-deep/90",
+                "min-h-11 bg-[color:var(--bloomora-accent-bg)] px-[1.125rem] font-bold text-[color:var(--bloomora-accent-on)] shadow-[0_4px_12px_rgba(232,155,184,0.35)] hover:brightness-105",
             })}
           >
             + Nueva
@@ -405,7 +405,7 @@ export function GoalProgressCard({ className }: GoalProgressCardProps) {
         </div>
       </header>
 
-      <div className="mt-4 flex min-h-0 w-full max-w-full flex-1 flex-col">
+      <div className="dashboard-card-scroll mt-4 flex min-h-0 w-full max-w-full flex-1 flex-col">
         {isLoading ? (
           <p className="py-8 text-center text-base text-bloomora-violet">
             Cargando metas…
@@ -413,7 +413,7 @@ export function GoalProgressCard({ className }: GoalProgressCardProps) {
         ) : null}
 
         {!isLoading && total === 0 ? (
-          <div className="rounded-[1.35rem] bg-bloomora-lavender-50/90 px-4 py-6 text-center ring-1 ring-bloomora-line/25 sm:px-5 sm:py-7">
+          <div className="rounded-[1.35rem] bg-[color:var(--bloomora-surface-2)] px-4 py-6 text-center ring-1 ring-[color:var(--bloomora-border)] sm:px-5 sm:py-7">
             <p className="text-3xl leading-none" aria-hidden>
               🌱
             </p>
@@ -430,7 +430,7 @@ export function GoalProgressCard({ className }: GoalProgressCardProps) {
                 size: "lg",
                 fullWidth: true,
                 className:
-                  "mt-5 h-14 min-h-14 bg-bloomora-rose-deep text-base font-bold text-white hover:bg-bloomora-rose-deep/90",
+                  "mt-5 h-14 min-h-14 bg-[color:var(--bloomora-accent-bg)] text-base font-bold text-[color:var(--bloomora-accent-on)] hover:brightness-105",
               })}
             >
               + Crear mi meta
@@ -440,7 +440,7 @@ export function GoalProgressCard({ className }: GoalProgressCardProps) {
 
         {!isLoading && total > 0 ? (
           <div className="flex min-h-0 flex-1 flex-col gap-4">
-            <div className="flex flex-col items-center gap-4 rounded-[1.375rem] bg-bloomora-mist px-4 py-5 text-center min-[600px]:flex-row min-[600px]:items-center min-[600px]:gap-6 min-[600px]:px-6 min-[600px]:py-6 min-[600px]:text-left">
+            <div className="flex shrink-0 flex-col items-center gap-4 rounded-[1.375rem] bg-bloomora-mist px-4 py-5 text-center min-[600px]:flex-row min-[600px]:items-center min-[600px]:gap-6 min-[600px]:px-6 min-[600px]:py-6 min-[600px]:text-left">
               <ProgressRing
                 value={monthPercent}
                 size={124}
@@ -464,7 +464,7 @@ export function GoalProgressCard({ className }: GoalProgressCardProps) {
                 <p className="mt-1 text-[0.9375rem] font-medium text-bloomora-violet">
                   {motivation.detail}
                 </p>
-                <span className="mt-3 inline-flex min-h-8 items-center rounded-pill border border-bloomora-line bg-bloomora-white px-3 text-sm font-bold tabular-nums text-bloomora-violet">
+                <span className="mt-3 inline-flex min-h-8 items-center rounded-pill border border-[color:var(--bloomora-border)] bg-bloomora-white px-3 text-sm font-bold tabular-nums text-bloomora-violet">
                   {monthPercent}% del mes
                 </span>
               </div>

@@ -188,7 +188,7 @@ export function ListItemAgendaMenu({
           role="menu"
           aria-labelledby={triggerId}
           className={cn(
-            'min-w-[11rem] overflow-hidden rounded-xl bg-bloomora-blush/[0.98] py-1 shadow-[0_14px_40px_rgba(91,74,140,0.18)] ring-1 ring-bloomora-line/40 backdrop-blur-sm',
+            'min-w-[11rem] overflow-hidden rounded-xl bg-bloomora-blush/[0.98] py-1 shadow-[0_14px_40px_rgba(91,74,140,0.18)] ring-1 ring-[color:var(--bloomora-border)] backdrop-blur-sm',
             isNarrow ? 'fixed rounded-[18px] p-1' : 'fixed rounded-xl p-1',
           )}
           style={
@@ -222,7 +222,7 @@ export function ListItemAgendaMenu({
           <button
             type="button"
             role="menuitem"
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-bloomora-deep transition hover:bg-bloomora-lavender-50/90"
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-bloomora-deep transition hover:bg-[color:var(--bloomora-surface-3)]"
             onClick={openTaskModal}
           >
             Crear como tarea
@@ -230,7 +230,7 @@ export function ListItemAgendaMenu({
           <button
             type="button"
             role="menuitem"
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-bloomora-deep transition hover:bg-bloomora-lavender-50/90"
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-bloomora-deep transition hover:bg-[color:var(--bloomora-surface-3)]"
             onClick={openSubtaskModal}
           >
             Crear como paso
@@ -256,7 +256,7 @@ export function ListItemAgendaMenu({
           role="dialog"
           aria-modal
           className={cn(
-            'bloomora-modal-panel fixed flex max-h-[min(85dvh,28rem)] flex-col gap-4 overflow-hidden bg-bloomora-blush/[0.98] shadow-[0_16px_48px_rgba(91,74,140,0.22)] ring-1 ring-bloomora-line/40 backdrop-blur-md',
+            'bloomora-modal-panel fixed flex max-h-[min(85dvh,28rem)] flex-col gap-4 overflow-hidden bg-bloomora-blush/[0.98] shadow-[0_16px_48px_rgba(91,74,140,0.22)] ring-1 ring-[color:var(--bloomora-border)] backdrop-blur-md',
             isNarrow
               ? 'rounded-[22px] p-5'
               : 'left-1/2 top-1/2 max-w-[min(100vw-2rem,22rem)] -translate-x-1/2 -translate-y-1/2 rounded-2xl p-6',
@@ -299,7 +299,7 @@ export function ListItemAgendaMenu({
                     type="button"
                     disabled={createTaskFromListItem.isPending}
                     onClick={() => handleCreateTask(dayKey, label)}
-                    className="flex w-full flex-col items-start gap-0.5 rounded-2xl border border-bloomora-line/35 bg-bloomora-white/80 px-4 py-3 text-left transition hover:border-bloomora-lilac/50 hover:bg-bloomora-lavender-50/60 disabled:opacity-60"
+                    className="flex w-full flex-col items-start gap-0.5 rounded-2xl border border-[color:var(--bloomora-border)] bg-bloomora-white/80 px-4 py-3 text-left transition hover:border-bloomora-lilac/50 hover:bg-[color:var(--bloomora-surface-3)] disabled:opacity-60"
                   >
                     <span className="text-sm font-bold text-bloomora-deep">{label}</span>
                     <span className="text-xs font-medium text-bloomora-text-muted">
@@ -340,7 +340,7 @@ export function ListItemAgendaMenu({
           role="dialog"
           aria-modal
           className={cn(
-            'bloomora-modal-panel fixed flex max-h-[min(88dvh,32rem)] flex-col gap-4 overflow-hidden bg-bloomora-blush/[0.98] shadow-[0_16px_48px_rgba(91,74,140,0.22)] ring-1 ring-bloomora-line/40 backdrop-blur-md',
+            'bloomora-modal-panel fixed flex max-h-[min(88dvh,32rem)] flex-col gap-4 overflow-hidden bg-bloomora-blush/[0.98] shadow-[0_16px_48px_rgba(91,74,140,0.22)] ring-1 ring-[color:var(--bloomora-border)] backdrop-blur-md',
             isNarrow
               ? 'rounded-[22px] p-5'
               : 'left-1/2 top-1/2 max-w-[min(100vw-2rem,24rem)] -translate-x-1/2 -translate-y-1/2 rounded-2xl p-6',
@@ -394,8 +394,8 @@ export function ListItemAgendaMenu({
                             className={cn(
                               'flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 transition',
                               selectedTaskId === t.id
-                                ? 'border-bloomora-rose/50 bg-bloomora-lavender-50/90 ring-1 ring-bloomora-rose/25'
-                                : 'border-bloomora-line/30 bg-bloomora-white/70 hover:border-bloomora-lilac/40',
+                                ? 'border-bloomora-rose/50 bg-[color:var(--bloomora-surface-2)] ring-1 ring-bloomora-rose/25'
+                                : 'border-[color:var(--bloomora-border)] bg-bloomora-white/70 hover:border-bloomora-lilac/40',
                             )}
                           >
                             <input
@@ -452,7 +452,7 @@ export function ListItemAgendaMenu({
         aria-haspopup="menu"
         aria-expanded={menuOpen}
         aria-controls={menuOpen ? menuId : undefined}
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-bloomora-line/40 bg-bloomora-white/90 text-lg font-bold text-bloomora-deep shadow-sm ring-1 ring-bloomora-line/20 transition hover:bg-bloomora-lavender-50/80 touch-manipulation"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[color:var(--bloomora-border)] bg-bloomora-white/90 text-lg font-bold text-bloomora-deep shadow-sm ring-1 ring-[color:var(--bloomora-border)] transition hover:bg-[color:var(--bloomora-surface-3)] touch-manipulation"
         onClick={(e) => {
           e.stopPropagation()
           setMenuOpen((o) => !o)

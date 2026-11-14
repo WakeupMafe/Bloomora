@@ -34,7 +34,7 @@ export function StudyToolCard({
   const ctaClass = cn(
     'mt-5 inline-flex h-[52px] w-full items-center justify-center rounded-pill text-base font-bold transition',
     ctaVariant === 'primary'
-      ? 'bg-bloomora-rose-deep text-white shadow-[0_4px_12px_rgba(232,155,184,0.35)] hover:bg-bloomora-rose-deep/90'
+      ? 'bg-bloomora-rose-deep text-[color:var(--bloomora-accent-on)] shadow-[0_4px_12px_rgba(232,155,184,0.35)] hover:bg-bloomora-rose-deep/90'
       : 'border-2 border-bloomora-line bg-bloomora-white text-bloomora-violet hover:bg-bloomora-mist/70',
   )
 

@@ -154,7 +154,7 @@ export function AdditionalToolsPanel({ className }: AdditionalToolsPanelProps) {
         className={cn('h-full min-w-0 w-full self-stretch', className)}
         aria-label="Herramientas adicionales"
       >
-        <DashboardCard className="h-full gap-4 bg-bloomora-white p-5 max-[599px]:p-5 min-[600px]:p-7">
+        <DashboardCard className="dashboard-panel-card flex h-full min-h-0 flex-col gap-4 bg-bloomora-white p-5 max-[599px]:p-5 min-[600px]:p-7">
           <header className="flex shrink-0 items-start justify-between gap-3">
             <div className="min-w-0">
               <h2 className="text-xl font-bold tracking-tight text-bloomora-deep min-[1024px]:text-[1.375rem]">
@@ -166,13 +166,16 @@ export function AdditionalToolsPanel({ className }: AdditionalToolsPanelProps) {
             </div>
             <Link
               to="/app/study-tools"
-              className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-pill border-2 border-bloomora-line bg-bloomora-white px-[1.125rem] text-[0.9375rem] font-bold text-bloomora-violet transition hover:bg-bloomora-mist/70"
+              className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-pill border-2 border-[color:var(--bloomora-border)] bg-bloomora-white px-[1.125rem] text-[0.9375rem] font-bold text-bloomora-violet transition hover:bg-[color:var(--bloomora-surface-3)]/70"
             >
               Ver todas
             </Link>
           </header>
 
-          <nav className="flex flex-col gap-3">
+          <nav
+            className="dashboard-card-scroll flex min-h-0 flex-1 flex-col gap-3"
+            aria-label="Accesos rápidos a herramientas"
+          >
             <DashboardQuickAction
               onClick={() => setToolChoice('pomodoro')}
               label="Pomodoro"
@@ -200,7 +203,7 @@ export function AdditionalToolsPanel({ className }: AdditionalToolsPanelProps) {
               icon={
                 <NotesToolIcon className="size-7 text-bloomora-violet sm:size-8" />
               }
-              iconClassName="bg-bloomora-mist text-bloomora-violet ring-bloomora-line/35"
+              iconClassName="bg-bloomora-mist text-bloomora-violet ring-[color:var(--bloomora-border)]"
             />
             <DashboardQuickAction
               onClick={() => setToolChoice('tabata')}
@@ -231,7 +234,7 @@ export function AdditionalToolsPanel({ className }: AdditionalToolsPanelProps) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="workspace-tool-choice-title"
-            className="w-full max-w-sm rounded-3xl border border-bloomora-line/50 bg-white p-6 shadow-2xl"
+            className="w-full max-w-sm rounded-3xl border border-[color:var(--bloomora-border)] bg-[color:var(--bloomora-surface-1)] p-6 shadow-2xl"
           >
             <h2
               id="workspace-tool-choice-title"

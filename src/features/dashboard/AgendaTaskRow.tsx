@@ -55,7 +55,7 @@ export function AgendaTaskRow({
       className={cn(
         "group flex flex-col gap-3 px-3 py-4 transition-colors",
         "md:flex-row md:items-center md:gap-4 md:px-2 md:py-3.5",
-        "lg:rounded-xl lg:hover:bg-white/45",
+        "lg:rounded-xl lg:hover:bg-[color:var(--bloomora-surface-3)]",
       )}
     >
       {/* Fila 1 (móvil): ✔ + título con prioridad de ancho · Desktop: misma fila con el bloque de hora a la derecha */}
@@ -133,7 +133,7 @@ export function AgendaTaskRow({
                 type="button"
                 aria-label={`Contador regresivo del bloque: ${title}`}
                 onClick={onOpenBlockCountdown}
-                className="rounded-lg p-1.5 text-bloomora-violet ring-1 ring-bloomora-line/40 transition hover:bg-bloomora-lavender-50/90 md:p-1"
+                className="rounded-lg p-1.5 text-bloomora-violet ring-1 ring-[color:var(--bloomora-border)] transition hover:bg-[color:var(--bloomora-surface-3)] md:p-1"
               >
                 <ClockIcon className="size-[1.125rem] md:size-4" />
               </button>
@@ -143,7 +143,7 @@ export function AgendaTaskRow({
                 type="button"
                 aria-label="Editar tarea"
                 onClick={onEdit}
-                className="rounded-lg px-2 py-1.5 text-[clamp(0.6875rem,0.62rem+0.35vw,0.75rem)] font-semibold text-bloomora-violet ring-1 ring-bloomora-line/40 hover:bg-white/80 md:py-1 md:text-[11px]"
+                className="rounded-lg px-2 py-1.5 text-[clamp(0.6875rem,0.62rem+0.35vw,0.75rem)] font-semibold text-bloomora-violet ring-1 ring-[color:var(--bloomora-border)] hover:bg-[color:var(--bloomora-surface-2)] md:py-1 md:text-[11px]"
               >
                 Editar
               </button>

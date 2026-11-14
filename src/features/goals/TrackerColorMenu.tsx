@@ -212,7 +212,7 @@ export function TrackerColorMenu({
         aria-label="Color de los días completados"
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          'inline-flex items-center gap-2 rounded-full bg-white/85 font-semibold text-bloomora-deep shadow-[0_4px_14px_rgba(124,107,181,0.1)] ring-1 ring-bloomora-line/35 transition hover:bg-white hover:ring-bloomora-rose/25',
+          'inline-flex items-center gap-2 rounded-full bg-[color:var(--bloomora-surface-2)] font-semibold text-[color:var(--bloomora-text)] shadow-[0_4px_14px_rgba(124,107,181,0.1)] ring-1 ring-[color:var(--bloomora-border-strong)] transition hover:bg-[color:var(--bloomora-surface-3)] hover:ring-[color:var(--bloomora-border-strong)]',
           compact ? 'px-2.5 py-1 text-[11px]' : 'px-3 py-1.5 text-xs sm:text-sm',
         )}
       >

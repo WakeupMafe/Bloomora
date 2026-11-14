@@ -340,7 +340,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
   return (
     <DashboardCard
       className={cn(
-        "h-full min-h-0 bg-bloomora-white p-5 max-[599px]:p-5 min-[600px]:p-7",
+        "dashboard-day-card flex h-full min-h-0 flex-col bg-bloomora-white p-5 max-[599px]:p-5 min-[600px]:p-7",
         className,
       )}
     >
@@ -442,7 +442,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
         <button
           type="button"
           onClick={openCreateForm}
-          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-pill bg-bloomora-rose-deep px-[1.125rem] text-[0.9375rem] font-bold text-white shadow-[0_4px_12px_rgba(232,155,184,0.35)] transition hover:bg-bloomora-rose-deep/90"
+          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-pill bg-[color:var(--bloomora-accent-bg)] px-[1.125rem] text-[0.9375rem] font-bold text-[color:var(--bloomora-accent-on)] shadow-[0_4px_12px_rgba(232,155,184,0.35)] transition hover:brightness-105"
         >
           + Tarea
         </button>
@@ -453,7 +453,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
           <button
             type="button"
             aria-label="Día anterior"
-            className="grid size-10 shrink-0 place-items-center rounded-full bg-bloomora-white text-lg text-bloomora-violet transition hover:bg-bloomora-lavender-50"
+            className="grid size-10 shrink-0 place-items-center rounded-full bg-bloomora-white text-lg text-bloomora-violet transition hover:bg-[color:var(--bloomora-surface-3)]"
             onClick={() => shiftDay(-1)}
           >
             ‹
@@ -464,7 +464,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
           <button
             type="button"
             aria-label="Día siguiente"
-            className="grid size-10 shrink-0 place-items-center rounded-full bg-bloomora-white text-lg text-bloomora-violet transition hover:bg-bloomora-lavender-50"
+            className="grid size-10 shrink-0 place-items-center rounded-full bg-bloomora-white text-lg text-bloomora-violet transition hover:bg-[color:var(--bloomora-surface-3)]"
             onClick={() => shiftDay(1)}
           >
             ›
@@ -475,7 +475,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
             type="button"
             disabled={isLoading || duplicateDay.isPending}
             onClick={() => setDuplicateConfirmOpen(true)}
-            className="self-center rounded-pill px-3 py-1.5 text-xs font-semibold text-bloomora-violet ring-1 ring-bloomora-line/50 transition hover:bg-bloomora-mist disabled:opacity-50"
+            className="self-center rounded-pill px-3 py-1.5 text-xs font-semibold text-bloomora-violet ring-1 ring-[color:var(--bloomora-border)] transition hover:bg-[color:var(--bloomora-surface-3)] disabled:opacity-50"
           >
             Duplicar al día siguiente
           </button>
@@ -519,23 +519,23 @@ export function AgendaCard({ className }: AgendaCardProps) {
           <p>No se pudieron cargar las tareas.</p>
           <p className="text-xs font-normal text-bloomora-text-muted">
             Comprueba en Supabase{" "}
-            <code className="rounded bg-bloomora-lavender-50 px-1 text-bloomora-deep">
+            <code className="rounded bg-[color:var(--bloomora-surface-2)] px-1 text-bloomora-deep">
               daily_plans
             </code>
             ,{" "}
-            <code className="rounded bg-bloomora-lavender-50 px-1 text-bloomora-deep">
+            <code className="rounded bg-[color:var(--bloomora-surface-2)] px-1 text-bloomora-deep">
               tasks
             </code>
             ,{" "}
-            <code className="rounded bg-bloomora-lavender-50 px-1 text-bloomora-deep">
+            <code className="rounded bg-[color:var(--bloomora-surface-2)] px-1 text-bloomora-deep">
               task_blocks
             </code>
             ,{" "}
-            <code className="rounded bg-bloomora-lavender-50 px-1 text-bloomora-deep">
+            <code className="rounded bg-[color:var(--bloomora-surface-2)] px-1 text-bloomora-deep">
               subtasks
             </code>{" "}
             y sus permisos RLS. Comprueba que esté aplicada la migración{" "}
-            <code className="rounded bg-bloomora-lavender-50 px-1 text-bloomora-deep">
+            <code className="rounded bg-[color:var(--bloomora-surface-2)] px-1 text-bloomora-deep">
               20260417_bloomora_simple_mode_rls_anon_core.sql
             </code>
             . Detalle de Supabase: {messageFromSupabaseError(agendaError)}
@@ -559,7 +559,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
         ) : null}
 
         {!isLoading && sortedTasks.length > 0 ? (
-          <div className="min-h-0 rounded-xl pr-1 ring-1 ring-bloomora-line/25">
+          <div className="min-h-0 rounded-xl pr-1 ring-1 ring-[color:var(--bloomora-border)]">
             <ul className="divide-y divide-bloomora-line/30">
               {sortedTasks.map((task) => (
                 <li key={task.id} className="flex flex-col">
@@ -750,7 +750,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
         {showCreateForm ? (
           <form
             onSubmit={handleSubmitCreate}
-            className="mt-5 space-y-3 rounded-[18px] bg-bloomora-white/85 p-4 shadow-[0_6px_20px_rgba(91,74,140,0.06)] ring-1 ring-bloomora-line/40"
+            className="mt-5 space-y-3 rounded-[18px] bg-bloomora-white/85 p-4 shadow-[0_6px_20px_rgba(91,74,140,0.06)] ring-1 ring-[color:var(--bloomora-border)]"
           >
             <p className="text-xs font-semibold text-bloomora-deep">
               {sortedTasks.length > 0 ? (
@@ -773,8 +773,8 @@ export function AgendaCard({ className }: AgendaCardProps) {
                 onClick={() => setCreateMode("normal")}
                 className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 transition ${
                   createMode === "normal"
-                    ? "bg-bloomora-violet text-white ring-bloomora-violet"
-                    : "bg-white/85 text-bloomora-violet ring-bloomora-line/40 hover:bg-bloomora-blush/45"
+                    ? "bg-[color:var(--bloomora-accent-bg)] text-[color:var(--bloomora-accent-on)] ring-bloomora-violet"
+                    : "bg-[color:var(--bloomora-surface-2)] text-bloomora-violet ring-[color:var(--bloomora-border)] hover:bg-[color:var(--bloomora-surface-3)]"
                 }`}
               >
                 Entrada normal
@@ -784,8 +784,8 @@ export function AgendaCard({ className }: AgendaCardProps) {
                 onClick={() => setCreateMode("goal")}
                 className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 transition ${
                   createMode === "goal"
-                    ? "bg-bloomora-violet text-white ring-bloomora-violet"
-                    : "bg-white/85 text-bloomora-violet ring-bloomora-line/40 hover:bg-bloomora-blush/45"
+                    ? "bg-[color:var(--bloomora-accent-bg)] text-[color:var(--bloomora-accent-on)] ring-bloomora-violet"
+                    : "bg-[color:var(--bloomora-surface-2)] text-bloomora-violet ring-[color:var(--bloomora-border)] hover:bg-[color:var(--bloomora-surface-3)]"
                 }`}
               >
                 Desde metas
@@ -797,7 +797,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
                 <select
                   value={selectedGoalId}
                   onChange={(e) => setSelectedGoalId(e.target.value)}
-                  className="mt-1.5 w-full rounded-xl border border-bloomora-line/60 bg-bloomora-white px-3 py-2.5 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/30 focus:ring-2"
+                  className="mt-1.5 w-full rounded-xl border border-[color:var(--bloomora-border)] bg-bloomora-white px-3 py-2.5 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/30 focus:ring-2"
                 >
                   {orderedGoalOptions.length === 0 ? (
                     <option value="">No hay metas creadas</option>
@@ -820,7 +820,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
                     ? (selectedGoal?.title ?? "")
                     : draftTitle
                 }
-                className="mt-1.5 w-full rounded-xl border border-bloomora-line/60 bg-bloomora-white px-3 py-2.5 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/30 focus:ring-2"
+                className="mt-1.5 w-full rounded-xl border border-[color:var(--bloomora-border)] bg-bloomora-white px-3 py-2.5 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/30 focus:ring-2"
                 placeholder="Ej. Caminar 20 minutos"
                 disabled={createMode === "goal"}
                 autoFocus
@@ -833,7 +833,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
                 step={300}
                 value={draftStartTime}
                 onChange={(e) => setDraftStartTime(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-bloomora-line/60 bg-bloomora-white px-3 py-2.5 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/30 focus:ring-2"
+                className="mt-1.5 w-full rounded-xl border border-[color:var(--bloomora-border)] bg-bloomora-white px-3 py-2.5 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/30 focus:ring-2"
               />
             </label>
             <label className="block text-xs font-medium text-bloomora-text-muted">
@@ -843,7 +843,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
                 step={300}
                 value={draftEndTime}
                 onChange={(e) => setDraftEndTime(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-bloomora-line/60 bg-bloomora-white px-3 py-2.5 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/30 focus:ring-2"
+                className="mt-1.5 w-full rounded-xl border border-[color:var(--bloomora-border)] bg-bloomora-white px-3 py-2.5 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/30 focus:ring-2"
               />
             </label>
             {createFormError ? (

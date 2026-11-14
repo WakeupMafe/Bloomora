@@ -1,32 +1,31 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Button } from '@/components/ui/Button'
 import {
   NoteTextOptionsPanel,
   type NoteTextOptionsValues,
 } from '@/features/notes/NoteTextOptionsPanel'
 import type { EnglishNoteColor } from '@/types/englishNote'
 import type { NoteBodyFont } from '@/features/notes/noteTypingDefaults'
-import { NOTE_BODY_FONTS } from '@/features/notes/noteFontUtils'
 import { ENGLISH_NOTE_COLORS } from '@/types/englishNote'
-import { NOTE_FONT_SIZE_STEP_PX } from '@/features/notes/noteEditorUtils'
-import { coordsFromEditorCaret } from '@/features/notes/noteEditorUtils'
 import {
   captureEditorSelection,
   coordsFromBookmark,
   restoreEditorSelection,
   type EditorSelectionBookmark,
 } from '@/features/notes/noteSelectionBookmark'
+import { coordsFromEditorCaret } from '@/features/notes/noteEditorUtils'
 import type { NoteFormatTarget } from '@/features/notes/noteTextOptionsConstants'
 import type {
   NoteFontWeight,
   NoteTextAlign,
   NoteTextCase,
 } from '@/features/notes/noteTypingDefaults'
+import { cn } from '@/utils/cn'
 
 export type NoteSelectionToolbarCoords = {
   top: number
   left: number
+  placement: 'above' | 'below'
 }
 
 export type NoteSelectionToolbarMode = 'full' | 'options'
@@ -35,6 +34,11 @@ export type { NoteFormatTarget } from '@/features/notes/noteTextOptionsConstants
 
 const Z_BACKDROP = 10_060
 const Z_PANEL = 10_065
+const Z_FLOATING = 45
+const BAR_HEIGHT = 52
+const GAP_ABOVE_SELECTION = 12
+const EDGE_PAD = 8
+const SHOW_HIDE_DEBOUNCE_MS = 120
 
 function hasSelectionInEditor(editor: HTMLElement): Range | null {
   const sel = window.getSelection()
@@ -45,21 +49,59 @@ function hasSelectionInEditor(editor: HTMLElement): Range | null {
   return range
 }
 
-export function coordsFromNoteSelection(editor: HTMLElement): NoteSelectionToolbarCoords | null {
+function clamp(n: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, n))
+}
+
+/** Viewport-aware coords for the dark floating selection bar (~12px above / flip below). */
+export function coordsFromNoteSelection(
+  editor: HTMLElement,
+  reserveBottomPx = 0,
+): NoteSelectionToolbarCoords | null {
   const range = hasSelectionInEditor(editor)
   if (!range) return null
   const rect = range.getBoundingClientRect()
   if (rect.width === 0 && rect.height === 0) return null
-  return {
-    top: Math.max(8, rect.top - 10),
-    left: rect.left + rect.width / 2,
-  }
+
+  const vv = window.visualViewport
+  const viewTop = (vv?.offsetTop ?? 0) + EDGE_PAD
+  const viewLeft = (vv?.offsetLeft ?? 0) + EDGE_PAD
+  const viewWidth = vv?.width ?? window.innerWidth
+  const viewBottom =
+    (vv ? vv.offsetTop + vv.height : window.innerHeight) - Math.max(0, reserveBottomPx) - EDGE_PAD
+
+  const spaceAbove = rect.top - viewTop
+  const spaceBelow = viewBottom - rect.bottom
+  const needsFlip = spaceAbove < BAR_HEIGHT + GAP_ABOVE_SELECTION
+  const placement: 'above' | 'below' =
+    needsFlip && spaceBelow > spaceAbove ? 'below' : 'above'
+
+  const top =
+    placement === 'above'
+      ? rect.top - GAP_ABOVE_SELECTION
+      : rect.bottom + GAP_ABOVE_SELECTION
+
+  const left = clamp(
+    rect.left + rect.width / 2,
+    viewLeft,
+    viewLeft + viewWidth - EDGE_PAD * 2,
+  )
+
+  return { top, left, placement }
 }
 
-/** Barra flotante: Ctrl+O = formato con selección o al escribir. */
+export type UseNoteSelectionToolbarOptions = {
+  /** Hide the floating bar (e.g. while a mobile sheet is open). */
+  suppressed?: boolean
+  /** Extra bottom inset so the bar never covers the quick bar / keyboard dock. */
+  reserveBottomPx?: number
+}
+
+/** Barra flotante al seleccionar + Ctrl+O opciones de texto. */
 export function useNoteSelectionToolbar(
   editorRef: React.RefObject<HTMLDivElement | null>,
   onRequestDismiss?: () => void,
+  options?: UseNoteSelectionToolbarOptions,
 ) {
   const savedSelectionRef = useRef<EditorSelectionBookmark | null>(null)
   const [panel, setPanel] = useState<{
@@ -67,17 +109,34 @@ export function useNoteSelectionToolbar(
     mode: NoteSelectionToolbarMode
     target: NoteFormatTarget
   } | null>(null)
+  const panelRef = useRef(panel)
+  const suppressed = options?.suppressed ?? false
+  const reserveBottomPx = options?.reserveBottomPx ?? 0
+  const suppressedRef = useRef(suppressed)
+  const reserveBottomRef = useRef(reserveBottomPx)
+  const interactingRef = useRef(false)
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const onRequestDismissRef = useRef(onRequestDismiss)
   useLayoutEffect(() => {
     onRequestDismissRef.current = onRequestDismiss
   }, [onRequestDismiss])
+  useLayoutEffect(() => {
+    panelRef.current = panel
+  }, [panel])
+  useLayoutEffect(() => {
+    suppressedRef.current = suppressed
+  }, [suppressed])
+  useLayoutEffect(() => {
+    reserveBottomRef.current = reserveBottomPx
+  }, [reserveBottomPx])
 
   const openFormatting = useCallback(
     (mode: NoteSelectionToolbarMode): boolean => {
       const editor = editorRef.current
       if (!editor) return false
 
-      const selectionCoords = coordsFromNoteSelection(editor)
+      const selectionCoords = coordsFromNoteSelection(editor, reserveBottomRef.current)
       if (selectionCoords) {
         savedSelectionRef.current = captureEditorSelection(editor)
         setPanel({ coords: selectionCoords, mode, target: 'selection' })
@@ -87,7 +146,11 @@ export function useNoteSelectionToolbar(
       savedSelectionRef.current = null
       const caretCoords = coordsFromEditorCaret(editor)
       if (!caretCoords) return false
-      setPanel({ coords: caretCoords, mode, target: 'typing' })
+      setPanel({
+        coords: { ...caretCoords, placement: 'above' },
+        mode,
+        target: 'typing',
+      })
       return true
     },
     [editorRef],
@@ -137,28 +200,122 @@ export function useNoteSelectionToolbar(
     [editorRef],
   )
 
+  const syncFloatingFromSelection = useCallback(() => {
+    const editor = editorRef.current
+    if (!editor) return
+
+    const current = panelRef.current
+    if (current?.mode === 'options') {
+      const next =
+        coordsFromNoteSelection(editor, reserveBottomRef.current) ??
+        (savedSelectionRef.current
+          ? (() => {
+              const fromBookmark = coordsFromBookmark(editor, savedSelectionRef.current)
+              return fromBookmark
+                ? ({ ...fromBookmark, placement: 'above' } as NoteSelectionToolbarCoords)
+                : null
+            })()
+          : null)
+      if (next) {
+        setPanel((prev) => (prev ? { ...prev, coords: next } : null))
+      }
+      return
+    }
+
+    if (suppressedRef.current || interactingRef.current) return
+
+    const next = coordsFromNoteSelection(editor, reserveBottomRef.current)
+    if (next) {
+      savedSelectionRef.current = captureEditorSelection(editor)
+      setPanel({ coords: next, mode: 'full', target: 'selection' })
+      return
+    }
+
+    if (current?.mode === 'full') {
+      setPanel(null)
+    }
+  }, [editorRef])
+
+  const scheduleSync = useCallback(() => {
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
+    debounceTimerRef.current = setTimeout(() => {
+      debounceTimerRef.current = null
+      syncFloatingFromSelection()
+    }, SHOW_HIDE_DEBOUNCE_MS)
+  }, [syncFloatingFromSelection])
+
+  useEffect(() => {
+    if (suppressed) {
+      setPanel((prev) => (prev?.mode === 'full' ? null : prev))
+      return
+    }
+    scheduleSync()
+  }, [suppressed, scheduleSync])
+
   useEffect(() => {
     const editor = editorRef.current
     if (!editor) return
 
+    const onSelectionChange = () => scheduleSync()
+    document.addEventListener('selectionchange', onSelectionChange)
+
     const onPointerDown = (e: PointerEvent) => {
       const target = e.target as Node
       if (target instanceof Element && target.closest('[data-note-selection-toolbar]')) {
+        interactingRef.current = true
         return
       }
-      if (target instanceof Element && target.closest('[data-bloomora-modal-backdrop], [role="dialog"]')) {
+      if (target instanceof Element && target.closest('[data-bloomora-modal-backdrop], [role="dialog"], [data-note-bottom-sheet]')) {
         return
       }
+      interactingRef.current = false
       if (!editor.contains(target)) {
-        requestDismissRef.current()
+        const current = panelRef.current
+        if (current?.mode === 'options') {
+          requestDismissRef.current()
+          return
+        }
+        if (current?.mode === 'full') {
+          scheduleSync()
+        }
       }
     }
 
-    document.addEventListener('pointerdown', onPointerDown)
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown)
+    const onPointerUp = () => {
+      if (interactingRef.current) {
+        requestAnimationFrame(() => {
+          interactingRef.current = false
+          scheduleSync()
+        })
+      }
     }
-  }, [editorRef])
+
+    const onBlur = () => {
+      window.setTimeout(() => {
+        if (interactingRef.current) return
+        if (suppressedRef.current) return
+        const active = document.activeElement
+        if (active instanceof Element && active.closest('[data-note-selection-toolbar], [role="dialog"], [data-note-bottom-sheet]')) {
+          return
+        }
+        const current = panelRef.current
+        if (current?.mode === 'full' && !hasSelectionInEditor(editor)) {
+          setPanel(null)
+        }
+      }, SHOW_HIDE_DEBOUNCE_MS)
+    }
+
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('pointerup', onPointerUp)
+    editor.addEventListener('blur', onBlur)
+    return () => {
+      document.removeEventListener('selectionchange', onSelectionChange)
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('pointerup', onPointerUp)
+      editor.removeEventListener('blur', onBlur)
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
+    }
+  }, [editorRef, scheduleSync])
 
   useEffect(() => {
     if (!panel) return
@@ -167,12 +324,16 @@ export function useNoteSelectionToolbar(
       if (e.key !== 'Escape') return
       if (document.querySelector('[data-bloomora-modal-backdrop]')) return
       e.preventDefault()
-      requestDismissRef.current()
+      if (panel.mode === 'options') {
+        requestDismissRef.current()
+        return
+      }
+      dismiss()
     }
 
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [panel])
+  }, [panel, dismiss])
 
   useEffect(() => {
     if (!panel || panel.mode !== 'options') return
@@ -188,31 +349,40 @@ export function useNoteSelectionToolbar(
   }, [panel])
 
   useEffect(() => {
-    if (!panel || panel.target !== 'selection' || panel.mode === 'options') return
+    if (!panel || panel.mode !== 'full') return
     const editor = editorRef.current
     if (!editor) return
 
     const update = () => {
-      const next = coordsFromNoteSelection(editor)
+      const next = coordsFromNoteSelection(editor, reserveBottomRef.current)
       if (next) {
-        setPanel((prev) => (prev ? { ...prev, coords: next } : null))
+        setPanel((prev) => (prev?.mode === 'full' ? { ...prev, coords: next } : prev))
         return
       }
       if (savedSelectionRef.current) {
         const fromBookmark = coordsFromBookmark(editor, savedSelectionRef.current)
         if (fromBookmark) {
-          setPanel((prev) => (prev ? { ...prev, coords: fromBookmark } : null))
+          setPanel((prev) =>
+            prev?.mode === 'full'
+              ? { ...prev, coords: { ...fromBookmark, placement: prev.coords.placement } }
+              : prev,
+          )
         }
       }
     }
 
     window.addEventListener('resize', update)
     window.addEventListener('scroll', update, true)
+    const vv = window.visualViewport
+    vv?.addEventListener('resize', update)
+    vv?.addEventListener('scroll', update)
     return () => {
       window.removeEventListener('resize', update)
       window.removeEventListener('scroll', update, true)
+      vv?.removeEventListener('resize', update)
+      vv?.removeEventListener('scroll', update)
     }
-  }, [panel, editorRef])
+  }, [panel, editorRef, reserveBottomPx])
 
   const prepareSelectionForFormat = useCallback(() => {
     const editor = editorRef.current
@@ -231,55 +401,294 @@ export function useNoteSelectionToolbar(
   }
 }
 
-function ColorHighlightRow({
+type ColorPopoverKind = 'text' | 'highlight' | null
+
+function FloatingColorPopover({
+  kind,
+  textColor,
+  highlightColor,
+  placement,
   onTextColor,
   onHighlight,
+  onClearHighlight,
   keepSelection,
-  showHighlight,
 }: {
+  kind: Exclude<ColorPopoverKind, null>
+  textColor: string
+  highlightColor: string | null
+  placement: 'above' | 'below'
   onTextColor: (hex: string, colorId: EnglishNoteColor) => void
   onHighlight: (hex: string) => void
-  keepSelection: (e: React.MouseEvent) => void
-  showHighlight: boolean
+  onClearHighlight: () => void
+  keepSelection: (e: React.MouseEvent | React.PointerEvent) => void
 }) {
   return (
-    <>
-      <span className="text-[0.65rem] font-bold uppercase tracking-wide text-bloomora-violet">
-        Color
-      </span>
-      {ENGLISH_NOTE_COLORS.map((c) => (
+    <div
+      role="listbox"
+      aria-label={kind === 'text' ? 'Colores de texto' : 'Colores de resaltado'}
+      className={cn(
+        'note-selection-float__popover',
+        placement === 'above'
+          ? 'note-selection-float__popover--above'
+          : 'note-selection-float__popover--below',
+      )}
+      onMouseDown={keepSelection}
+      onPointerDown={keepSelection}
+    >
+      {kind === 'highlight' ? (
         <button
-          key={c.id}
           type="button"
-          title={c.label}
-          aria-label={`Color de texto: ${c.label}`}
-          className="size-7 rounded-full border-2 border-white shadow-sm transition hover:scale-110"
-          style={{ backgroundColor: c.value }}
+          role="option"
+          aria-selected={!highlightColor}
+          aria-label="Quitar resaltado"
+          title="Quitar resaltado"
+          className={cn(
+            'note-selection-float__swatch note-selection-float__swatch--clear',
+            !highlightColor && 'note-selection-float__swatch--on',
+          )}
           onMouseDown={keepSelection}
-          onClick={() => onTextColor(c.value, c.id)}
-        />
-      ))}
-      {showHighlight ? (
-        <>
-          <span className="mx-0.5 h-6 w-px bg-bloomora-line/40" aria-hidden />
-          <span className="text-[0.65rem] font-bold uppercase tracking-wide text-bloomora-violet">
-            Resaltar
-          </span>
-          {ENGLISH_NOTE_COLORS.map((c) => (
-            <button
-              key={`hl-${c.id}`}
-              type="button"
-              title={`Resaltar: ${c.label}`}
-              aria-label={`Resaltar: ${c.label}`}
-              className="size-6 rounded-md border border-bloomora-line/30 ring-1 ring-inset ring-white/50 transition hover:scale-110"
-              style={{ backgroundColor: c.value }}
-              onMouseDown={keepSelection}
-              onClick={() => onHighlight(c.value)}
-            />
-          ))}
-        </>
+          onClick={onClearHighlight}
+        >
+          /
+        </button>
       ) : null}
-    </>
+      {ENGLISH_NOTE_COLORS.map((c) => {
+        const active =
+          kind === 'text' ? textColor.toLowerCase() === c.value.toLowerCase() : highlightColor === c.value
+        return (
+          <button
+            key={c.id}
+            type="button"
+            role="option"
+            aria-selected={active}
+            aria-label={kind === 'text' ? `Color de texto: ${c.label}` : `Resaltar: ${c.label}`}
+            title={c.label}
+            className={cn(
+              'note-selection-float__swatch',
+              kind === 'highlight' && 'note-selection-float__swatch--hl',
+              active && 'note-selection-float__swatch--on',
+            )}
+            style={{ backgroundColor: c.value }}
+            onMouseDown={keepSelection}
+            onClick={() => {
+              if (kind === 'text') onTextColor(c.value, c.id)
+              else onHighlight(c.value)
+            }}
+          />
+        )
+      })}
+    </div>
+  )
+}
+
+function FloatingSelectionBar({
+  coords,
+  active,
+  textColor,
+  highlightColor,
+  onBold,
+  onItalic,
+  onUnderline,
+  onTextColor,
+  onHighlight,
+  onClearHighlight,
+  onOpenMore,
+  onPrepareSelection,
+}: {
+  coords: NoteSelectionToolbarCoords
+  active: { bold: boolean; italic: boolean; underline: boolean }
+  textColor: string
+  highlightColor: string | null
+  onBold: () => void
+  onItalic: () => void
+  onUnderline: () => void
+  onTextColor: (hex: string, colorId: EnglishNoteColor) => void
+  onHighlight: (hex: string) => void
+  onClearHighlight: () => void
+  onOpenMore: () => void
+  onPrepareSelection?: () => void
+}) {
+  const [colorPopover, setColorPopover] = useState<ColorPopoverKind>(null)
+
+  const keepSelection = (e: React.MouseEvent | React.PointerEvent) => {
+    e.preventDefault()
+    onPrepareSelection?.()
+  }
+
+  useEffect(() => {
+    setColorPopover(null)
+  }, [coords.top, coords.left, coords.placement])
+
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
+    <div
+      role="toolbar"
+      data-note-selection-toolbar
+      aria-label="Formato de la selección"
+      className={cn(
+        'note-selection-float',
+        coords.placement === 'above'
+          ? 'note-selection-float--above'
+          : 'note-selection-float--below',
+      )}
+      style={{
+        top: coords.top,
+        left: coords.left,
+        zIndex: Z_FLOATING,
+        ['--ax' as string]: '50%',
+      }}
+      onMouseDown={keepSelection}
+      onPointerDown={keepSelection}
+    >
+      <button
+        type="button"
+        aria-label="Negrita"
+        aria-pressed={active.bold}
+        title="Negrita"
+        className={cn('note-selection-float__btn', active.bold && 'note-selection-float__btn--on')}
+        onMouseDown={keepSelection}
+        onPointerDown={keepSelection}
+        onClick={() => {
+          setColorPopover(null)
+          onBold()
+        }}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <path d="M7 5h6a3.5 3.5 0 010 7H7z" stroke="currentColor" strokeWidth="2.4" strokeLinejoin="round" />
+          <path d="M7 12h7a3.5 3.5 0 010 7H7z" stroke="currentColor" strokeWidth="2.4" strokeLinejoin="round" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        aria-label="Cursiva"
+        aria-pressed={active.italic}
+        title="Cursiva"
+        className={cn('note-selection-float__btn', active.italic && 'note-selection-float__btn--on')}
+        onMouseDown={keepSelection}
+        onPointerDown={keepSelection}
+        onClick={() => {
+          setColorPopover(null)
+          onItalic()
+        }}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <path d="M19 4h-9M14 20H5M15 4L9 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        aria-label="Subrayado"
+        aria-pressed={active.underline}
+        title="Subrayado"
+        className={cn('note-selection-float__btn', active.underline && 'note-selection-float__btn--on')}
+        onMouseDown={keepSelection}
+        onPointerDown={keepSelection}
+        onClick={() => {
+          setColorPopover(null)
+          onUnderline()
+        }}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <path d="M6 4v6a6 6 0 0012 0V4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M4 21h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </button>
+
+      <span className="note-selection-float__sep" aria-hidden />
+
+      <div className="relative">
+        <button
+          type="button"
+          aria-label="Color del texto"
+          aria-expanded={colorPopover === 'text'}
+          aria-haspopup="listbox"
+          title="Color del texto"
+          className={cn('note-selection-float__btn', colorPopover === 'text' && 'note-selection-float__btn--on')}
+          onMouseDown={keepSelection}
+          onPointerDown={keepSelection}
+          onClick={() => setColorPopover((k) => (k === 'text' ? null : 'text'))}
+        >
+          <span className="note-selection-float__letter-a">
+            A
+            <i style={{ backgroundColor: textColor || 'var(--color-bloomora-rose)' }} />
+          </span>
+        </button>
+        {colorPopover === 'text' ? (
+          <FloatingColorPopover
+            kind="text"
+            textColor={textColor}
+            highlightColor={highlightColor}
+            placement={coords.placement}
+            onTextColor={(hex, id) => {
+              onTextColor(hex, id)
+              setColorPopover(null)
+            }}
+            onHighlight={onHighlight}
+            onClearHighlight={onClearHighlight}
+            keepSelection={keepSelection}
+          />
+        ) : null}
+      </div>
+
+      <div className="relative">
+        <button
+          type="button"
+          aria-label="Resaltar"
+          aria-expanded={colorPopover === 'highlight'}
+          aria-haspopup="listbox"
+          title="Resaltar"
+          className={cn('note-selection-float__btn', colorPopover === 'highlight' && 'note-selection-float__btn--on')}
+          onMouseDown={keepSelection}
+          onPointerDown={keepSelection}
+          onClick={() => setColorPopover((k) => (k === 'highlight' ? null : 'highlight'))}
+        >
+          <span className="note-selection-float__highlight-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path d="M9 11l-5 5v4h4l5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M9 11l6-6 4 4-6 6z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        </button>
+        {colorPopover === 'highlight' ? (
+          <FloatingColorPopover
+            kind="highlight"
+            textColor={textColor}
+            highlightColor={highlightColor}
+            placement={coords.placement}
+            onTextColor={onTextColor}
+            onHighlight={(hex) => {
+              onHighlight(hex)
+              setColorPopover(null)
+            }}
+            onClearHighlight={() => {
+              onClearHighlight()
+              setColorPopover(null)
+            }}
+            keepSelection={keepSelection}
+          />
+        ) : null}
+      </div>
+
+      <span className="note-selection-float__sep" aria-hidden />
+
+      <button
+        type="button"
+        aria-label="Más formato"
+        title="Aa Más"
+        className="note-selection-float__btn note-selection-float__btn--more"
+        onMouseDown={keepSelection}
+        onPointerDown={keepSelection}
+        onClick={() => {
+          setColorPopover(null)
+          onOpenMore()
+        }}
+      >
+        <span className="note-selection-float__aa">Aa</span>
+        Más
+      </button>
+    </div>,
+    document.body,
   )
 }
 
@@ -288,11 +697,18 @@ export function NoteSelectionToolbar({
   mode,
   formatTarget,
   optionValues,
+  active,
+  textColor,
+  highlightColor,
+  onBold,
+  onItalic,
+  onUnderline,
+  onOpenMore,
   onTextColor,
   onHighlight,
   onClearHighlight,
   onFontChange,
-  onFontSizeChange,
+  onFontSizeChange: _onFontSizeChange,
   onFontSizeSet,
   onFontWeight,
   onAlign,
@@ -300,8 +716,8 @@ export function NoteSelectionToolbar({
   onParagraphSpacingChange,
   onTextCase,
   onCustomTextColor,
-  onAlignCenter,
-  onAlignLeft,
+  onAlignCenter: _onAlignCenter,
+  onAlignLeft: _onAlignLeft,
   onApplyTextoPreset,
   onClose,
   onPrepareSelection,
@@ -310,6 +726,13 @@ export function NoteSelectionToolbar({
   mode: NoteSelectionToolbarMode
   formatTarget: NoteFormatTarget
   optionValues: NoteTextOptionsValues
+  active?: { bold: boolean; italic: boolean; underline: boolean }
+  textColor?: string
+  highlightColor?: string | null
+  onBold?: () => void
+  onItalic?: () => void
+  onUnderline?: () => void
+  onOpenMore?: () => void
   onTextColor: (hex: string, colorId: EnglishNoteColor) => void
   onHighlight: (hex: string) => void
   onClearHighlight: () => void
@@ -355,24 +778,24 @@ export function NoteSelectionToolbar({
           data-note-selection-toolbar
         >
           <div className="pointer-events-auto w-full max-w-[min(100vw-1.5rem,28rem)]">
-          <NoteTextOptionsPanel
-            formatTarget={formatTarget}
-            values={optionValues}
-            onClose={close}
-            keepSelection={keepSelection}
-            onFontChange={onFontChange}
-            onFontSizeChange={onFontSizeSet}
-            onTextColor={onTextColor}
-            onCustomTextColor={onCustomTextColor}
-            onHighlight={onHighlight}
-            onClearHighlight={onClearHighlight}
-            onFontWeight={onFontWeight}
-            onAlign={onAlign}
-            onLineHeight={onLineHeight}
-            onParagraphSpacingChange={onParagraphSpacingChange}
-            onTextCase={onTextCase}
-            onApplyTextoPreset={onApplyTextoPreset}
-          />
+            <NoteTextOptionsPanel
+              formatTarget={formatTarget}
+              values={optionValues}
+              onClose={close}
+              keepSelection={keepSelection}
+              onFontChange={onFontChange}
+              onFontSizeChange={onFontSizeSet}
+              onTextColor={onTextColor}
+              onCustomTextColor={onCustomTextColor}
+              onHighlight={onHighlight}
+              onClearHighlight={onClearHighlight}
+              onFontWeight={onFontWeight}
+              onAlign={onAlign}
+              onLineHeight={onLineHeight}
+              onParagraphSpacingChange={onParagraphSpacingChange}
+              onTextCase={onTextCase}
+              onApplyTextoPreset={onApplyTextoPreset}
+            />
           </div>
         </div>
       </>,
@@ -380,87 +803,22 @@ export function NoteSelectionToolbar({
     )
   }
 
+  if (mode !== 'full') return null
+
   return (
-    <div
-      role="toolbar"
-      data-note-selection-toolbar
-      onMouseDown={keepSelection}
-      aria-label="Opciones del texto seleccionado"
-      className="fixed z-50 max-w-[min(100vw-1rem,28rem)] -translate-x-1/2 -translate-y-full rounded-2xl border border-bloomora-line/30 bg-bloomora-white/95 px-3 py-2.5 shadow-[0_12px_36px_-10px_rgba(91,74,140,0.35)] backdrop-blur-sm"
-      style={{ top: coords.top, left: coords.left }}
-    >
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="text-[0.6rem] font-bold uppercase tracking-wide text-bloomora-violet">
-          Fuente
-        </span>
-        {NOTE_BODY_FONTS.map(({ id, label }) => (
-          <Button
-            key={id}
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="!min-h-8 px-2.5 text-xs"
-            onMouseDown={keepSelection}
-            onClick={() => onFontChange(id)}
-          >
-            {label}
-          </Button>
-        ))}
-        <span className="mx-0.5 h-5 w-px bg-bloomora-line/40" aria-hidden />
-        <span className="text-[0.6rem] font-bold uppercase tracking-wide text-bloomora-violet">
-          Tamaño
-        </span>
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          className="!min-h-8 px-2 text-xs font-bold"
-          onMouseDown={keepSelection}
-          onClick={() => onFontSizeChange(-NOTE_FONT_SIZE_STEP_PX)}
-        >
-          A−
-        </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          className="!min-h-8 px-2 text-xs font-bold"
-          onMouseDown={keepSelection}
-          onClick={() => onFontSizeChange(NOTE_FONT_SIZE_STEP_PX)}
-        >
-          A+
-        </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          className="!min-h-8 px-2.5 text-xs"
-          onMouseDown={keepSelection}
-          onClick={onAlignCenter}
-        >
-          Centrar
-        </Button>
-      </div>
-      <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-bloomora-line/20 pt-2">
-        <ColorHighlightRow
-          onTextColor={onTextColor}
-          onHighlight={onHighlight}
-          keepSelection={keepSelection}
-          showHighlight
-        />
-      </div>
-      <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-bloomora-line/20 pt-2">
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          className="!min-h-8 px-2.5 text-xs"
-          onMouseDown={keepSelection}
-          onClick={onAlignLeft}
-        >
-          Izquierda
-        </Button>
-      </div>
-    </div>
+    <FloatingSelectionBar
+      coords={coords}
+      active={active ?? { bold: false, italic: false, underline: false }}
+      textColor={textColor ?? '#111111'}
+      highlightColor={highlightColor ?? null}
+      onBold={onBold ?? (() => {})}
+      onItalic={onItalic ?? (() => {})}
+      onUnderline={onUnderline ?? (() => {})}
+      onTextColor={onTextColor}
+      onHighlight={onHighlight}
+      onClearHighlight={onClearHighlight}
+      onOpenMore={onOpenMore ?? (() => {})}
+      onPrepareSelection={onPrepareSelection}
+    />
   )
 }
