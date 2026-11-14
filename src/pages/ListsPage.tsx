@@ -1685,7 +1685,7 @@ function ListItemRow({
                 </button>
               </div>
             ) : null}
-            {!multiSelectMode ? (
+            {!multiSelectMode && !showHoverActions ? (
               <ListItemMoreMenu onEdit={beginEdit} onDelete={beginDelete} />
             ) : null}
             {showAgenda ? (
