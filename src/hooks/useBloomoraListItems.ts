@@ -1,9 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  clearCompletedListItems,
   deleteList,
   deleteListItem,
+  deleteListItems,
   insertListItem,
   listListItems,
+  markListItemsDone,
+  reinsertListItem,
   updateListItem,
   updateListTitle,
   type ListItemRow,
@@ -75,7 +79,63 @@ export function useListItemsMutations(cedula: string | null, listId: string | nu
     onSuccess: inv,
   })
 
-  return { addItem, toggleItem, renameItem, removeItem }
+  const clearCompleted = useMutation({
+    mutationFn: async () => {
+      if (!listId) throw new Error('Sin lista')
+      await clearCompletedListItems(requireSupabase(), Number(listId))
+    },
+    onSuccess: inv,
+  })
+
+  const markManyDone = useMutation({
+    mutationFn: async (vars: { ids: string[]; done: boolean }) => {
+      await markListItemsDone(
+        requireSupabase(),
+        vars.ids.map(Number),
+        vars.done,
+      )
+    },
+    onSuccess: inv,
+  })
+
+  const removeMany = useMutation({
+    mutationFn: async (ids: string[]) => {
+      await deleteListItems(
+        requireSupabase(),
+        ids.map(Number),
+      )
+    },
+    onSuccess: inv,
+  })
+
+  const restoreItem = useMutation({
+    mutationFn: async (vars: {
+      title: string
+      done: boolean
+      sortOrder?: number
+    }) => {
+      if (!listId) throw new Error('Sin lista')
+      return reinsertListItem(
+        requireSupabase(),
+        Number(listId),
+        vars.title,
+        vars.done,
+        vars.sortOrder,
+      )
+    },
+    onSuccess: inv,
+  })
+
+  return {
+    addItem,
+    toggleItem,
+    renameItem,
+    removeItem,
+    clearCompleted,
+    markManyDone,
+    removeMany,
+    restoreItem,
+  }
 }
 
 export function useUpdateListTitleMutation(cedula: string | null) {

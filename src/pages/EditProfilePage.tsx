@@ -171,11 +171,15 @@ export function EditProfilePage() {
             'bloomora-elevated-panel app-principal-card mt-6 overflow-hidden ring-1 ring-bloomora-line/25 max-[599px]:mt-4',
           )}
         >
-          <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <BackButton
+              parentTo="/app"
+              parentLabel="Hoy"
+              className="shrink-0"
+            />
             <h1 className="app-fluid-title font-bold tracking-tight text-bloomora-deep">
               Editar Perfil
             </h1>
-            <BackButton to="/app" className="shrink-0" />
           </div>
 
           {isLoading ? (

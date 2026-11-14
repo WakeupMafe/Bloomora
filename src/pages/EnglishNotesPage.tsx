@@ -1,5 +1,4 @@
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { BackButton } from '@/components/navigation/BackButton'
 import { Card } from '@/components/ui/Card'
 import { useBloomoraAlert } from '@/contexts/BloomoraAlertContext'
@@ -230,7 +229,12 @@ export function EnglishNotesPage({ embedded = false }: { embedded?: boolean }) {
     </aside>
 
     <main className="notes-main">
-      {!embedded && <div className="notes-app-nav"><BackButton to="/app" label="Volver" /><Link to="/app/study-tools">Herramientas</Link></div>}
+      {!embedded && (
+        <div className="notes-app-nav flex items-center gap-3">
+          <BackButton parentTo="/app/study-tools" parentLabel="Herramientas" />
+          <span className="font-bold text-bloomora-deep">Apuntes</span>
+        </div>
+      )}
       {!cedula ? <Card variant="glass" className="notes-state-card">Necesitas iniciar sesión para guardar apuntes.</Card>
       : !supabaseReady ? <Card variant="glass" className="notes-state-card">Supabase no está configurado. Añade VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en .env.local y reinicia la app.</Card>
       : isError ? <Card variant="glass" className="notes-state-card">{messageFromSupabaseError(error)}<p>Revisa la tabla english_notes y la migración supabase/migrations/20260528_fix_english_notes.sql.</p></Card>

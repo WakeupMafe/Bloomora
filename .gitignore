@@ -25,3 +25,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Prompts de diseno para Cursor (no subir al repo)
+PROMPT*.txt
+**/PROMPT*.txt
+*.prompt.txt

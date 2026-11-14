@@ -1,6 +1,5 @@
 import { type FormEvent, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { BloomoraLogo } from '@/components/brand/BloomoraLogo'
 import { BackButton } from '@/components/navigation/BackButton'
 import { Button } from '@/components/ui/Button'
 import { useBloomoraToast } from '@/contexts/BloomoraToastContext'
@@ -155,13 +154,16 @@ export function NewGoalPage() {
 
   return (
     <div className="bloomora-new-goal-page app-shell-padding app-content-fluid mx-auto flex min-h-dvh flex-col gap-6 bg-bloomora-snow pb-16">
-      <header className="flex items-center justify-between gap-4">
-        <BloomoraLogo size="sm" />
-        <BackButton to="/app" label="Cancelar" className="bloomora-new-goal-cancel" />
+      <header className="flex items-center gap-3">
+        <BackButton
+          parentTo="/app/goals/overview"
+          parentLabel="Metas"
+          className="bloomora-new-goal-cancel"
+        />
+        <h1 className="app-fluid-title font-bold text-bloomora-deep">Nueva meta</h1>
       </header>
 
       <div>
-        <h1 className="app-fluid-title font-bold text-bloomora-deep">Nueva meta</h1>
         <p className="mt-1 text-sm text-bloomora-text-muted">
           Crea una meta clara y con progreso real.
         </p>

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { BloomoraLogo } from '@/components/brand/BloomoraLogo'
 import { BackButton } from '@/components/navigation/BackButton'
 import { Button } from '@/components/ui/Button'
 import { GoalTrackerPanel } from '@/features/goals/GoalTrackerPanel'
@@ -110,7 +109,11 @@ export function GoalTrackerPage() {
     return (
       <div className="app-shell-padding app-content-fluid mx-auto">
         <p className="text-bloomora-text-muted">Meta no encontrada.</p>
-        <BackButton to="/app" label="Volver al inicio" className="mt-4" />
+        <BackButton
+          parentTo="/app/goals/overview"
+          parentLabel="Metas"
+          className="mt-4"
+        />
       </div>
     )
   }
@@ -137,9 +140,11 @@ export function GoalTrackerPage() {
 
   return (
     <div className="bloomora-goal-tracker-page app-shell-padding app-content-fluid mx-auto flex min-h-dvh flex-col gap-6 bg-bloomora-snow pb-16">
-      <header className="flex items-center justify-between gap-4">
-        <BloomoraLogo size="sm" />
-        <BackButton to="/app/goals/overview" label="Volver a metas" />
+      <header className="flex items-center gap-3">
+        <BackButton parentTo="/app/goals/overview" parentLabel="Metas" />
+        <h1 className="min-w-0 truncate text-lg font-bold text-bloomora-deep sm:text-xl">
+          {goal.title}
+        </h1>
       </header>
 
       {editingTitle ? (

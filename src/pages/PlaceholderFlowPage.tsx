@@ -1,5 +1,4 @@
 import { useLocation } from 'react-router-dom'
-import { BloomoraLogo } from '@/components/brand/BloomoraLogo'
 import { BackButton } from '@/components/navigation/BackButton'
 import { Card } from '@/components/ui/Card'
 
@@ -15,13 +14,12 @@ export function PlaceholderFlowPage() {
 
   return (
     <div className="app-shell-padding app-content-fluid mx-auto flex min-h-dvh flex-col gap-6 bg-bloomora-snow">
-      <header className="flex items-center justify-between">
-        <BloomoraLogo size="sm" />
-        <BackButton to="/app" label="Volver al inicio" />
+      <header className="flex items-center gap-3">
+        <BackButton parentTo="/app" parentLabel="Hoy" />
+        <h1 className="app-fluid-title font-bold text-bloomora-deep">{title}</h1>
       </header>
       <Card className="app-principal-card">
-        <h1 className="app-fluid-title font-bold text-bloomora-deep">{title}</h1>
-        <p className="mt-2 text-sm text-bloomora-text-muted">
+        <p className="text-sm text-bloomora-text-muted">
           Pantalla en construccion.
         </p>
       </Card>

@@ -1,7 +1,5 @@
 import { useCallback, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { BloomoraLogo } from '@/components/brand/BloomoraLogo'
-import { BackButton } from '@/components/navigation/BackButton'
 import { Button } from '@/components/ui/Button'
 import ConejoBoy from '@/assets/ConejoBoy.png'
 import { BloomoraImage } from '@/components/ui/BloomoraImage'
@@ -77,11 +75,6 @@ export function GoalsOverviewPage() {
 
   return (
     <div className="app-shell-padding app-shell-padding--goals-wide app-content-fluid mx-auto flex min-h-dvh flex-col gap-8 bg-bloomora-snow pb-12">
-      <header className="flex items-center justify-between gap-4">
-        <BloomoraLogo size="sm" />
-        <BackButton to="/app" label="Volver al inicio" />
-      </header>
-
       <div>
         <h1 className="app-fluid-title font-bold text-bloomora-deep">Todas las metas</h1>
         <p className="mt-1 text-sm text-bloomora-text-muted">

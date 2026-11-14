@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { BackButton } from '@/components/navigation/BackButton'
 import { useBloomoraToast } from '@/contexts/BloomoraToastContext'
 import { useUserPhone } from '@/contexts/UserPhoneContext'
@@ -155,14 +155,11 @@ export function EnglishFlashcardsPage() {
 
   return (
     <div className="flashcards-page app-shell-padding app-content-fluid mx-auto min-h-dvh bg-[#f8f6fc] pb-16">
-      <div className="mb-6 flex items-center justify-between gap-3">
-        <BackButton to="/app" label="Volver al inicio" />
-        <Link
-          to="/app"
-          className="text-xs font-semibold text-bloomora-violet hover:text-bloomora-deep sm:text-sm"
-        >
-          Inicio
-        </Link>
+      <div className="mb-6 flex items-center gap-3">
+        <BackButton parentTo="/app/study-tools" parentLabel="Herramientas" />
+        <h1 className="font-bold tracking-tight text-bloomora-deep text-[clamp(1.35rem,1.1rem+1vw,1.75rem)]">
+          Flashcards
+        </h1>
       </div>
 
       {view === 'list' ? (

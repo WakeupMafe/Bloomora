@@ -1558,6 +1558,172 @@
     }
   }
 
+  /* BackButton — spec boton_volver_componentes */
+  .bloomora-back-btn {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border-radius: 9999px;
+    border: 1px solid #e6dce4;
+    background: #ffffff;
+    color: #544687;
+    box-shadow: 0 4px 14px -6px rgba(84, 70, 135, 0.18);
+    cursor: pointer;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease,
+      box-shadow 150ms ease,
+      transform 150ms ease;
+  }
+
+  .bloomora-back-btn--labeled {
+    width: auto;
+    gap: 6px;
+    padding: 0 18px 0 12px;
+  }
+
+  .bloomora-back-btn__icon {
+    display: block;
+    flex-shrink: 0;
+  }
+
+  .bloomora-back-btn__label {
+    font-family: Quicksand, system-ui, sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.01em;
+  }
+
+  .bloomora-back-btn:hover {
+    background: #f4f0fa;
+    border-color: #b8a6f0;
+    color: #3f3468;
+  }
+
+  .bloomora-back-btn:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 3px #fff,
+      0 0 0 5px #544687;
+  }
+
+  .bloomora-back-btn:active {
+    background: #efeafb;
+    box-shadow: none;
+    transform: scale(0.96);
+  }
+
+  .bloomora-back-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  /* Página Listas */
+  .bloomora-lists-page {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 1184px;
+    min-width: 0;
+    min-height: calc(100dvh - 4rem);
+    overflow-x: hidden;
+  }
+
+  @media (max-width: 599px) {
+    .bloomora-lists-page {
+      min-height: calc(100dvh - 4rem - 72px - env(safe-area-inset-bottom, 0px));
+    }
+  }
+
+  .bloomora-lists-progress {
+    height: 8px;
+    border-radius: 9999px;
+    background: #ebe4f5;
+    overflow: hidden;
+  }
+
+  .bloomora-lists-progress--lg {
+    height: 12px;
+  }
+
+  .bloomora-lists-progress > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(
+      90deg,
+      var(--bloomora-list-cta-from),
+      var(--bloomora-list-cta-via),
+      var(--bloomora-list-cta-to)
+    );
+  }
+
+  .bloomora-lists-undo {
+    position: fixed;
+    left: 50%;
+    bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+    z-index: 260;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: min(calc(100vw - 2rem), 28rem);
+    transform: translateX(-50%);
+    border-radius: 9999px;
+    background: #3f3468;
+    color: #fff;
+    padding: 0.65rem 0.75rem 0.65rem 1.1rem;
+    box-shadow: 0 16px 40px -12px rgba(63, 52, 104, 0.55);
+  }
+
+  @media (max-width: 599px) {
+    .bloomora-lists-undo {
+      bottom: calc(72px + env(safe-area-inset-bottom, 0px) + 0.75rem);
+    }
+  }
+
+  .bloomora-lists-sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 280;
+  }
+
+  .bloomora-lists-sheet__backdrop {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    background: rgba(63, 52, 104, 0.35);
+    backdrop-filter: blur(2px);
+  }
+
+  .bloomora-lists-sheet__panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-height: min(88dvh, 36rem);
+    overflow: auto;
+    border-radius: 1.5rem 1.5rem 0 0;
+    background: #fff;
+    padding: 0.75rem 1.1rem calc(1.1rem + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -12px 40px -10px rgba(63, 52, 104, 0.28);
+  }
+
+  .bloomora-lists-sheet__handle {
+    width: 2.5rem;
+    height: 0.3rem;
+    margin: 0.15rem auto 0.85rem;
+    border-radius: 9999px;
+    background: #d9d0e6;
+  }
+
   /*
    * Botones nativos (<button>): transición ease-out en colores/sombras y ligero
    * feedback al pulsar. :where() mantiene baja especificidad para no pisar utilidades

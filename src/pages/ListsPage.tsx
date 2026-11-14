@@ -1,5 +1,6 @@
 import {
   type FormEvent,
+  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
@@ -7,20 +8,40 @@ import {
   useState,
 } from 'react'
 import { createPortal } from 'react-dom'
-import { useQueries } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
-import { BloomoraLogo } from '@/components/brand/BloomoraLogo'
+import { BloomyPose } from '@/components/brand/BloomyPose'
 import { BackButton } from '@/components/navigation/BackButton'
 import { Button } from '@/components/ui/Button'
 import { useBloomoraAlert } from '@/contexts/BloomoraAlertContext'
 import { useListGadgets } from '@/contexts/ListGadgetsContext'
 import { useUserPhone } from '@/contexts/UserPhoneContext'
-import { useAddListMutation, useBloomoraLists } from '@/hooks/useBloomoraLists'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
 import {
-  computeNextAgendaBlockMinutes,
-  useListItemAgendaMutations,
-} from '@/hooks/useListItemAgendaMutations'
+  ListActionsSheet,
+  type ListActionId,
+} from '@/features/lists/ListActionsSheet'
+import { ListItemAgendaMenu } from '@/features/lists/ListItemAgendaMenu'
+import {
+  clearListEmoji,
+  getListEmoji,
+  LIST_EMOJI_OPTIONS,
+  setListEmoji,
+} from '@/features/lists/listEmoji'
+import {
+  copyTextToClipboard,
+  formatListAsText,
+  renderAndExportListImage,
+} from '@/features/lists/exportListShare'
+import {
+  formatListUpdatedLabel,
+  LIST_IDEA_PRESETS,
+  listProgressPct,
+} from '@/features/lists/listFormat'
+import { useBloomoraToast } from '@/contexts/BloomoraToastContext'
+import {
+  useAddListMutation,
+  useBloomoraLists,
+  useDuplicateListMutation,
+} from '@/hooks/useBloomoraLists'
 import {
   useBloomoraListItems,
   useDeleteListMutation,
@@ -28,51 +49,89 @@ import {
   useUpdateListTitleMutation,
   type UiListItem,
 } from '@/hooks/useBloomoraListItems'
-import { ListItemAgendaMenu } from '@/features/lists/ListItemAgendaMenu'
-import { listAgendaTasks } from '@/services/supabase/agendaRepo'
-import { requireExistingProfileByCedula } from '@/services/supabase/profilesRepo'
-import { requireSupabase } from '@/services/supabase/typedClient'
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import type { DashboardList } from '@/types/dashboardLists'
-import {
-  addLocalDays,
-  formatMinutes12h,
-  startOfLocalDay,
-  titleCaseAgendaDate,
-  toDateKeyLocal,
-} from '@/utils/agendaTime'
 import { cn } from '@/utils/cn'
 
-/** Referencias estables: `data ?? []` inline crea un array nuevo cada render y dispara efectos. */
 const EMPTY_LISTS: DashboardList[] = []
-const EMPTY_LIST_ITEMS: UiListItem[] = []
+const EMPTY_ITEMS: UiListItem[] = []
+const SWIPE_THRESHOLD = 64
+
+type PendingUndo = {
+  listId: string
+  item: UiListItem
+  timer: ReturnType<typeof setTimeout>
+}
 
 export function ListsPage() {
   const { cedula } = useUserPhone()
   const { confirm } = useBloomoraAlert()
+  const { showToast } = useBloomoraToast()
   const { openListGadget, closeListGadget, isListGadgetOpen } = useListGadgets()
+  const [exportBusy, setExportBusy] = useState(false)
+  const isWide = useMediaQuery('(min-width: 600px)')
   const canUseGadgets = useMediaQuery('(min-width: 768px)')
   const { data: listsData, isLoading: listsLoading } = useBloomoraLists(cedula)
   const lists = listsData ?? EMPTY_LISTS
   const addListMut = useAddListMutation(cedula)
+  const dupListMut = useDuplicateListMutation(cedula)
   const updateTitleMut = useUpdateListTitleMutation(cedula)
   const deleteListMut = useDeleteListMutation(cedula)
   const [searchParams, setSearchParams] = useSearchParams()
   const listParam = searchParams.get('list')
   const crearParam = searchParams.get('crear')
-  const newListInputRef = useRef<HTMLInputElement>(null)
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [listQuery, setListQuery] = useState('')
   const [newListTitle, setNewListTitle] = useState('')
+  const [creatingOpen, setCreatingOpen] = useState(false)
   const [listTitleEdit, setListTitleEdit] = useState('')
+  const [renaming, setRenaming] = useState(false)
   const [newItem, setNewItem] = useState('')
+  const [emojiTick, setEmojiTick] = useState(0)
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false)
+  const [actionsOpen, setActionsOpen] = useState(false)
+  const [hintDismissed, setHintDismissed] = useState(false)
+  const [multiSelectMode, setMultiSelectMode] = useState(false)
+  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([])
+  const [pendingSectionOpen, setPendingSectionOpen] = useState(true)
+  const [doneSectionOpen, setDoneSectionOpen] = useState(true)
+  const [pendingUndo, setPendingUndo] = useState<PendingUndo | null>(null)
+  const [emojiById, setEmojiById] = useState<Record<string, string>>({})
+
+  const newListInputRef = useRef<HTMLInputElement>(null)
+  const newItemInputRef = useRef<HTMLInputElement>(null)
+  const renameInputRef = useRef<HTMLInputElement>(null)
+
+  useBodyScrollLock(actionsOpen || emojiPickerOpen)
 
   const selectList = useCallback(
     (id: string) => {
       setSelectedId(id)
       setSearchParams({ list: id }, { replace: true })
+      setActionsOpen(false)
+      setMultiSelectMode(false)
+      setSelectedItemIds([])
+      setRenaming(false)
     },
     [setSearchParams],
   )
+
+  const clearMobileDetail = useCallback(() => {
+    setSelectedId(null)
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete('list')
+        return next
+      },
+      { replace: true },
+    )
+    setActionsOpen(false)
+    setMultiSelectMode(false)
+    setSelectedItemIds([])
+  }, [setSearchParams])
 
   useEffect(() => {
     if (lists.length === 0) {
@@ -103,9 +162,14 @@ export function ListsPage() {
         { replace: true },
       )
     }
+    if (!isWide) {
+      if (selectedId && lists.some((l) => l.id === selectedId)) return
+      setSelectedId(null)
+      return
+    }
     if (selectedId && lists.some((l) => l.id === selectedId)) return
     setSelectedId(lists[0]!.id)
-  }, [lists, listParam, selectedId, setSearchParams])
+  }, [lists, listParam, selectedId, setSearchParams, isWide])
 
   const selected = useMemo(
     () => lists.find((l) => l.id === selectedId) ?? null,
@@ -113,16 +177,29 @@ export function ListsPage() {
   )
 
   useEffect(() => {
-    if (selected) setListTitleEdit(selected.title)
-  }, [selected])
+    if (selected) {
+      setListTitleEdit(selected.title)
+      setRenaming(false)
+    }
+  }, [selected?.id, selected?.title])
+
+  useEffect(() => {
+    const map: Record<string, string> = {}
+    lists.forEach((l, i) => {
+      map[l.id] = getListEmoji(l.id, l.title, i)
+    })
+    setEmojiById(map)
+  }, [lists, emojiTick])
 
   useEffect(() => {
     if (crearParam !== '1') return
+    setCreatingOpen(true)
     const frame = window.requestAnimationFrame(() => {
-      const input = newListInputRef.current
-      if (!input) return
-      input.focus({ preventScroll: false })
-      input.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      newListInputRef.current?.focus({ preventScroll: false })
+      newListInputRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      })
     })
     setSearchParams(
       (prev) => {
@@ -140,124 +217,61 @@ export function ListsPage() {
     cedula,
     selectedId,
   )
-  const items = itemsData ?? EMPTY_LIST_ITEMS
-  const { addItem, toggleItem, renameItem, removeItem } = useListItemsMutations(
-    cedula,
-    selectedId,
-  )
+  const items = itemsData ?? EMPTY_ITEMS
   const {
-    createTaskFromListItem,
-    addSubtaskFromListItem,
-    showToast,
-  } = useListItemAgendaMutations(cedula)
+    addItem,
+    toggleItem,
+    renameItem,
+    removeItem,
+    clearCompleted,
+    markManyDone,
+    removeMany,
+  } = useListItemsMutations(cedula, selectedId)
 
-  const [multiSelectMode, setMultiSelectMode] = useState(false)
-  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([])
-  const [bulkTaskModalOpen, setBulkTaskModalOpen] = useState(false)
-  const [bulkSubtaskModalOpen, setBulkSubtaskModalOpen] = useState(false)
-  const [selectedBulkTaskId, setSelectedBulkTaskId] = useState<number | null>(null)
-  const [bulkPending, setBulkPending] = useState(false)
+  const pendingUndoRef = useRef<PendingUndo | null>(null)
+  pendingUndoRef.current = pendingUndo
+  const removeItemMutateRef = useRef(removeItem.mutate)
+  removeItemMutateRef.current = removeItem.mutate
 
-  const { dayKeys, dayDates } = useMemo(() => {
-    const today = startOfLocalDay(new Date())
-    const keys: string[] = []
-    const dates: Date[] = []
-    for (let i = 0; i < 3; i++) {
-      const d = addLocalDays(today, i)
-      keys.push(toDateKeyLocal(d))
-      dates.push(d)
+  useEffect(() => {
+    return () => {
+      const pending = pendingUndoRef.current
+      if (!pending) return
+      clearTimeout(pending.timer)
+      removeItemMutateRef.current(pending.item.id)
     }
-    return { dayKeys: keys, dayDates: dates }
   }, [])
 
-  const selectedItems = useMemo(
-    () => items.filter((it) => selectedItemIds.includes(it.id)),
-    [items, selectedItemIds],
-  )
+  useEffect(() => {
+    if (!pendingUndo) return
+    if (pendingUndo.listId === selectedId) return
+    clearTimeout(pendingUndo.timer)
+    removeItemMutateRef.current(pendingUndo.item.id)
+    setPendingUndo(null)
+  }, [selectedId, pendingUndo])
 
-  const bulkAgendaQueries = useQueries({
-    queries: dayKeys.map((dayKey) => ({
-      queryKey: ['agenda-lite-bulk', cedula, dayKey] as const,
-      queryFn: async () => {
-        const sb = requireSupabase()
-        await requireExistingProfileByCedula(sb, cedula!)
-        return listAgendaTasks(sb, cedula!, dayKey)
-      },
-      enabled: Boolean(cedula && (bulkTaskModalOpen || bulkSubtaskModalOpen)),
-      staleTime: 30_000,
-    })),
-  })
+  const filteredLists = useMemo(() => {
+    const q = listQuery.trim().toLowerCase()
+    if (!q) return lists
+    return lists.filter((l) => l.title.toLowerCase().includes(q))
+  }, [lists, listQuery])
 
-  const exitMultiSelectMode = () => {
-    setMultiSelectMode(false)
-    setSelectedItemIds((prev) => (prev.length === 0 ? prev : []))
-    setBulkTaskModalOpen(false)
-    setBulkSubtaskModalOpen(false)
-    setSelectedBulkTaskId(null)
-  }
-
-  const activateMultiSelect = (itemId: string) => {
-    setMultiSelectMode(true)
-    setSelectedItemIds((prev) => (prev.includes(itemId) ? prev : [...prev, itemId]))
-  }
-
-  const toggleSelectedItem = (itemId: string) => {
-    setSelectedItemIds((prev) =>
-      prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId],
+  const totals = useMemo(() => {
+    const listCount = lists.length
+    const pending = lists.reduce(
+      (acc, l) => acc + Math.max(0, l.totalCount - l.doneCount),
+      0,
     )
-  }
+    return { listCount, pending }
+  }, [lists])
 
-  const transferSelectedAsTasks = async (dayKey: string, dayLabel: string) => {
-    if (selectedItems.length === 0) {
-      showToast('Selecciona al menos un ítem.')
-      return
-    }
-    setBulkPending(true)
-    try {
-      for (const it of selectedItems) {
-        await createTaskFromListItem.mutateAsync({ dayKey, title: it.title })
-        if (!it.done) await toggleItem.mutateAsync({ id: it.id, done: true })
-      }
-      showToast(
-        `Listo! Pasaste ${selectedItems.length} ítems como tarea en ${dayLabel}.`,
-      )
-      exitMultiSelectMode()
-    } catch (e) {
-      showToast(
-        e instanceof Error ? e.message : 'No se pudieron pasar todos los ítems.',
-      )
-    } finally {
-      setBulkPending(false)
-    }
-  }
+  const showMobileDetail = !isWide && selected != null
+  const showListPanel = isWide || !showMobileDetail
+  const showDetailPanel = isWide || showMobileDetail
 
-  const transferSelectedAsSteps = async () => {
-    if (selectedBulkTaskId == null) {
-      showToast('Elige una tarea.')
-      return
-    }
-    if (selectedItems.length === 0) {
-      showToast('Selecciona al menos un ítem.')
-      return
-    }
-    setBulkPending(true)
-    try {
-      for (const it of selectedItems) {
-        await addSubtaskFromListItem.mutateAsync({
-          taskId: selectedBulkTaskId,
-          title: it.title,
-        })
-        if (!it.done) await toggleItem.mutateAsync({ id: it.id, done: true })
-      }
-      showToast(`Genial! Agregaste ${selectedItems.length} ítems como pasos.`)
-      exitMultiSelectMode()
-    } catch (e) {
-      showToast(
-        e instanceof Error ? e.message : 'No se pudieron asignar todos los pasos.',
-      )
-    } finally {
-      setBulkPending(false)
-    }
+  const openCreate = () => {
+    setCreatingOpen(true)
+    requestAnimationFrame(() => newListInputRef.current?.focus())
   }
 
   const handleCreateList = (e: FormEvent) => {
@@ -265,28 +279,219 @@ export function ListsPage() {
     const t = newListTitle.trim()
     if (!t) return
     addListMut.mutate(t, {
-      onSuccess: () => setNewListTitle(''),
+      onSuccess: (newId) => {
+        setNewListTitle('')
+        setCreatingOpen(false)
+        if (newId != null) selectList(String(newId))
+      },
     })
   }
 
-  const handleRenameList = (e: FormEvent) => {
-    e.preventDefault()
+  const createFromIdea = (title: string, emoji: string) => {
+    addListMut.mutate(title, {
+      onSuccess: (newId) => {
+        if (newId != null) {
+          setListEmoji(String(newId), emoji)
+          setEmojiTick((n) => n + 1)
+          selectList(String(newId))
+        }
+      },
+    })
+  }
+
+  const handleRenameList = (e?: FormEvent) => {
+    e?.preventDefault()
     if (!selectedId) return
     const t = listTitleEdit.trim()
     if (!t) return
-    updateTitleMut.mutate({ listId: selectedId, title: t })
+    updateTitleMut.mutate(
+      { listId: selectedId, title: t },
+      { onSuccess: () => setRenaming(false) },
+    )
   }
 
   const handleAddItem = (e: FormEvent) => {
     e.preventDefault()
     const t = newItem.trim()
     if (!t) return
-    addItem.mutate(t, { onSuccess: () => setNewItem('') })
+    addItem.mutate(t, {
+      onSuccess: () => {
+        setNewItem('')
+        newItemInputRef.current?.focus()
+      },
+    })
+  }
+
+  const scheduleUndoRemove = (item: UiListItem) => {
+    if (!selectedId) return
+    if (pendingUndo) {
+      clearTimeout(pendingUndo.timer)
+      removeItem.mutate(pendingUndo.item.id)
+    }
+    const timer = setTimeout(() => {
+      removeItem.mutate(item.id)
+      setPendingUndo(null)
+    }, 5000)
+    setPendingUndo({ listId: selectedId, item, timer })
+  }
+
+  const undoRemove = () => {
+    if (!pendingUndo) return
+    clearTimeout(pendingUndo.timer)
+    setPendingUndo(null)
+  }
+
+  const visibleItems = useMemo(() => {
+    if (!pendingUndo || pendingUndo.listId !== selectedId) return items
+    return items.filter((i) => i.id !== pendingUndo.item.id)
+  }, [items, pendingUndo, selectedId])
+
+  const visiblePending = useMemo(
+    () => visibleItems.filter((i) => !i.done),
+    [visibleItems],
+  )
+  const visibleDone = useMemo(
+    () => visibleItems.filter((i) => i.done),
+    [visibleItems],
+  )
+
+  const selectedDone = selected?.doneCount ?? visibleDone.length
+  const selectedTotal = selected?.totalCount ?? visibleItems.length
+  const selectedPct = listProgressPct(selectedDone, selectedTotal)
+  const selectedEmoji =
+    selected != null
+      ? (emojiById[selected.id] ?? getListEmoji(selected.id, selected.title))
+      : '📝'
+
+  const exitMultiSelect = () => {
+    setMultiSelectMode(false)
+    setSelectedItemIds([])
+  }
+
+  const toggleSelectedItem = (id: string) => {
+    setSelectedItemIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    )
+  }
+
+  const selectAllVisible = () => {
+    setSelectedItemIds(visibleItems.map((i) => i.id))
+  }
+
+  const handleSheetAction = async (id: ListActionId) => {
+    if (!selected) return
+    setActionsOpen(false)
+    if (id === 'postit') {
+      if (canUseGadgets) openListGadget(selected.id)
+      return
+    }
+    if (id === 'rename') {
+      setRenaming(true)
+      requestAnimationFrame(() => renameInputRef.current?.focus())
+      return
+    }
+    if (id === 'emoji') {
+      setEmojiPickerOpen(true)
+      return
+    }
+    if (id === 'select') {
+      setMultiSelectMode(true)
+      return
+    }
+    if (id === 'copy-text') {
+      try {
+        const text = formatListAsText({
+          title: selected.title,
+          emoji: selectedEmoji,
+          items: visibleItems,
+        })
+        await copyTextToClipboard(text)
+        showToast('Lista copiada como texto. Ya la puedes pegar o reenviar.')
+      } catch {
+        showToast('No se pudo copiar el texto.')
+      }
+      return
+    }
+    if (id === 'copy-image') {
+      if (exportBusy) return
+      setExportBusy(true)
+      try {
+        const result = await renderAndExportListImage({
+          title: selected.title,
+          emoji: selectedEmoji,
+          items: visibleItems,
+        })
+        if (result === 'copied') {
+          showToast('Imagen copiada. Pégala donde quieras.')
+        } else if (result === 'shared') {
+          showToast('Lista compartida.')
+        } else {
+          showToast('Imagen guardada en descargas.')
+        }
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return
+        showToast('No se pudo generar la imagen.')
+      } finally {
+        setExportBusy(false)
+      }
+      return
+    }
+    if (id === 'duplicate') {
+      dupListMut.mutate({
+        listId: selected.id,
+        title: `${selected.title} (copia)`,
+      })
+      return
+    }
+    if (id === 'clear') {
+      if (selectedDone === 0) return
+      clearCompleted.mutate()
+      return
+    }
+    if (id === 'delete') {
+      const ok = await confirm({
+        title: `¿Eliminar “${selected.title}”?`,
+        description: `Se borrarán la lista y sus ${selectedTotal} ítems. Esta acción no se puede deshacer.`,
+        confirmLabel: 'Eliminar lista',
+        tone: 'danger',
+      })
+      if (!ok) return
+      deleteListMut.mutate(selected.id, {
+        onSuccess: () => {
+          closeListGadget(selected.id)
+          clearListEmoji(selected.id)
+          if (!isWide) clearMobileDetail()
+          else {
+            setSelectedId(null)
+            setSearchParams({}, { replace: true })
+          }
+        },
+      })
+    }
+  }
+
+  const markSelectedDone = () => {
+    if (selectedItemIds.length === 0) return
+    markManyDone.mutate(
+      { ids: selectedItemIds, done: true },
+      { onSuccess: exitMultiSelect },
+    )
+  }
+
+  const deleteSelected = async () => {
+    if (selectedItemIds.length === 0) return
+    const ok = await confirm({
+      title: `¿Eliminar ${selectedItemIds.length} ítems?`,
+      confirmLabel: 'Eliminar',
+      tone: 'danger',
+    })
+    if (!ok) return
+    removeMany.mutate(selectedItemIds, { onSuccess: exitMultiSelect })
   }
 
   useEffect(() => {
     setSelectedItemIds((prev) => {
-      const next = prev.filter((id) => items.some((it) => it.id === id))
+      const next = prev.filter((id) => visibleItems.some((it) => it.id === id))
       if (
         next.length === prev.length &&
         next.every((id, i) => id === prev[i])
@@ -295,430 +500,769 @@ export function ListsPage() {
       }
       return next
     })
-  }, [items])
+  }, [visibleItems])
 
   useEffect(() => {
-    if (!multiSelectMode) return
-    if (selectedItemIds.length === 0) {
-      setMultiSelectMode(false)
-      setBulkTaskModalOpen(false)
-      setBulkSubtaskModalOpen(false)
-      setSelectedBulkTaskId(null)
-    }
-  }, [multiSelectMode, selectedItemIds.length])
-
-  useEffect(() => {
-    exitMultiSelectMode()
+    exitMultiSelect()
+    setActionsOpen(false)
+    setEmojiPickerOpen(false)
   }, [selectedId])
 
   return (
-    <div className="app-shell-padding app-content-fluid mx-auto flex min-h-dvh flex-col gap-5 bg-bloomora-snow pb-[max(4rem,env(safe-area-inset-bottom))] sm:gap-6">
-      <header className="flex items-center justify-between gap-3">
-        <BloomoraLogo size="sm" />
-        <BackButton to="/app" label="Volver al inicio" />
-      </header>
-
-      <h1 className="app-fluid-title font-bold text-bloomora-deep">Tus listas</h1>
-
-      <div className="flex min-w-0 flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] lg:items-start lg:gap-8">
-        <aside className="min-w-0 space-y-3 rounded-[clamp(1rem,0.85rem+0.8vw,1.35rem)] bg-bloomora-lavender-50/95 p-4 shadow-[0_6px_24px_-10px_rgba(124,107,181,0.12)] ring-1 ring-bloomora-line/40 sm:p-5">
-          <p className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-bloomora-text-muted">
-            Tus listas
-          </p>
-          {listsLoading ? (
-            <p className="text-sm text-bloomora-text-muted">Cargando…</p>
-          ) : lists.length === 0 ? (
-            <p className="text-sm text-bloomora-text-muted">Sin listas aún.</p>
-          ) : (
-            <ul
-              className={cn(
-                'flex gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]',
-                'snap-x snap-mandatory',
-                'lg:flex-col lg:gap-2 lg:overflow-visible lg:pb-0 lg:snap-none',
-              )}
-            >
-              {lists.map((l) => (
-                <li key={l.id} className="shrink-0 snap-start lg:w-full lg:shrink">
-                  <button
-                    type="button"
-                    onClick={() => selectList(l.id)}
-                    className={cn(
-                      'flex max-w-[min(85vw,16rem)] items-center gap-2 rounded-2xl px-3 py-3 text-left text-sm font-semibold transition touch-manipulation',
-                      'min-h-[2.75rem] whitespace-nowrap lg:max-w-none lg:w-full lg:whitespace-normal',
-                      selectedId === l.id
-                        ? 'bg-bloomora-lavender-100 text-bloomora-deep shadow-sm ring-2 ring-bloomora-lilac/45'
-                        : 'bg-bloomora-white/80 text-bloomora-deep ring-1 ring-bloomora-line/35 hover:bg-bloomora-lavender-100/90 hover:ring-bloomora-lilac/25',
-                    )}
-                  >
-                    <span className="min-w-0 truncate lg:whitespace-normal">{l.title}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          <form
-            onSubmit={handleCreateList}
-            className="space-y-2 border-t border-bloomora-line/20 pt-3"
+    <div className="bloomora-lists-page app-shell-padding--dashboard mx-auto flex flex-col gap-5 max-[599px]:gap-4">
+      {!showMobileDetail ? (
+        <header className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3 pb-1 pt-6 max-[599px]:pt-6 min-[600px]:pt-8 min-[1024px]:pt-10">
+          <div className="min-w-0">
+            <h1 className="text-[clamp(1.75rem,1.4rem+1.2vw,2.25rem)] font-bold tracking-tight text-bloomora-deep">
+              Listas
+            </h1>
+            <p className="mt-1 text-sm text-bloomora-text-muted">
+              {listsLoading
+                ? 'Cargando…'
+                : `${totals.listCount} lista${totals.listCount === 1 ? '' : 's'} · ${totals.pending} pendiente${totals.pending === 1 ? '' : 's'}`}
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            className="min-h-11 shrink-0 self-end rounded-pill px-4 shadow-[0_8px_20px_-8px_rgba(232,155,184,0.55)]"
+            onClick={openCreate}
           >
-            <input
-              ref={newListInputRef}
-              value={newListTitle}
-              onChange={(e) => setNewListTitle(e.target.value)}
-              placeholder="Nueva lista…"
-              aria-label="Nombre de la nueva lista"
-              className="bloomora-form-input w-full rounded-xl border border-bloomora-line/50 px-3 py-2.5 text-sm font-semibold outline-none ring-bloomora-lilac/20 focus:ring-2"
-            />
+            <span className="max-[599px]:hidden">+ Nueva lista</span>
+            <span className="min-[600px]:hidden">+ Nueva</span>
+          </Button>
+        </header>
+      ) : null}
+
+      {creatingOpen ? (
+        <form
+          onSubmit={handleCreateList}
+          className="flex flex-col gap-2 rounded-[1.25rem] border border-bloomora-line bg-bloomora-white p-3 shadow-sm sm:flex-row sm:items-center"
+        >
+          <input
+            ref={newListInputRef}
+            value={newListTitle}
+            onChange={(e) => setNewListTitle(e.target.value)}
+            placeholder="Nombre de la nueva lista…"
+            aria-label="Nombre de la nueva lista"
+            className="bloomora-form-input min-h-11 min-w-0 flex-1 rounded-xl border border-bloomora-line/50 px-3 text-sm font-semibold outline-none ring-bloomora-lilac/20 focus:ring-2"
+          />
+          <div className="flex gap-2">
             <Button
               type="submit"
               size="sm"
-              className="w-full"
               disabled={!newListTitle.trim() || addListMut.isPending}
             >
               Crear
             </Button>
-          </form>
-        </aside>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setCreatingOpen(false)
+                setNewListTitle('')
+              }}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </form>
+      ) : null}
 
-        <section className="min-w-0 rounded-[clamp(1.1rem,0.95rem+0.9vw,1.5rem)] bg-bloomora-lavender-50/95 p-4 shadow-[0_8px_32px_-12px_rgba(124,107,181,0.14)] ring-1 ring-bloomora-line/40 sm:p-6">
-          {!selected ? (
-            <p className="text-sm text-bloomora-text-muted">
-              Crea o elige una lista.
-            </p>
-          ) : (
-            <>
-              <form
-                onSubmit={handleRenameList}
-                className="flex flex-col gap-3 border-b border-bloomora-line/15 pb-4 sm:flex-row sm:flex-wrap sm:items-end"
-              >
-                <label className="min-w-0 flex-1 text-xs font-semibold text-bloomora-text-muted sm:min-w-[12rem]">
-                  Nombre de la lista
-                  <input
-                    value={listTitleEdit}
-                    onChange={(e) => setListTitleEdit(e.target.value)}
-                    className="bloomora-form-input mt-1 w-full rounded-xl border border-bloomora-line/50 px-3 py-2.5 text-[clamp(0.95rem,0.88rem+0.4vw,1.05rem)] font-bold text-bloomora-deep outline-none ring-bloomora-lilac/20 focus:ring-2"
-                  />
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="submit"
-                    size="sm"
-                    disabled={updateTitleMut.isPending}
-                    className="min-h-10 touch-manipulation"
-                  >
-                    Guardar nombre
-                  </Button>
-                  {canUseGadgets ? (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      className="min-h-10 touch-manipulation"
-                      disabled={isListGadgetOpen(selected.id)}
-                      onClick={() => openListGadget(selected.id)}
-                    >
-                      {isListGadgetOpen(selected.id)
-                        ? 'Ya en post-it'
-                        : 'Abrir como post-it'}
-                    </Button>
-                  ) : null}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="min-h-10 text-red-600 touch-manipulation"
-                    onClick={async () => {
-                      const ok = await confirm({
-                        title: '¿Eliminar esta lista y sus ítems?',
-                        confirmLabel: 'Eliminar',
-                        tone: 'danger',
-                      })
-                      if (!ok) return
-                      deleteListMut.mutate(selected.id, {
-                        onSuccess: () => {
-                          closeListGadget(selected.id)
-                          setSelectedId(null)
-                          setSearchParams({}, { replace: true })
-                        },
-                      })
-                    }}
-                  >
-                    Eliminar lista
-                  </Button>
-                </div>
-              </form>
-
-              <div className="mt-5">
-                <h2 className="text-sm font-bold text-bloomora-deep">
-                  Cosas de la lista
-                </h2>
-                <p className="mt-1 text-xs text-bloomora-text-muted">
-                  Márcala cuando la hagas.
-                </p>
-                {!multiSelectMode ? (
-                  <p className="mt-1 text-[0.7rem] font-semibold text-bloomora-violet">
-                    Doble clic en un ítem para seleccionar varios.
-                  </p>
-                ) : (
-                  <div className="mt-3 space-y-2 rounded-2xl border border-bloomora-lilac/35 bg-bloomora-lavender-50/75 p-3 ring-1 ring-bloomora-line/30">
-                    <p className="text-xs font-bold text-bloomora-deep">
-                      Seleccionados: {selectedItems.length}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        disabled={selectedItems.length === 0 || bulkPending}
-                        onClick={() => setBulkTaskModalOpen(true)}
-                      >
-                        Pasar como tarea
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={selectedItems.length === 0 || bulkPending}
-                        onClick={() => setBulkSubtaskModalOpen(true)}
-                      >
-                        Pasar como paso
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={exitMultiSelectMode}
-                        disabled={bulkPending}
-                      >
-                        Cancelar selección
-                      </Button>
-                    </div>
-                  </div>
-                )}
-                {itemsLoading ? (
-                  <p className="mt-3 text-sm text-bloomora-text-muted">
-                    Cargando…
-                  </p>
-                ) : items.length === 0 ? (
-                  <p className="mt-3 rounded-2xl bg-bloomora-lavender-50/50 px-4 py-4 text-center text-sm text-bloomora-text-muted ring-1 ring-bloomora-line/25">
-                    Lista vacía. Escribe abajo y añade tu primer paso.
-                  </p>
-                ) : (
-                  <ul className="mt-4 flex flex-col gap-3">
-                    {items.map((it) => (
-                      <ListItemRow
-                        key={it.id}
-                        cedula={cedula}
-                        item={it}
-                        multiSelectMode={multiSelectMode}
-                        selected={selectedItemIds.includes(it.id)}
-                        onActivateMultiSelect={() => activateMultiSelect(it.id)}
-                        onSelectToggle={() => toggleSelectedItem(it.id)}
-                        onToggle={(done) =>
-                          toggleItem.mutate({ id: it.id, done })
-                        }
-                        onRename={(title) =>
-                          renameItem.mutate({ id: it.id, title })
-                        }
-                        onDelete={async () => {
-                          const ok = await confirm({
-                            title: '¿Quitar este ítem?',
-                            confirmLabel: 'Quitar',
-                            tone: 'danger',
-                          })
-                          if (!ok) return
-                          removeItem.mutate(it.id)
-                        }}
-                      />
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              <form
-                onSubmit={handleAddItem}
-                className="mt-6 flex flex-col gap-3 sm:mt-5 sm:flex-row sm:items-stretch"
-              >
-                <input
-                  value={newItem}
-                  onChange={(e) => setNewItem(e.target.value)}
-                  placeholder="Algo más para la lista…"
-                  className="bloomora-form-input min-h-12 min-w-0 flex-1 rounded-2xl border border-bloomora-line/50 px-4 py-3 text-[clamp(0.9rem,0.85rem+0.35vw,1rem)] font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/25 focus:ring-2 touch-manipulation"
-                />
-                <Button
-                  type="submit"
-                  size="sm"
-                  className="min-h-12 shrink-0 px-6 sm:self-end"
-                  disabled={!newItem.trim() || addItem.isPending}
-                >
-                  Añadir
-                </Button>
-              </form>
-            </>
+      {!listsLoading && lists.length === 0 ? (
+        <EmptyListsState
+          onCreate={openCreate}
+          onIdea={createFromIdea}
+          busy={addListMut.isPending}
+        />
+      ) : (
+        <div
+          className={cn(
+            'grid min-w-0 gap-4',
+            isWide &&
+              'min-[600px]:grid-cols-[minmax(15rem,18.5rem)_minmax(0,1fr)] min-[1024px]:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)] min-[600px]:items-start',
           )}
-        </section>
-      </div>
-      {bulkTaskModalOpen && typeof document !== 'undefined'
-        ? createPortal(
-            <>
-              <button
-                type="button"
-                data-bloomora-modal-backdrop
-                className="fixed inset-0 border-0 bg-bloomora-deep/20 p-0 backdrop-blur-[2px]"
-                style={{ zIndex: 10_070 }}
-                aria-label="Cerrar"
-                onClick={() => !bulkPending && setBulkTaskModalOpen(false)}
-              />
-              <div
-                role="dialog"
-                aria-modal
-                className="bloomora-modal-panel fixed left-1/2 top-1/2 z-[10075] flex max-h-[min(88dvh,32rem)] w-[min(100vw-1.5rem,24rem)] -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-hidden rounded-2xl bg-bloomora-blush/[0.98] p-5 shadow-[0_16px_48px_rgba(91,74,140,0.22)] ring-1 ring-bloomora-line/40 backdrop-blur-md sm:p-6"
-              >
-                <div>
-                  <p className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-bloomora-text-muted">
-                    Transferencia múltiple
-                  </p>
-                  <h2 className="bloomora-modal-title mt-1 text-base font-bold text-bloomora-deep sm:text-lg">
-                    Pasar como tarea
+        >
+          {showListPanel ? (
+            <aside
+              className={cn(
+                'min-w-0',
+                isWide
+                  ? 'rounded-[1.5rem] border border-bloomora-line bg-bloomora-white p-4 shadow-[0_10px_30px_-18px_rgba(91,74,140,0.28)] sm:p-5'
+                  : 'p-0',
+              )}
+            >
+              {isWide ? (
+                <div className="mb-3 flex items-center gap-2">
+                  <h2 className="text-base font-bold text-bloomora-deep">
+                    Tus listas
                   </h2>
-                  <p className="mt-1 text-sm text-bloomora-text-muted">
-                    Se crearán {selectedItems.length} tareas y se tacharán en la lista.
-                  </p>
+                  <span className="inline-flex min-h-6 min-w-6 items-center justify-center rounded-pill bg-bloomora-blush px-2 text-xs font-bold text-bloomora-rose-deep">
+                    {totals.listCount}
+                  </span>
                 </div>
-                <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto">
-                  {dayKeys.map((dayKey, i) => {
-                    const label = titleCaseAgendaDate(dayDates[i]!)
-                    const q = bulkAgendaQueries[i]
-                    const tasks = q?.data ?? []
-                    const { startMin, endMin } = computeNextAgendaBlockMinutes(tasks)
-                    const range = `${formatMinutes12h(startMin)} – ${formatMinutes12h(endMin)}`
+              ) : null}
+
+              <label className="relative mb-3 block">
+                <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-bloomora-text-muted">
+                  🔍
+                </span>
+                <input
+                  value={listQuery}
+                  onChange={(e) => setListQuery(e.target.value)}
+                  placeholder="Buscar lista"
+                  className="bloomora-form-input min-h-11 w-full rounded-pill border border-bloomora-line/50 bg-bloomora-white py-2.5 pl-10 pr-4 text-sm font-semibold shadow-sm outline-none ring-bloomora-lilac/20 focus:ring-2"
+                />
+              </label>
+
+              {listsLoading ? (
+                <p className="text-sm text-bloomora-text-muted">Cargando…</p>
+              ) : filteredLists.length === 0 ? (
+                <p className="text-sm text-bloomora-text-muted">
+                  No hay listas con ese nombre.
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-2">
+                  {filteredLists.map((l, idx) => {
+                    const emoji = emojiById[l.id] ?? getListEmoji(l.id, l.title, idx)
+                    const pct = listProgressPct(l.doneCount, l.totalCount)
+                    const active = selectedId === l.id
                     return (
-                      <li key={dayKey}>
+                      <li key={l.id}>
                         <button
                           type="button"
-                          disabled={bulkPending}
-                          onClick={() => void transferSelectedAsTasks(dayKey, label)}
-                          className="flex w-full flex-col items-start gap-0.5 rounded-2xl border border-bloomora-line/35 bg-bloomora-white/80 px-4 py-3 text-left transition hover:border-bloomora-lilac/50 hover:bg-bloomora-lavender-50/60 disabled:opacity-60"
+                          onClick={() => selectList(l.id)}
+                          className={cn(
+                            'flex w-full items-center gap-3 rounded-[1.15rem] px-3 py-3 text-left transition touch-manipulation',
+                            active
+                              ? 'bg-bloomora-blush/80 ring-2 ring-bloomora-rose/45'
+                              : isWide
+                                ? 'bg-bloomora-mist/35 ring-1 ring-bloomora-line/35 hover:bg-bloomora-mist/70'
+                                : 'bg-bloomora-white shadow-[0_6px_18px_-10px_rgba(91,74,140,0.28)] ring-1 ring-bloomora-line/30',
+                            !isWide && 'pr-2',
+                          )}
                         >
-                          <span className="text-sm font-bold text-bloomora-deep">{label}</span>
-                          <span className="text-xs font-medium text-bloomora-text-muted">
-                            {q?.isLoading ? 'Calculando hora…' : `Sugerido: ${range}`}
+                          <span
+                            className="grid size-11 shrink-0 place-items-center rounded-[0.9rem] bg-bloomora-white text-xl shadow-sm"
+                            aria-hidden
+                          >
+                            {emoji}
                           </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-center gap-1.5">
+                              <span className="truncate font-bold text-bloomora-deep">
+                                {l.title}
+                              </span>
+                              {active && isWide ? (
+                                <span className="text-xs" aria-hidden>
+                                  ✏️
+                                </span>
+                              ) : null}
+                            </span>
+                            <span className="mt-1.5 flex items-center gap-2">
+                              <span className="bloomora-lists-progress min-w-0 flex-1">
+                                <span style={{ width: `${pct}%` }} />
+                              </span>
+                              <span className="shrink-0 text-xs font-semibold tabular-nums text-bloomora-text-muted">
+                                {l.doneCount} de {l.totalCount}
+                              </span>
+                            </span>
+                          </span>
+                          {!isWide ? (
+                            <span className="text-bloomora-text-muted" aria-hidden>
+                              ›
+                            </span>
+                          ) : null}
                         </button>
                       </li>
                     )
                   })}
                 </ul>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="self-end"
-                  onClick={() => setBulkTaskModalOpen(false)}
-                  disabled={bulkPending}
-                >
-                  Cancelar
-                </Button>
-              </div>
-            </>,
+              )}
+
+              {!isWide && lists.length > 0 ? (
+                <div className="mt-5 rounded-[1.25rem] border border-dashed border-bloomora-lilac/45 bg-bloomora-mist/30 p-4">
+                  <p className="mb-3 text-sm font-bold text-bloomora-deep">
+                    Ideas para tu próxima lista
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {LIST_IDEA_PRESETS.slice(0, 4).map((idea) => (
+                      <button
+                        key={idea.label}
+                        type="button"
+                        disabled={addListMut.isPending}
+                        onClick={() => createFromIdea(idea.title, idea.emoji)}
+                        className="inline-flex min-h-10 items-center gap-1.5 rounded-pill bg-bloomora-white px-3 text-sm font-bold text-bloomora-violet ring-1 ring-bloomora-line/40"
+                      >
+                        <span aria-hidden>{idea.emoji}</span>
+                        {idea.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </aside>
+          ) : null}
+
+          {showDetailPanel ? (
+            <section className="min-w-0 rounded-[1.5rem] border border-bloomora-line bg-bloomora-white p-4 shadow-[0_10px_30px_-18px_rgba(91,74,140,0.28)] sm:p-5 max-[599px]:rounded-none max-[599px]:border-0 max-[599px]:bg-transparent max-[599px]:p-0 max-[599px]:shadow-none">
+              {!selected ? (
+                <p className="text-sm text-bloomora-text-muted">
+                  Elige una lista o crea una nueva.
+                </p>
+              ) : (
+                <>
+                  {showMobileDetail ? (
+                    <header className="mb-4 flex items-center gap-2">
+                      <BackButton
+                        parentTo="/app/lists"
+                        parentLabel="Listas"
+                        iconOnly
+                        onClick={(e) => {
+                          e.preventDefault()
+                          clearMobileDetail()
+                        }}
+                      />
+                      <h2 className="min-w-0 flex-1 truncate text-center text-lg font-bold text-bloomora-deep">
+                        {selected.title}
+                      </h2>
+                      <button
+                        type="button"
+                        aria-label="Más acciones"
+                        className="grid size-11 place-items-center rounded-full text-xl text-bloomora-deep"
+                        onClick={() => setActionsOpen(true)}
+                      >
+                        ⋮
+                      </button>
+                    </header>
+                  ) : null}
+
+                  {multiSelectMode ? (
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-bloomora-mist/70 px-3 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          aria-label="Salir de selección"
+                          className="grid size-9 place-items-center rounded-full bg-bloomora-white text-bloomora-deep ring-1 ring-bloomora-line/40"
+                          onClick={exitMultiSelect}
+                        >
+                          ✕
+                        </button>
+                        <p className="text-sm font-bold text-bloomora-deep">
+                          {selectedItemIds.length} seleccionado
+                          {selectedItemIds.length === 1 ? '' : 's'}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="text-sm font-bold text-bloomora-violet"
+                        onClick={selectAllVisible}
+                      >
+                        Seleccionar todo
+                      </button>
+                      <p className="basis-full text-xs text-bloomora-text-muted">
+                        Toca los ítems para elegirlos
+                        {isWide ? ' · en PC también Shift + clic para un rango' : ''}
+                      </p>
+                    </div>
+                  ) : null}
+
+                  <div
+                    className={cn(
+                      'rounded-[1.25rem] bg-bloomora-mist/45 p-3 sm:p-4',
+                      showMobileDetail && 'bg-bloomora-white ring-1 ring-bloomora-line/35',
+                    )}
+                  >
+                    <div className="flex flex-wrap items-start gap-3">
+                      <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-bloomora-blush text-2xl">
+                        {selectedEmoji}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        {renaming ? (
+                          <form
+                            onSubmit={handleRenameList}
+                            className="flex flex-wrap items-center gap-2"
+                          >
+                            <input
+                              ref={renameInputRef}
+                              value={listTitleEdit}
+                              onChange={(e) => setListTitleEdit(e.target.value)}
+                              className="bloomora-form-input min-h-10 min-w-0 flex-1 rounded-xl border border-bloomora-line/50 px-3 text-base font-bold outline-none ring-bloomora-lilac/25 focus:ring-2"
+                            />
+                            <Button type="submit" size="sm">
+                              Guardar
+                            </Button>
+                          </form>
+                        ) : (
+                          <div className="flex flex-wrap items-center gap-2">
+                            {!showMobileDetail ? (
+                              <h2 className="text-xl font-bold text-bloomora-deep">
+                                {selected.title}
+                              </h2>
+                            ) : null}
+                            {!showMobileDetail ? (
+                              <button
+                                type="button"
+                                aria-label="Renombrar"
+                                className="text-sm"
+                                onClick={() => {
+                                  setRenaming(true)
+                                  requestAnimationFrame(() =>
+                                    renameInputRef.current?.focus(),
+                                  )
+                                }}
+                              >
+                                ✏️
+                              </button>
+                            ) : null}
+                          </div>
+                        )}
+                        <p className="mt-0.5 text-sm text-bloomora-text-muted">
+                          {selectedTotal === 0
+                            ? 'Sin ítems todavía'
+                            : `${selectedDone} de ${selectedTotal} hechos`}
+                          {!showMobileDetail && selected.updatedAt
+                            ? ` · ${formatListUpdatedLabel(selected.updatedAt)}`
+                            : ''}
+                        </p>
+                      </div>
+                      <div className="ml-auto flex flex-wrap items-center gap-2">
+                        {canUseGadgets ? (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            className="min-h-10"
+                            disabled={isListGadgetOpen(selected.id)}
+                            onClick={() => openListGadget(selected.id)}
+                          >
+                            {showMobileDetail ? '📄 Post-it' : '📄 Abrir como post-it'}
+                          </Button>
+                        ) : showMobileDetail ? (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            className="min-h-10"
+                            disabled
+                            title="Los post-it están en tablet y PC"
+                          >
+                            📄 Post-it
+                          </Button>
+                        ) : null}
+                        {!showMobileDetail ? (
+                          <button
+                            type="button"
+                            aria-label="Más acciones"
+                            className="grid size-10 place-items-center rounded-full text-lg text-bloomora-deep ring-1 ring-bloomora-line/40"
+                            onClick={() => setActionsOpen(true)}
+                          >
+                            ⋮
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                    {selectedTotal > 0 ? (
+                      <div className="mt-3 flex items-center gap-3">
+                        <div className="bloomora-lists-progress bloomora-lists-progress--lg min-w-0 flex-1">
+                          <span style={{ width: `${selectedPct}%` }} />
+                        </div>
+                        <span className="text-sm font-bold tabular-nums text-bloomora-violet">
+                          {selectedPct}%
+                        </span>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {showMobileDetail && !hintDismissed && !multiSelectMode ? (
+                    <div className="relative mt-3 rounded-2xl bg-bloomora-mist/70 px-3 py-2.5 pr-9 text-xs font-semibold leading-relaxed text-bloomora-violet">
+                      Desliza un ítem a la izquierda para editar o quitar. Mantén
+                      presionado para seleccionar varios.
+                      <button
+                        type="button"
+                        aria-label="Cerrar pista"
+                        className="absolute right-2 top-2 grid size-7 place-items-center rounded-full"
+                        onClick={() => setHintDismissed(true)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : null}
+
+                  {!showMobileDetail ? (
+                    <form
+                      onSubmit={handleAddItem}
+                      className="mt-4 flex items-center gap-2 rounded-pill bg-bloomora-blush/70 p-1.5 ring-1 ring-bloomora-line/30"
+                    >
+                      <span className="pl-3 text-bloomora-rose-deep" aria-hidden>
+                        +
+                      </span>
+                      <input
+                        ref={newItemInputRef}
+                        value={newItem}
+                        onChange={(e) => setNewItem(e.target.value)}
+                        placeholder={
+                          selectedTotal === 0
+                            ? 'Escribe tu primer ítem…'
+                            : 'Agregar algo a la lista…'
+                        }
+                        className="min-h-11 min-w-0 flex-1 bg-transparent px-1 text-sm font-semibold text-bloomora-deep outline-none placeholder:text-bloomora-text-muted"
+                      />
+                      <span className="hidden text-xs font-bold text-bloomora-text-muted sm:inline">
+                        Enter ↵
+                      </span>
+                      <button
+                        type="submit"
+                        disabled={!newItem.trim() || addItem.isPending}
+                        aria-label="Agregar ítem"
+                        className="grid size-11 shrink-0 place-items-center rounded-full bg-bloomora-rose-deep text-lg font-bold text-white shadow-sm disabled:opacity-45"
+                      >
+                        +
+                      </button>
+                    </form>
+                  ) : null}
+
+                  {itemsLoading ? (
+                    <p className="mt-4 text-sm text-bloomora-text-muted">
+                      Cargando…
+                    </p>
+                  ) : visibleItems.length === 0 ? (
+                    <EmptyListItemsState />
+                  ) : (
+                    <div className="mt-4 space-y-4">
+                      {selectedDone === selectedTotal && selectedTotal > 0 ? (
+                        <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-emerald-50 px-4 py-3 ring-1 ring-emerald-200/80">
+                          <BloomyPose pose="celebrate" sizePx={72} showSparks={false} />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-emerald-800">
+                              ¡Lista completa! Todo listo.
+                            </p>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="secondary"
+                              className="mt-2"
+                              onClick={() => clearCompleted.mutate()}
+                            >
+                              🧹 Limpiar hechos
+                            </Button>
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <ItemSection
+                        title="PENDIENTES"
+                        count={visiblePending.length}
+                        open={pendingSectionOpen}
+                        onToggle={() => setPendingSectionOpen((v) => !v)}
+                        trailing={
+                          !multiSelectMode ? (
+                            <button
+                              type="button"
+                              className="inline-flex items-center gap-1 text-xs font-bold text-bloomora-violet"
+                              onClick={() => setMultiSelectMode(true)}
+                            >
+                              ☑️ Seleccionar
+                            </button>
+                          ) : null
+                        }
+                      >
+                        {visiblePending.map((it) => (
+                          <ListItemRow
+                            key={it.id}
+                            cedula={cedula}
+                            item={it}
+                            multiSelectMode={multiSelectMode}
+                            selected={selectedItemIds.includes(it.id)}
+                            swipeEnabled={showMobileDetail && !multiSelectMode}
+                            onSelectToggle={() => toggleSelectedItem(it.id)}
+                            onActivateMultiSelect={() => {
+                              setMultiSelectMode(true)
+                              setSelectedItemIds((prev) =>
+                                prev.includes(it.id) ? prev : [...prev, it.id],
+                              )
+                            }}
+                            onToggle={(done) =>
+                              toggleItem.mutate({ id: it.id, done })
+                            }
+                            onRename={(title) =>
+                              renameItem.mutate({ id: it.id, title })
+                            }
+                            onDelete={() => scheduleUndoRemove(it)}
+                          />
+                        ))}
+                      </ItemSection>
+
+                      <ItemSection
+                        title="HECHOS"
+                        count={visibleDone.length}
+                        open={doneSectionOpen}
+                        onToggle={() => setDoneSectionOpen((v) => !v)}
+                        trailing={
+                          visibleDone.length > 0 && !multiSelectMode ? (
+                            <button
+                              type="button"
+                              className="inline-flex items-center gap-1 text-xs font-bold text-bloomora-violet"
+                              onClick={() => clearCompleted.mutate()}
+                            >
+                              🧹 Limpiar hechos
+                            </button>
+                          ) : null
+                        }
+                      >
+                        {visibleDone.map((it) => (
+                          <ListItemRow
+                            key={it.id}
+                            cedula={cedula}
+                            item={it}
+                            multiSelectMode={multiSelectMode}
+                            selected={selectedItemIds.includes(it.id)}
+                            swipeEnabled={showMobileDetail && !multiSelectMode}
+                            onSelectToggle={() => toggleSelectedItem(it.id)}
+                            onActivateMultiSelect={() => {
+                              setMultiSelectMode(true)
+                              setSelectedItemIds((prev) =>
+                                prev.includes(it.id) ? prev : [...prev, it.id],
+                              )
+                            }}
+                            onToggle={(done) =>
+                              toggleItem.mutate({ id: it.id, done })
+                            }
+                            onRename={(title) =>
+                              renameItem.mutate({ id: it.id, title })
+                            }
+                            onDelete={() => scheduleUndoRemove(it)}
+                          />
+                        ))}
+                      </ItemSection>
+                    </div>
+                  )}
+
+                  {showMobileDetail ? (
+                    <form
+                      onSubmit={handleAddItem}
+                      className="sticky bottom-0 z-10 mt-4 flex items-center gap-2 rounded-pill bg-bloomora-white p-1.5 shadow-[0_8px_28px_-10px_rgba(91,74,140,0.35)] ring-1 ring-bloomora-line/40"
+                    >
+                      <span className="pl-3 text-bloomora-rose-deep" aria-hidden>
+                        +
+                      </span>
+                      <input
+                        ref={newItemInputRef}
+                        value={newItem}
+                        onChange={(e) => setNewItem(e.target.value)}
+                        placeholder="Agregar algo…"
+                        className="min-h-11 min-w-0 flex-1 bg-transparent px-1 text-sm font-semibold outline-none"
+                      />
+                      <button
+                        type="submit"
+                        disabled={!newItem.trim() || addItem.isPending}
+                        aria-label="Agregar ítem"
+                        className="grid size-12 shrink-0 place-items-center rounded-full bg-bloomora-rose-deep text-xl font-bold text-white shadow-md disabled:opacity-45"
+                      >
+                        +
+                      </button>
+                    </form>
+                  ) : null}
+                </>
+              )}
+            </section>
+          ) : null}
+        </div>
+      )}
+
+      {multiSelectMode && selectedItemIds.length > 0
+        ? createPortal(
+            <div className="bloomora-lists-undo !bottom-[max(5.5rem,calc(72px+env(safe-area-inset-bottom)+1rem))] min-[600px]:!bottom-8">
+              <span className="text-sm font-bold">
+                {selectedItemIds.length} ítem
+                {selectedItemIds.length === 1 ? '' : 's'}
+              </span>
+              <button
+                type="button"
+                className="ml-auto inline-flex min-h-10 items-center gap-1.5 rounded-pill bg-white px-3 text-sm font-bold text-bloomora-deep"
+                onClick={markSelectedDone}
+              >
+                ✓ Marcar como hechos
+              </button>
+              <button
+                type="button"
+                className="inline-flex min-h-10 items-center gap-1 rounded-pill bg-[#e86b8c] px-3 text-sm font-bold text-white"
+                onClick={() => void deleteSelected()}
+              >
+                🗑️ Eliminar
+              </button>
+            </div>,
             document.body,
           )
         : null}
-      {bulkSubtaskModalOpen && typeof document !== 'undefined'
+
+      {pendingUndo
         ? createPortal(
-            <>
+            <div className="bloomora-lists-undo" role="status">
+              <span className="text-sm font-semibold">
+                Quitaste “{pendingUndo.item.title}”
+              </span>
               <button
                 type="button"
-                data-bloomora-modal-backdrop
-                className="fixed inset-0 border-0 bg-bloomora-deep/20 p-0 backdrop-blur-[2px]"
-                style={{ zIndex: 10_070 }}
+                className="ml-auto inline-flex min-h-10 items-center gap-1.5 rounded-pill bg-white px-3 text-sm font-bold text-bloomora-deep"
+                onClick={undoRemove}
+              >
+                ↩️ Deshacer
+              </button>
+            </div>,
+            document.body,
+          )
+        : null}
+
+      {selected ? (
+        <ListActionsSheet
+          open={actionsOpen}
+          title={selected.title}
+          emoji={selectedEmoji}
+          done={selectedDone}
+          total={selectedTotal}
+          canPostit={canUseGadgets}
+          postitOpen={isListGadgetOpen(selected.id)}
+          exportBusy={exportBusy}
+          onClose={() => setActionsOpen(false)}
+          onAction={(id) => void handleSheetAction(id)}
+        />
+      ) : null}
+
+      {emojiPickerOpen && selected
+        ? createPortal(
+            <div className="bloomora-lists-sheet" role="presentation">
+              <button
+                type="button"
+                className="bloomora-lists-sheet__backdrop"
+                data-backdrop
                 aria-label="Cerrar"
-                onClick={() => !bulkPending && setBulkSubtaskModalOpen(false)}
+                onClick={() => setEmojiPickerOpen(false)}
               />
               <div
                 role="dialog"
                 aria-modal
-                className="bloomora-modal-panel fixed left-1/2 top-1/2 z-[10075] flex max-h-[min(88dvh,34rem)] w-[min(100vw-1.5rem,25rem)] -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-hidden rounded-2xl bg-bloomora-blush/[0.98] p-5 shadow-[0_16px_48px_rgba(91,74,140,0.22)] ring-1 ring-bloomora-line/40 backdrop-blur-md sm:p-6"
+                aria-label="Cambiar emoji"
+                className="bloomora-lists-sheet__panel max-[599px]:!bottom-0 min-[600px]:inset-auto min-[600px]:left-1/2 min-[600px]:top-1/2 min-[600px]:w-[min(100vw-2rem,22rem)] min-[600px]:-translate-x-1/2 min-[600px]:-translate-y-1/2 min-[600px]:rounded-[1.5rem]"
               >
-                <div>
-                  <p className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-bloomora-text-muted">
-                    Transferencia múltiple
-                  </p>
-                  <h2 className="bloomora-modal-title mt-1 text-base font-bold text-bloomora-deep sm:text-lg">
-                    Pasar como paso
-                  </h2>
-                  <p className="mt-1 text-sm text-bloomora-text-muted">
-                    Elige una tarea destino para {selectedItems.length} ítems.
-                  </p>
-                </div>
-                <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-0.5">
-                  {dayKeys.map((dayKey, i) => {
-                    const dayLabel = titleCaseAgendaDate(dayDates[i]!)
-                    const q = bulkAgendaQueries[i]
-                    const tasks = q?.data ?? []
-                    return (
-                      <div key={dayKey}>
-                        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-bloomora-violet">
-                          {dayLabel}
-                        </p>
-                        {q?.isLoading ? (
-                          <p className="text-sm text-bloomora-text-muted">Cargando…</p>
-                        ) : tasks.length === 0 ? (
-                          <p className="text-sm text-bloomora-text-muted">Sin tareas este día.</p>
-                        ) : (
-                          <ul className="space-y-1.5">
-                            {tasks.map((t) => (
-                              <li key={t.id}>
-                                <label
-                                  className={cn(
-                                    'flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 transition',
-                                    selectedBulkTaskId === t.id
-                                      ? 'border-bloomora-rose/50 bg-bloomora-lavender-50/90 ring-1 ring-bloomora-rose/25'
-                                      : 'border-bloomora-line/30 bg-bloomora-white/70 hover:border-bloomora-lilac/40',
-                                  )}
-                                >
-                                  <input
-                                    type="radio"
-                                    name="bulk-task-pick"
-                                    className="mt-1"
-                                    checked={selectedBulkTaskId === t.id}
-                                    onChange={() => setSelectedBulkTaskId(t.id)}
-                                  />
-                                  <span className="min-w-0 flex-1 text-sm font-semibold leading-snug text-bloomora-deep">
-                                    {t.title}
-                                  </span>
-                                </label>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setBulkSubtaskModalOpen(false)}
-                    disabled={bulkPending}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    disabled={selectedBulkTaskId == null || bulkPending}
-                    onClick={() => void transferSelectedAsSteps()}
-                  >
-                    {bulkPending ? 'Asignando…' : 'Asignar varios'}
-                  </Button>
+                <div className="bloomora-lists-sheet__handle min-[600px]:hidden" />
+                <p className="mb-3 font-bold text-bloomora-deep">Cambiar emoji</p>
+                <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+                  {LIST_EMOJI_OPTIONS.map((em) => (
+                    <button
+                      key={em}
+                      type="button"
+                      className="grid aspect-square place-items-center rounded-2xl bg-bloomora-mist text-2xl hover:bg-bloomora-blush"
+                      onClick={() => {
+                        setListEmoji(selected.id, em)
+                        setEmojiTick((n) => n + 1)
+                        setEmojiPickerOpen(false)
+                      }}
+                    >
+                      {em}
+                    </button>
+                  ))}
                 </div>
               </div>
-            </>,
+            </div>,
             document.body,
           )
         : null}
     </div>
+  )
+}
+
+function EmptyListsState({
+  onCreate,
+  onIdea,
+  busy,
+}: {
+  onCreate: () => void
+  onIdea: (title: string, emoji: string) => void
+  busy: boolean
+}) {
+  return (
+    <div className="flex flex-col items-center rounded-[1.75rem] border border-bloomora-line bg-bloomora-white px-6 py-10 text-center shadow-sm">
+      <BloomyPose pose="wave" sizePx={160} priority />
+      <h2 className="mt-4 text-xl font-bold text-bloomora-deep">
+        Aún no tienes listas
+      </h2>
+      <p className="mt-2 max-w-md text-sm text-bloomora-text-muted">
+        Crea una para tus compras, tu próximo viaje o lo que quieras recordar.
+      </p>
+      <Button
+        type="button"
+        className="mt-5 min-h-12 rounded-pill px-6"
+        onClick={onCreate}
+        disabled={busy}
+      >
+        + Crear mi primera lista
+      </Button>
+      <div className="mt-6 flex flex-wrap justify-center gap-2">
+        {LIST_IDEA_PRESETS.map((idea) => (
+          <button
+            key={idea.label}
+            type="button"
+            disabled={busy}
+            onClick={() => onIdea(idea.title, idea.emoji)}
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-pill bg-bloomora-mist px-3 text-sm font-bold text-bloomora-violet ring-1 ring-bloomora-line/40"
+          >
+            <span aria-hidden>{idea.emoji}</span>
+            {idea.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function EmptyListItemsState() {
+  return (
+    <div className="mt-6 flex flex-col items-center px-4 py-6 text-center">
+      <BloomyPose pose="think" sizePx={120} showSparks={false} />
+      <p className="mt-3 max-w-sm text-sm font-semibold leading-relaxed text-bloomora-text-muted">
+        Tu lista está vacía. Escribe arriba y presiona Enter. Puedes agregar
+        varios seguidos sin soltar el teclado.
+      </p>
+    </div>
+  )
+}
+
+function ItemSection({
+  title,
+  count,
+  open,
+  onToggle,
+  trailing,
+  children,
+}: {
+  title: string
+  count: number
+  open: boolean
+  onToggle: () => void
+  trailing?: ReactNode
+  children: ReactNode
+}) {
+  if (count === 0 && title === 'HECHOS') return null
+  return (
+    <section>
+      <div className="mb-2 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.08em] text-bloomora-text-muted"
+        >
+          <span aria-hidden>{open ? '▾' : '▸'}</span>
+          {title}
+          <span className="inline-flex min-h-5 min-w-5 items-center justify-center rounded-pill bg-bloomora-blush px-1.5 text-[0.65rem] font-bold text-bloomora-rose-deep">
+            {count}
+          </span>
+        </button>
+        <div className="ml-auto">{trailing}</div>
+      </div>
+      {open ? <ul className="space-y-2">{children}</ul> : null}
+    </section>
   )
 }
 
@@ -727,6 +1271,7 @@ function ListItemRow({
   item,
   multiSelectMode,
   selected,
+  swipeEnabled,
   onSelectToggle,
   onActivateMultiSelect,
   onToggle,
@@ -734,9 +1279,10 @@ function ListItemRow({
   onDelete,
 }: {
   cedula: string | null
-  item: { id: string; title: string; done: boolean }
+  item: UiListItem
   multiSelectMode: boolean
   selected: boolean
+  swipeEnabled: boolean
   onSelectToggle: () => void
   onActivateMultiSelect: () => void
   onToggle: (done: boolean) => void
@@ -745,66 +1291,133 @@ function ListItemRow({
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(item.title)
+  const [offset, setOffset] = useState(0)
+  const startX = useRef<number | null>(null)
+  const longPress = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     setDraft(item.title)
   }, [item.title])
 
+  useEffect(() => {
+    return () => {
+      if (longPress.current) clearTimeout(longPress.current)
+    }
+  }, [])
+
   const markAsTransferred = () => {
     if (!item.done) onToggle(true)
   }
 
+  const closeSwipe = () => setOffset(0)
+
   return (
     <li
       className={cn(
-        'bloomora-list-item-surface overflow-hidden rounded-2xl border border-bloomora-line/30',
-        'p-3 shadow-[0_4px_18px_-6px_rgba(124,107,181,0.12)] ring-1 ring-bloomora-line/25',
-        multiSelectMode && selected && 'ring-2 ring-bloomora-rose/45',
-        'sm:p-4',
+        'relative overflow-hidden rounded-2xl',
+        multiSelectMode && selected && 'ring-2 ring-bloomora-violet/40',
       )}
       onDoubleClick={() => {
         if (editing || multiSelectMode) return
         onActivateMultiSelect()
       }}
+      onTouchStart={(e) => {
+        if (!swipeEnabled || editing) return
+        startX.current = e.touches[0]?.clientX ?? null
+        longPress.current = setTimeout(() => {
+          onActivateMultiSelect()
+        }, 480)
+      }}
+      onTouchMove={(e) => {
+        if (longPress.current) {
+          clearTimeout(longPress.current)
+          longPress.current = null
+        }
+        if (startX.current == null) return
+        const x = e.touches[0]?.clientX ?? startX.current
+        const dx = Math.min(0, x - startX.current)
+        setOffset(Math.max(dx, -140))
+      }}
+      onTouchEnd={() => {
+        if (longPress.current) {
+          clearTimeout(longPress.current)
+          longPress.current = null
+        }
+        startX.current = null
+        setOffset((v) => (v < -SWIPE_THRESHOLD ? -132 : 0))
+      }}
     >
-      {editing ? (
-        <form
-          className="flex flex-col gap-3"
-          onSubmit={(e) => {
-            e.preventDefault()
-            onRename(draft)
-            setEditing(false)
-          }}
-        >
-          <div className="flex items-start gap-3">
+      {swipeEnabled ? (
+        <div className="absolute inset-y-0 right-0 flex w-[132px]">
+          <button
+            type="button"
+            className="flex flex-1 items-center justify-center bg-[#d4c8f0] text-xs font-bold text-bloomora-deep"
+            onClick={() => {
+              closeSwipe()
+              setEditing(true)
+            }}
+          >
+            ✏️ Editar
+          </button>
+          <button
+            type="button"
+            className="flex flex-1 items-center justify-center bg-[#e86b8c] text-xs font-bold text-white"
+            onClick={() => {
+              closeSwipe()
+              onDelete()
+            }}
+          >
+            🗑️ Quitar
+          </button>
+        </div>
+      ) : null}
+
+      <div
+        className={cn(
+          'relative flex gap-3 bg-bloomora-mist/40 p-3 ring-1 ring-bloomora-line/25 sm:p-3.5',
+          item.done && 'bg-bloomora-mist/25',
+          selected && multiSelectMode && 'bg-[#ebe4f8]',
+        )}
+        style={
+          swipeEnabled
+            ? { transform: `translateX(${offset}px)`, transition: startX.current == null ? 'transform 160ms ease' : undefined }
+            : undefined
+        }
+      >
+        {editing ? (
+          <form
+            className="flex min-w-0 flex-1 flex-col gap-2"
+            onSubmit={(e) => {
+              e.preventDefault()
+              onRename(draft.trim() || item.title)
+              setEditing(false)
+            }}
+          >
             <input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              className="bloomora-form-input min-h-11 min-w-0 flex-1 rounded-xl border border-bloomora-line/50 px-3 py-2 text-sm font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/25 focus:ring-2"
+              className="bloomora-form-input min-h-10 w-full rounded-xl border border-bloomora-line/50 px-3 text-sm font-semibold outline-none focus:ring-2"
               autoFocus
             />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" size="sm" className="min-h-10 touch-manipulation">
-              Guardar
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="min-h-10 touch-manipulation"
-              onClick={() => {
-                setDraft(item.title)
-                setEditing(false)
-              }}
-            >
-              Cancelar
-            </Button>
-          </div>
-        </form>
-      ) : (
-        <div className="flex gap-2 sm:gap-3">
-          <div className="flex min-w-0 flex-1 items-start gap-3">
+            <div className="flex gap-2">
+              <Button type="submit" size="sm">
+                Guardar
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setDraft(item.title)
+                  setEditing(false)
+                }}
+              >
+                Cancelar
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <>
             <button
               type="button"
               role="checkbox"
@@ -814,62 +1427,58 @@ function ListItemRow({
                 else onToggle(!item.done)
               }}
               className={cn(
-                'mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 text-sm font-bold transition touch-manipulation',
+                'mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-[0.7rem] border-2 text-sm font-bold transition',
                 multiSelectMode
                   ? selected
-                    ? 'border-bloomora-violet bg-bloomora-violet text-white shadow-sm'
-                    : 'border-bloomora-violet/40 bg-bloomora-white text-transparent hover:border-bloomora-violet/70'
+                    ? 'border-bloomora-violet bg-bloomora-violet text-white'
+                    : 'border-bloomora-lilac/50 bg-white'
                   : item.done
-                    ? 'border-bloomora-rose-deep bg-bloomora-rose text-white shadow-sm'
-                    : 'border-bloomora-rose/40 bg-bloomora-white text-transparent hover:border-bloomora-rose/70',
+                    ? 'border-emerald-500 bg-emerald-500 text-white'
+                    : 'border-bloomora-lilac/45 bg-white',
               )}
             >
-              {multiSelectMode ? (selected ? '✓' : '') : item.done ? '✓' : ''}
+              {(multiSelectMode ? selected : item.done) ? '✓' : ''}
             </button>
             <div className="min-w-0 flex-1">
               <p
                 className={cn(
-                  'text-[clamp(0.9rem,0.84rem+0.35vw,1rem)] font-semibold leading-snug text-bloomora-deep',
+                  'text-[0.95rem] font-semibold leading-snug text-bloomora-deep',
                   item.done &&
-                    'text-bloomora-text-muted line-through decoration-bloomora-rose/55',
+                    'text-bloomora-text-muted line-through decoration-bloomora-lilac/60',
                 )}
               >
                 {item.title}
               </p>
-              {multiSelectMode ? (
-                <p className="mt-2 text-xs font-semibold text-bloomora-violet">
-                  {selected ? 'Seleccionado' : 'Toca el círculo para seleccionar'}
-                </p>
-              ) : (
-                <div className="mt-2.5 flex flex-wrap gap-2">
+              {!multiSelectMode && !swipeEnabled ? (
+                <div className="mt-2 flex flex-wrap gap-2">
                   <button
                     type="button"
-                    className="rounded-full bg-bloomora-lavender-100/90 px-3 py-1.5 text-xs font-semibold text-bloomora-violet ring-1 ring-bloomora-line/40 transition hover:bg-bloomora-lavender-50 touch-manipulation"
+                    className="rounded-full bg-bloomora-white px-3 py-1 text-xs font-semibold text-bloomora-violet ring-1 ring-bloomora-line/40"
                     onClick={() => setEditing(true)}
                   >
                     Editar
                   </button>
                   <button
                     type="button"
-                    className="rounded-full bg-bloomora-lavender-100/90 px-3 py-1.5 text-xs font-semibold text-red-600/90 ring-1 ring-red-500/15 transition hover:bg-red-500/10 touch-manipulation"
+                    className="rounded-full bg-bloomora-white px-3 py-1 text-xs font-semibold text-[#d64062] ring-1 ring-red-200/60"
                     onClick={onDelete}
                   >
                     Quitar
                   </button>
                 </div>
-              )}
+              ) : null}
             </div>
-          </div>
-          {!multiSelectMode ? (
-            <ListItemAgendaMenu
-              cedula={cedula}
-              itemTitle={item.title}
-              itemDone={item.done}
-              onTransferred={markAsTransferred}
-            />
-          ) : null}
-        </div>
-      )}
+            {!multiSelectMode && !swipeEnabled ? (
+              <ListItemAgendaMenu
+                cedula={cedula}
+                itemTitle={item.title}
+                itemDone={item.done}
+                onTransferred={markAsTransferred}
+              />
+            ) : null}
+          </>
+        )}
+      </div>
     </li>
   )
 }
