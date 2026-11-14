@@ -853,6 +853,7 @@
 /* Parte 2 · barra agrupada (tablet/PC): wrap por grupos, sin scroll horizontal */
 .notes-main [data-note-editor] [data-note-toolbar].note-toolbar--grouped {
   --note-toolbar-control: 36px;
+  position: sticky;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
@@ -975,9 +976,36 @@
 .note-toolbar-btn--pagebreak-icon span:last-child {
   display: none;
 }
+/* Chevron fuera del flujo flex (esquina) para no empujar grupos a otra fila */
 .note-toolbar-toggle {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  margin: 0;
+  z-index: 2;
+}
+.note-toolbar--ribbon-compact .note-toolbar-toggle {
+  position: static;
   margin-left: auto;
-  align-self: flex-end;
+  align-self: center;
+  top: auto;
+  right: auto;
+}
+
+/* Texto puede encoger la fuente antes de bajar de fila */
+.note-toolbar-group--texto {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+.note-toolbar-group--texto .note-toolbar-group__controls {
+  min-width: 0;
+  max-width: 100%;
+}
+.note-toolbar-font-wrap {
+  flex: 1 1 96px;
+  min-width: 72px;
+  max-width: 130px;
 }
 
 /* Selects / stepper dentro de la barra */
@@ -1006,10 +1034,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 6px;
-  flex: 1 1 110px;
-  width: 110px;
+  width: 100%;
   max-width: 130px;
-  min-width: 72px;
+  min-width: 0;
   height: var(--note-toolbar-control);
   min-height: var(--note-toolbar-control);
   border-radius: 999px;
@@ -1074,11 +1101,12 @@
 }
 
 /* Cinta contraíble (compact = una fila, sin labels) */
-.note-toolbar--ribbon-compact {
+.notes-main [data-note-editor] [data-note-toolbar].note-toolbar--grouped.note-toolbar--ribbon-compact {
   flex-wrap: nowrap;
   align-items: center;
   max-height: calc(var(--note-toolbar-control) + 28px);
   padding: 8px 12px;
+  overflow-x: visible;
 }
 .note-toolbar--ribbon-compact .note-toolbar-group__label {
   display: none;

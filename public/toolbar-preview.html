@@ -124,7 +124,11 @@
     }
     .note-toolbar-btn--pagebreak-icon { width: var(--note-toolbar-control); min-width: var(--note-toolbar-control); padding: 0; }
     .note-toolbar-btn--pagebreak-icon span:last-child { display: none; }
-    .note-toolbar-toggle { margin-left: auto; align-self: flex-end; }
+    .note-toolbar-toggle { position: absolute; right: 8px; top: 8px; margin: 0; z-index: 2; }
+    .note-toolbar--ribbon-compact .note-toolbar-toggle { position: static; margin-left: auto; align-self: center; }
+    .note-toolbar-group--texto { flex: 0 1 auto; min-width: 0; max-width: 100%; }
+    .note-toolbar-group--texto .note-toolbar-group__controls { min-width: 0; max-width: 100%; }
+    .note-toolbar-font-wrap { flex: 1 1 96px; min-width: 72px; max-width: 130px; }
     .note-toolbar-heading {
       width: 96px; max-width: 96px; height: var(--note-toolbar-control); border-radius: 999px;
       border: 1px solid var(--notes-border); background: #fff; padding: 0 8px 0 12px;
@@ -132,7 +136,7 @@
     }
     .note-toolbar-font {
       display: inline-flex; align-items: center; justify-content: space-between; gap: 6px;
-      flex: 1 1 110px; width: 110px; max-width: 130px; min-width: 72px;
+      width: 100%; max-width: 130px; min-width: 0;
       height: var(--note-toolbar-control); border-radius: 999px; border: 1px solid var(--notes-border);
       background: #fff; padding: 0 8px 0 12px; font-size: 13px; font-weight: 700; color: var(--color-bloomora-deep);
     }
@@ -149,7 +153,7 @@
       width: 2.75rem; border: 0; background: transparent; text-align: center; font-size: 13px; font-weight: 700;
       appearance: none;
     }
-    .note-toolbar--ribbon-compact {
+    .notes-main [data-note-editor] [data-note-toolbar].note-toolbar--grouped.note-toolbar--ribbon-compact {
       flex-wrap: nowrap; align-items: center; max-height: calc(var(--note-toolbar-control) + 28px); padding: 8px 12px;
     }
     .note-toolbar--ribbon-compact .note-toolbar-group__label { display: none; }
@@ -190,7 +194,7 @@
             <span class="note-toolbar-group__label">Texto</span>
             <div class="note-toolbar-group__controls">
               <select class="note-toolbar-heading" aria-label="Estilo"><option>Normal</option></select>
-              <div data-toolbar-compact-hide>
+              <div class="note-toolbar-font-wrap" data-toolbar-compact-hide>
                 <button type="button" class="note-toolbar-font"><span>Poppins</span><span>▾</span></button>
               </div>
               <div class="note-toolbar-size">

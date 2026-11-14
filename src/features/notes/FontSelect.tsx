@@ -65,7 +65,10 @@ export function FontSelect({
   const toolbar = variant === 'toolbar'
 
   return (
-    <div className={cn('shrink-0', toolbar && 'note-toolbar-font-wrap')} data-toolbar-compact-hide={toolbar ? true : undefined}>
+    <div
+      className={cn(toolbar ? 'note-toolbar-font-wrap min-w-0' : 'shrink-0')}
+      data-toolbar-compact-hide={toolbar ? true : undefined}
+    >
       <button
         ref={triggerRef}
         type="button"
