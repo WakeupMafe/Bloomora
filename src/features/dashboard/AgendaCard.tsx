@@ -559,7 +559,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
         ) : null}
 
         {!isLoading && sortedTasks.length > 0 ? (
-          <div className="shrink-0 rounded-xl pr-1 ring-1 ring-bloomora-line/25">
+          <div className="min-h-0 rounded-xl pr-1 ring-1 ring-bloomora-line/25">
             <ul className="divide-y divide-bloomora-line/30">
               {sortedTasks.map((task) => (
                 <li key={task.id} className="flex flex-col">
