@@ -6,7 +6,7 @@ import { usePopoverDismiss } from '@/hooks/usePopoverDismiss'
 import { cn } from '@/utils/cn'
 
 const MENU_WIDTH = 200
-const MENU_HEIGHT_EST = 108
+const MENU_HEIGHT_EST = 148
 /** Por encima del selector de color del tracker (10050) */
 const Z_MENU = 10_060
 const Z_BACKDROP_MOBILE = 10_055
@@ -19,6 +19,7 @@ type GoalActionsMenuProps = {
   onTriggerClick: () => void
   onEdit: () => void
   onDelete: () => void
+  onShare?: () => void
 }
 
 export function GoalActionsMenu({
@@ -28,6 +29,7 @@ export function GoalActionsMenu({
   onTriggerClick,
   onEdit,
   onDelete,
+  onShare,
 }: GoalActionsMenuProps) {
   const uid = useId().replace(/:/g, '')
   const triggerId = `goal-menu-trigger-${uid}`
@@ -54,6 +56,11 @@ export function GoalActionsMenu({
 
   const runEdit = () => {
     onEdit()
+    close()
+  }
+
+  const runShare = () => {
+    onShare?.()
     close()
   }
 
@@ -112,6 +119,16 @@ export function GoalActionsMenu({
                   }
           }
         >
+          {onShare ? (
+            <button
+              type="button"
+              role="menuitem"
+              className="flex w-full items-center rounded-lg px-3 py-2.5 text-left text-sm font-medium text-bloomora-deep transition hover:bg-bloomora-mist/90"
+              onClick={runShare}
+            >
+              Compartir mi logro
+            </button>
+          ) : null}
           <button
             type="button"
             role="menuitem"

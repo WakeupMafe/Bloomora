@@ -1,8 +1,51 @@
 import { useState } from 'react'
-import bunnyHandsUp from '@/assets/bloomy/bunny_hands_up_512.png'
-import bunnyPhone from '@/assets/bloomy/bunny_phone_512.png'
-import bunnyThink from '@/assets/bloomy/bunny_think_512.png'
+import bunnyHandsUpPng from '@/assets/bloomy/bunny_hands_up_512.png'
+import bunnyHandsUp1xAvif from '@/assets/bloomy/bunny_hands_up_1x.avif'
+import bunnyHandsUp1xWebp from '@/assets/bloomy/bunny_hands_up_1x.webp'
+import bunnyHandsUp2xAvif from '@/assets/bloomy/bunny_hands_up_2x.avif'
+import bunnyHandsUp2xWebp from '@/assets/bloomy/bunny_hands_up_2x.webp'
+import bunnyPhonePng from '@/assets/bloomy/bunny_phone_512.png'
+import bunnyPhone1xAvif from '@/assets/bloomy/bunny_phone_1x.avif'
+import bunnyPhone1xWebp from '@/assets/bloomy/bunny_phone_1x.webp'
+import bunnyPhone2xAvif from '@/assets/bloomy/bunny_phone_2x.avif'
+import bunnyPhone2xWebp from '@/assets/bloomy/bunny_phone_2x.webp'
+import bunnyThinkPng from '@/assets/bloomy/bunny_think_512.png'
+import bunnyThink1xAvif from '@/assets/bloomy/bunny_think_1x.avif'
+import bunnyThink1xWebp from '@/assets/bloomy/bunny_think_1x.webp'
+import bunnyThink2xAvif from '@/assets/bloomy/bunny_think_2x.avif'
+import bunnyThink2xWebp from '@/assets/bloomy/bunny_think_2x.webp'
 import { Button } from '@/components/ui/Button'
+
+function StudyToolBloomy({
+  png,
+  avif1x,
+  avif2x,
+  webp1x,
+  webp2x,
+}: {
+  png: string
+  avif1x: string
+  avif2x: string
+  webp1x: string
+  webp2x: string
+}) {
+  return (
+    <picture>
+      <source type="image/avif" srcSet={`${avif1x} 1x, ${avif2x} 2x`} />
+      <source type="image/webp" srcSet={`${webp1x} 1x, ${webp2x} 2x`} />
+      <img
+        src={png}
+        alt=""
+        width={140}
+        height={140}
+        loading="lazy"
+        decoding="async"
+        className="h-[140px] w-auto object-contain object-center"
+        aria-hidden
+      />
+    </picture>
+  )
+}
 import { DashboardGreeting } from '@/features/dashboard/DashboardGreeting'
 import { StudyToolCard } from '@/features/study-tools/StudyToolCard'
 import { useWorkspaceTools, type WorkspaceToolId } from '@/contexts/WorkspaceToolsContext'
@@ -69,11 +112,12 @@ export function StudyToolsPage() {
           ]}
           visualClassName="bg-[#FFF3DD]"
           visual={
-            <img
-              src={bunnyThink}
-              alt=""
-              className="h-[140px] w-auto object-contain object-center"
-              aria-hidden
+            <StudyToolBloomy
+              png={bunnyThinkPng}
+              avif1x={bunnyThink1xAvif}
+              avif2x={bunnyThink2xAvif}
+              webp1x={bunnyThink1xWebp}
+              webp2x={bunnyThink2xWebp}
             />
           }
         />
@@ -86,11 +130,12 @@ export function StudyToolsPage() {
           chips={['Tus notas']}
           visualClassName="bg-bloomora-mist"
           visual={
-            <img
-              src={bunnyPhone}
-              alt=""
-              className="h-[140px] w-auto object-contain object-center"
-              aria-hidden
+            <StudyToolBloomy
+              png={bunnyPhonePng}
+              avif1x={bunnyPhone1xAvif}
+              avif2x={bunnyPhone2xAvif}
+              webp1x={bunnyPhone1xWebp}
+              webp2x={bunnyPhone2xWebp}
             />
           }
           onClick={() => setToolChoice('english-notes')}
@@ -103,11 +148,12 @@ export function StudyToolsPage() {
           chips={[tabataChip, firstTabataChip]}
           visualClassName="bg-emerald-50"
           visual={
-            <img
-              src={bunnyHandsUp}
-              alt=""
-              className="h-[140px] w-auto object-contain object-center"
-              aria-hidden
+            <StudyToolBloomy
+              png={bunnyHandsUpPng}
+              avif1x={bunnyHandsUp1xAvif}
+              avif2x={bunnyHandsUp2xAvif}
+              webp1x={bunnyHandsUp1xWebp}
+              webp2x={bunnyHandsUp2xWebp}
             />
           }
           onClick={() => setToolChoice('tabata')}

@@ -3,8 +3,8 @@ import { BloomyPose } from '@/components/brand/BloomyPose'
 import { cn } from '@/utils/cn'
 import iconEye from '@/assets/svg/icon_eye.svg'
 import iconEyeOff from '@/assets/svg/icon_eye_off.svg'
-import bunnyCover from '@/assets/bloomy/bunny_cover_eyes_512.png'
-import bunnyPeek from '@/assets/bloomy/bunny_peek_512.png'
+import bunnyCover from '@/assets/bloomy/bunny_cover_eyes_1x.webp'
+import bunnyPeek from '@/assets/bloomy/bunny_peek_1x.webp'
 
 type BunnyPasswordProps = {
   value: string

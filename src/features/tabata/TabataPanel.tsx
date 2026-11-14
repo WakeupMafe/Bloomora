@@ -5,11 +5,52 @@ import {
   useState,
   type FormEvent,
 } from 'react'
-import bunnyCelebrate from '@/assets/bloomy/bunny_celebrate_512.png'
-import bunnyWave from '@/assets/bloomy/bunny_wave_512.png'
+import bunnyCelebratePng from '@/assets/bloomy/bunny_celebrate_512.png'
+import bunnyCelebrate1xAvif from '@/assets/bloomy/bunny_celebrate_1x.avif'
+import bunnyCelebrate1xWebp from '@/assets/bloomy/bunny_celebrate_1x.webp'
+import bunnyCelebrate2xAvif from '@/assets/bloomy/bunny_celebrate_2x.avif'
+import bunnyCelebrate2xWebp from '@/assets/bloomy/bunny_celebrate_2x.webp'
+import bunnyWavePng from '@/assets/bloomy/bunny_wave_512.png'
+import bunnyWave1xAvif from '@/assets/bloomy/bunny_wave_1x.avif'
+import bunnyWave1xWebp from '@/assets/bloomy/bunny_wave_1x.webp'
+import bunnyWave2xAvif from '@/assets/bloomy/bunny_wave_2x.avif'
+import bunnyWave2xWebp from '@/assets/bloomy/bunny_wave_2x.webp'
 
+function BloomyWaveStill({
+  heightPx,
+  className,
+}: {
+  heightPx: number
+  className?: string
+}) {
+  return (
+    <picture>
+      <source
+        type="image/avif"
+        srcSet={`${bunnyWave1xAvif} 1x, ${bunnyWave2xAvif} 2x`}
+      />
+      <source
+        type="image/webp"
+        srcSet={`${bunnyWave1xWebp} 1x, ${bunnyWave2xWebp} 2x`}
+      />
+      <img
+        src={bunnyWavePng}
+        alt=""
+        width={heightPx}
+        height={heightPx}
+        loading="lazy"
+        decoding="async"
+        className={className}
+        aria-hidden
+      />
+    </picture>
+  )
+}
+
+/** Carga el WebP animado solo cuando el celebrate está montado y no hay reduced-motion. */
 function BloomySaltaCelebrate({ sizePx = 200 }: { sizePx?: number }) {
   const [reduceMotion, setReduceMotion] = useState(false)
+  const [loadAnim, setLoadAnim] = useState(false)
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -19,22 +60,43 @@ function BloomySaltaCelebrate({ sizePx = 200 }: { sizePx?: number }) {
     return () => mq.removeEventListener('change', sync)
   }, [])
 
+  useEffect(() => {
+    if (reduceMotion) {
+      setLoadAnim(false)
+      return
+    }
+    // Diferir un tick para no competir con paint del modal/overlay
+    const id = window.requestAnimationFrame(() => setLoadAnim(true))
+    return () => window.cancelAnimationFrame(id)
+  }, [reduceMotion])
+
   const frameStyle = {
     width: sizePx,
     height: sizePx,
   } as const
 
-  if (reduceMotion) {
+  if (reduceMotion || !loadAnim) {
     return (
-      <img
-        src={bunnyCelebrate}
-        alt="Bloomy celebrando"
-        width={600}
-        height={600}
-        loading="lazy"
-        className="object-contain"
-        style={frameStyle}
-      />
+      <picture>
+        <source
+          type="image/avif"
+          srcSet={`${bunnyCelebrate1xAvif} 1x, ${bunnyCelebrate2xAvif} 2x`}
+        />
+        <source
+          type="image/webp"
+          srcSet={`${bunnyCelebrate1xWebp} 1x, ${bunnyCelebrate2xWebp} 2x`}
+        />
+        <img
+          src={bunnyCelebratePng}
+          alt="Bloomy celebrando"
+          width={sizePx}
+          height={sizePx}
+          loading="lazy"
+          decoding="async"
+          className="object-contain"
+          style={frameStyle}
+        />
+      </picture>
     )
   }
 
@@ -44,9 +106,10 @@ function BloomySaltaCelebrate({ sizePx = 200 }: { sizePx?: number }) {
       <img
         src="/mascota/bloomy_salta.gif"
         alt="Bloomy celebrando"
-        width={600}
-        height={600}
+        width={400}
+        height={400}
         loading="lazy"
+        decoding="async"
         className="object-contain"
         style={frameStyle}
       />
@@ -540,11 +603,9 @@ export function TabataPanel({
 
             {!isLoading && tabatas.length === 0 ? (
               <div className="flex flex-1 flex-col items-center justify-center gap-2 py-8 text-center">
-                <img
-                  src={bunnyWave}
-                  alt=""
+                <BloomyWaveStill
+                  heightPx={112}
                   className="h-28 w-auto object-contain"
-                  aria-hidden
                 />
                 <p className="text-base font-bold text-bloomora-deep">
                   Aún no tienes Tabatas
@@ -805,11 +866,9 @@ export function TabataPanel({
 
         {view.kind === 'duplicate' ? (
           <div className="flex flex-col items-center gap-3 py-4 text-center">
-            <img
-              src={bunnyWave}
-              alt=""
+            <BloomyWaveStill
+              heightPx={96}
               className="h-24 w-auto object-contain"
-              aria-hidden
             />
             <h3 className="text-lg font-bold text-bloomora-deep">
               Este Tabata ya existe

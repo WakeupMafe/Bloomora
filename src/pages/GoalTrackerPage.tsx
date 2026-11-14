@@ -5,7 +5,16 @@ import { BackButton } from '@/components/navigation/BackButton'
 import { Button } from '@/components/ui/Button'
 import { GoalTrackerPanel } from '@/features/goals/GoalTrackerPanel'
 import { getCompletedDaysForMonth } from '@/features/goals/goalTrackerUtils'
+import { ShareAchievementCelebrate } from '@/features/share-achievement/ShareAchievementCelebrate'
+import { ShareAchievementModal } from '@/features/share-achievement/ShareAchievementModal'
+import {
+  buildShareStats,
+  detectStreakMilestoneCrossed,
+  shareStorageKey,
+} from '@/features/share-achievement/shareAchievementStats'
+import type { ShareMilestoneKind } from '@/features/share-achievement/shareAchievementTypes'
 import { useGoalTaskTemplates } from '@/hooks/useGoalTaskTemplates'
+import { useBloomoraProfile } from '@/hooks/useBloomoraProfile'
 import { useUserPhone } from '@/contexts/UserPhoneContext'
 import {
   useBloomoraGoals,
@@ -13,10 +22,16 @@ import {
   useUpdateGoalFieldsMutation,
   useUpdateGoalTrackerColorMutation,
 } from '@/hooks/useBloomoraGoals'
+import {
+  mockProfileFirstName,
+} from '@/data/dashboardMock'
+import { profileFirstName } from '@/lib/profileAvatarSrc'
 
 export function GoalTrackerPage() {
   const { goalId } = useParams<{ goalId: string }>()
-  const { cedula } = useUserPhone()
+  const { cedula, phone } = useUserPhone()
+  const { data: profile } = useBloomoraProfile(phone)
+  const firstName = profileFirstName(profile ?? undefined, mockProfileFirstName)
   const { isTemplate, toggleTemplate } = useGoalTaskTemplates(cedula)
   const { data: goals = [], isLoading } = useBloomoraGoals(cedula)
   const toggleGoalDayMut = useToggleGoalDayMutation(cedula)
@@ -30,6 +45,13 @@ export function GoalTrackerPage() {
   )
   const [titleDraft, setTitleDraft] = useState('')
   const [editingTitle, setEditingTitle] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
+  const [celebrateKind, setCelebrateKind] = useState<ShareMilestoneKind | null>(
+    null,
+  )
+  const [shareInitialKind, setShareInitialKind] = useState<
+    ShareMilestoneKind | undefined
+  >()
 
   useEffect(() => {
     if (goal) setTitleDraft(goal.title)
@@ -40,6 +62,41 @@ export function GoalTrackerPage() {
     setViewYear(d.getFullYear())
     setViewMonthIndex0(d.getMonth())
   }, [viewYear, viewMonthIndex0])
+
+  const handleToggleDay = (day: number) => {
+    if (!goal) return
+    const before = getCompletedDaysForMonth(goal, viewYear, viewMonthIndex0)
+    const wasDone = before.includes(day)
+    const after = wasDone
+      ? before.filter((d) => d !== day)
+      : [...before, day].sort((a, b) => a - b)
+
+    toggleGoalDayMut.mutate({
+      goalId: goal.id,
+      year: viewYear,
+      monthIndex0: viewMonthIndex0,
+      day,
+    })
+
+    if (wasDone) return
+
+    const crossed = detectStreakMilestoneCrossed(
+      before,
+      after,
+      viewYear,
+      viewMonthIndex0,
+    )
+    if (!crossed) return
+
+    const key = shareStorageKey(goal.id, crossed, viewYear, viewMonthIndex0)
+    try {
+      if (localStorage.getItem(key) === '1') return
+      localStorage.setItem(key, '1')
+    } catch {
+      /* ignorar */
+    }
+    setCelebrateKind(crossed)
+  }
 
   if (isLoading) {
     return (
@@ -72,6 +129,11 @@ export function GoalTrackerPage() {
       },
     )
   }
+
+  const celebrateStats =
+    celebrateKind != null
+      ? buildShareStats(goal, celebrateKind, viewYear, viewMonthIndex0)
+      : null
 
   return (
     <div className="bloomora-goal-tracker-page app-shell-padding app-content-fluid mx-auto flex min-h-dvh flex-col gap-6 bg-bloomora-snow pb-16">
@@ -133,6 +195,18 @@ export function GoalTrackerPage() {
               ? '✅ Guardado como formato de tarea'
               : '¿Guardar como formato de tarea?'}
           </button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="rounded-full"
+            onClick={() => {
+              setShareInitialKind(undefined)
+              setShareOpen(true)
+            }}
+          >
+            Compartir mi logro
+          </Button>
         </div>
       )}
 
@@ -148,18 +222,35 @@ export function GoalTrackerPage() {
         year={viewYear}
         monthIndex0={viewMonthIndex0}
         completedDays={getCompletedDaysForMonth(goal, viewYear, viewMonthIndex0)}
-        onToggleDay={(day) =>
-          toggleGoalDayMut.mutate({
-            goalId: goal.id,
-            year: viewYear,
-            monthIndex0: viewMonthIndex0,
-            day,
-          })
-        }
+        onToggleDay={handleToggleDay}
         monthNavigation={{
           onPrev: () => shiftMonth(-1),
           onNext: () => shiftMonth(1),
         }}
+      />
+
+      {celebrateStats && celebrateKind ? (
+        <ShareAchievementCelebrate
+          open
+          firstName={firstName}
+          stats={celebrateStats}
+          onDismiss={() => setCelebrateKind(null)}
+          onShare={() => {
+            setShareInitialKind(celebrateKind)
+            setCelebrateKind(null)
+            setShareOpen(true)
+          }}
+        />
+      ) : null}
+
+      <ShareAchievementModal
+        open={shareOpen}
+        goal={goal}
+        year={viewYear}
+        monthIndex0={viewMonthIndex0}
+        initialKind={shareInitialKind}
+        firstName={firstName}
+        onClose={() => setShareOpen(false)}
       />
     </div>
   )

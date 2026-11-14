@@ -8,6 +8,7 @@ import { buttonClassName } from "@/components/ui/buttonRecipe";
 import { useBloomoraAlert } from "@/contexts/BloomoraAlertContext";
 import { useBloomoraToast } from "@/contexts/BloomoraToastContext";
 import { useUserPhone } from "@/contexts/UserPhoneContext";
+import { ShareAchievementModal } from "@/features/share-achievement/ShareAchievementModal";
 import {
   useBloomoraGoals,
   useDeleteGoalMutation,
@@ -114,6 +115,7 @@ function GoalListRow({
   onCloseMenu,
   onDelete,
   onEdit,
+  onShare,
   onDoubleMarkToday,
   marking,
 }: {
@@ -123,6 +125,7 @@ function GoalListRow({
   onCloseMenu: () => void;
   onDelete: () => void;
   onEdit: () => void;
+  onShare: () => void;
   onDoubleMarkToday: () => void;
   marking: boolean;
 }) {
@@ -218,6 +221,7 @@ function GoalListRow({
           onTriggerClick={onToggleMenu}
           onEdit={onEdit}
           onDelete={onDelete}
+          onShare={onShare}
         />
       </div>
     </div>
@@ -242,7 +246,9 @@ export function GoalProgressCard({ className }: GoalProgressCardProps) {
 
   const [menuGoalId, setMenuGoalId] = useState<string | null>(null);
   const [markingGoalId, setMarkingGoalId] = useState<string | null>(null);
+  const [shareGoalId, setShareGoalId] = useState<string | null>(null);
   const closeGoalMenu = () => setMenuGoalId(null);
+  const shareGoal = goals.find((g) => g.id === shareGoalId) ?? null;
 
   const now = new Date();
   const monthLabelRaw = monthLabelEs(now.getFullYear(), now.getMonth());
@@ -476,6 +482,7 @@ export function GoalProgressCard({ className }: GoalProgressCardProps) {
                   onCloseMenu={closeGoalMenu}
                   onDelete={() => handleDelete(g.id)}
                   onEdit={() => handleEdit(g.id)}
+                  onShare={() => setShareGoalId(g.id)}
                   onDoubleMarkToday={() => void handleDoubleMarkToday(g)}
                   marking={markingGoalId === g.id}
                 />
@@ -484,6 +491,15 @@ export function GoalProgressCard({ className }: GoalProgressCardProps) {
           </div>
         ) : null}
       </div>
+      {shareGoal ? (
+        <ShareAchievementModal
+          open
+          goal={shareGoal}
+          year={now.getFullYear()}
+          monthIndex0={now.getMonth()}
+          onClose={() => setShareGoalId(null)}
+        />
+      ) : null}
     </DashboardCard>
   );
 }
