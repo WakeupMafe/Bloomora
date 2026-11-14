@@ -1035,12 +1035,30 @@ export function NoteEditor({
             () => applyTypingFormat({ highlightColor: hex }),
           )
         }}
+        onOpenTextOptions={() => {
+          if (!editorRef.current) return
+          openFormatting('options')
+        }}
+        onLineHeightChange={(lineHeight) => {
+          patchPanelFormat({ lineHeight })
+          applyToolbarSelectionOrTyping(
+            (editor) => {
+              applyNoteLineHeightToSelection(editor, lineHeight)
+              markUnsaved()
+            },
+            (editor) => {
+              applyTypingFormat({ lineHeight })
+              applyNoteLineHeightToSelection(editor, lineHeight)
+            },
+          )
+        }}
         active={activeMarks}
         font={panelFormat.font}
         fontSizePx={panelFormat.fontSizePx}
         paragraphStyle={paragraphStyle}
         textColor={ENGLISH_NOTE_COLORS.find((color) => color.id === panelFormat.colorId)?.value ?? '#111111'}
         highlightColor={highlightColor}
+        lineHeight={panelFormat.lineHeight}
         onInsertImage={() => imgInputRef.current?.click()}
         onUndo={() => cmd('undo')}
         onRedo={() => cmd('redo')}

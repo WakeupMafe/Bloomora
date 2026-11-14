@@ -775,6 +775,141 @@
 .notes-workspace--narrow .notes-main [data-note-editor] [role='toolbar'] {
   margin: 0.35rem 0.5rem 0;
 }
+
+/* Parte 2 · barra agrupada (tablet/PC); móvil mantiene wrap usable */
+.notes-main [data-note-editor] [data-note-toolbar].note-toolbar--grouped {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem 0.65rem;
+  padding: 0.65rem 0.85rem;
+  overflow-x: visible;
+  overscroll-behavior-x: auto;
+  border: 1px solid var(--notes-border);
+  border-radius: 1.35rem;
+  background: color-mix(in srgb, var(--color-bloomora-white) 94%, transparent);
+  box-shadow: 0 5px 18px -12px rgba(91, 74, 140, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  scrollbar-width: thin;
+}
+.notes-workspace--narrow .notes-main [data-note-editor] [data-note-toolbar].note-toolbar--grouped {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  gap: 0.4rem 0.5rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 1rem;
+}
+.note-toolbar-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  flex: 0 0 auto;
+}
+.note-toolbar-group__label {
+  display: block;
+  font-size: 10.5px;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--color-bloomora-text-muted);
+  padding-left: 0.35rem;
+}
+.note-toolbar-group__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  min-height: 2.75rem;
+  padding: 0.125rem;
+  border: 1px solid var(--notes-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-bloomora-mist) 55%, var(--color-bloomora-white));
+}
+.notes-workspace--narrow .note-toolbar-group__controls {
+  min-height: 2.35rem;
+}
+.note-toolbar-btn {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  color: var(--color-bloomora-violet);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  line-height: 1;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.note-toolbar-btn:hover {
+  background: var(--color-bloomora-lavender-50);
+  color: var(--color-bloomora-deep);
+}
+.note-toolbar-btn:focus-visible {
+  outline: 2px solid var(--color-bloomora-lilac);
+  outline-offset: 1px;
+}
+.note-toolbar-btn--active {
+  background: var(--color-bloomora-lavender-50);
+  color: var(--color-bloomora-deep);
+}
+.note-toolbar-btn--text {
+  width: auto;
+  gap: 0.35rem;
+  padding: 0 0.65rem;
+}
+.note-toolbar-btn--swatch,
+.note-toolbar-lineheight,
+.note-toolbar-pagesize {
+  position: relative;
+  overflow: hidden;
+}
+.note-toolbar-btn--pagebreak {
+  width: auto;
+  gap: 0.4rem;
+  padding: 0 0.75rem;
+  border: 1.5px solid color-mix(in srgb, var(--color-bloomora-rose-deep) 70%, var(--color-bloomora-lilac));
+  color: var(--color-bloomora-deep);
+  background: color-mix(in srgb, var(--color-bloomora-blush) 70%, var(--color-bloomora-white));
+}
+.note-toolbar-btn--pagebreak:hover {
+  background: var(--color-bloomora-blush);
+}
+.notes-workspace--narrow .note-toolbar-btn {
+  min-width: 36px;
+  min-height: 36px;
+}
+.notes-workspace--narrow .note-toolbar-btn--pagebreak span:last-child {
+  display: none;
+}
+.notes-workspace--narrow .note-toolbar-btn--pagebreak {
+  padding: 0;
+  min-width: 36px;
+}
+.notes-workspace--compact .note-toolbar-group__controls > div > button,
+.notes-workspace--wide .note-toolbar-group__controls > div > button {
+  min-height: 44px;
+  height: 44px;
+}
+.notes-workspace--compact .note-toolbar-group__controls > select,
+.notes-workspace--wide .note-toolbar-group__controls > select {
+  min-height: 44px;
+  height: 44px;
+}
+.notes-workspace--compact .note-toolbar-group__controls > div.inline-flex,
+.notes-workspace--wide .note-toolbar-group__controls > div.inline-flex {
+  min-height: 44px;
+  height: 44px;
+}
 .notes-main [data-note-editor] .english-note-pages-canvas {
   flex: 1;
   min-width: 0;
