@@ -814,9 +814,9 @@ export function NoteEditor({
   }
 
   return (
-    <Card data-note-editor variant="glass" className={cn(bloomoraPanelCardClass, 'mx-auto w-full min-w-0 max-w-full space-y-4 overflow-visible p-3 sm:p-5')}>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="text-xs font-semibold text-bloomora-text-muted">
+    <Card data-note-editor variant="glass" className={cn(bloomoraPanelCardClass, 'mx-auto w-full min-w-0 max-w-full space-y-4 overflow-x-hidden overflow-y-visible p-3 sm:p-5')}>
+      <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+        <label className="min-w-0 text-xs font-semibold text-bloomora-text-muted">
           Nombre del apunte
           <input
             type="text"
@@ -827,13 +827,13 @@ export function NoteEditor({
             }}
             placeholder="Ej. Verbos irregulares"
             aria-label="Nombre del apunte"
-            className={cn(bloomoraInputClass, 'mt-1 !min-h-10 rounded-xl px-3 py-2')}
+            className={cn(bloomoraInputClass, 'mt-1 !min-h-10 w-full min-w-0 max-w-full rounded-xl px-3 py-2')}
           />
           <span className="mt-1 block text-[0.65rem] font-normal text-bloomora-text-muted/90">
             Solo identifica el archivo en tu lista. Usa Texto normal o estilos de Título 1, 2 y 3 desde la barra.
           </span>
         </label>
-        <label className="text-xs font-semibold text-bloomora-text-muted">
+        <label className="min-w-0 text-xs font-semibold text-bloomora-text-muted">
           Categoria (opcional)
           <input
             value={categoryDraft}
@@ -841,7 +841,7 @@ export function NoteEditor({
               setCategoryDraft(e.target.value)
               markUnsaved()
             }}
-            className={cn(bloomoraInputClass, 'mt-1 !min-h-10 rounded-xl px-3 py-2')}
+            className={cn(bloomoraInputClass, 'mt-1 !min-h-10 w-full min-w-0 max-w-full rounded-xl px-3 py-2')}
           />
         </label>
       </div>

@@ -298,9 +298,10 @@ export function NoteToolbar(props: NoteToolbarProps) {
   return (
     <div
       role="toolbar"
+      data-note-toolbar
       aria-label="Herramientas de edición del apunte"
       onPointerDownCapture={props.onBeforeControl}
-      className="sticky top-0 z-30 -mx-1 flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-bloomora-line/30 bg-white/95 p-1.5 shadow-[0_5px_18px_-12px_rgba(91,74,140,0.3)] backdrop-blur supports-[backdrop-filter]:bg-white/90 [scrollbar-width:thin]"
+      className="sticky top-0 z-30 -mx-1 flex w-full min-w-0 max-w-full items-center gap-1 overflow-x-auto overscroll-x-contain rounded-xl border border-bloomora-line/30 bg-white/95 p-1.5 shadow-[0_5px_18px_-12px_rgba(91,74,140,0.3)] backdrop-blur supports-[backdrop-filter]:bg-white/90 [scrollbar-width:thin]"
     >
       <div role="group" aria-label="Deshacer y rehacer" className="flex shrink-0 items-center gap-1">
         <ToolbarButton label="Deshacer" shortcut="Ctrl+Z" onClick={props.onUndo}>↶</ToolbarButton>

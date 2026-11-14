@@ -1077,7 +1077,8 @@
     margin-inline: auto;
     box-sizing: border-box;
     width: min(100%, var(--english-note-sheet-width));
-    max-width: var(--english-note-sheet-width);
+    max-width: min(100%, var(--english-note-sheet-width));
+    min-width: 0;
     min-height: var(--english-note-sheet-min-height);
     padding: 1.5rem;
   }
@@ -1099,21 +1100,36 @@
     padding-inline: calc(1.5rem + 10mm);
   }
 
+  @media (max-width: 1119px) {
+    .english-note-sheet--letter,
+    .english-note-sheet--a4 {
+      --english-note-sheet-width: 100%;
+    }
+
+    .english-note-sheet--a4 {
+      padding-inline: 1.25rem;
+    }
+  }
+
   /* Vista tipo Word: lienzo gris + hojas blancas apiladas */
   .english-note-pages-canvas {
     margin-top: 0.5rem;
     border-radius: 1.25rem;
     background: linear-gradient(180deg, #4f4a5e 0%, #3d3849 100%);
-    padding: clamp(1.25rem, 2vw, 2rem);
+    padding: clamp(0.75rem, 2vw, 2rem);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    min-width: 0;
+    max-width: 100%;
   }
 
   .english-note-pages-stack {
     display: flex;
     flex-direction: column;
     gap: 0;
+    box-sizing: border-box;
     width: min(100%, var(--english-note-sheet-width, 8.5in));
-    max-width: var(--english-note-sheet-width, 8.5in);
+    max-width: min(100%, var(--english-note-sheet-width, 8.5in));
+    min-width: 0;
     margin-inline: auto;
   }
 

@@ -70,7 +70,7 @@ export function FontSelect({
         title="Elegir fuente"
         onPointerDown={onPointerDown}
         onClick={() => setOpen((current) => !current)}
-        className="flex h-9 w-[clamp(7.5rem,18vw,12rem)] items-center justify-between gap-2 rounded-full border border-bloomora-line/50 bg-white px-3 text-xs font-medium text-bloomora-deep shadow-sm transition hover:border-bloomora-lilac/60 hover:bg-bloomora-lavender-50/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-bloomora-lilac"
+        className="flex h-9 w-[clamp(6.25rem,28vw,12rem)] max-w-[9.5rem] items-center justify-between gap-2 rounded-full border border-bloomora-line/50 bg-white px-3 text-xs font-medium text-bloomora-deep shadow-sm transition hover:border-bloomora-lilac/60 hover:bg-bloomora-lavender-50/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-bloomora-lilac sm:max-w-none"
       >
         <span className="truncate" style={{ fontFamily: noteBodyFontFamily(value) }}>{selectedFont.label}</span>
         <svg viewBox="0 0 16 16" className={`size-3.5 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" aria-hidden>

@@ -37,7 +37,12 @@ export function EnglishNotesPage({ embedded = false }: { embedded?: boolean }) {
   const [hasPendingEdits, setHasPendingEdits] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const workspaceRef = useRef<HTMLDivElement>(null)
-  const [layoutMode, setLayoutMode] = useState<'wide' | 'compact' | 'narrow'>('wide')
+  const [layoutMode, setLayoutMode] = useState<'wide' | 'compact' | 'narrow'>(() => {
+    if (typeof window === 'undefined') return 'narrow'
+    const width = window.innerWidth
+    return width < 700 ? 'narrow' : width < 1120 ? 'compact' : 'wide'
+  })
+  const [mobileInspectorOpen, setMobileInspectorOpen] = useState(false)
   const detailNoteId = activeId && !isDraftNoteId(activeId) ? activeId : null
   const { data: activeDetail, isFetching: isActiveDetailLoading } = useEnglishNoteDetail(cedula, detailNoteId)
   const visibleNotes = useMemo(() => draftNote ? [draftNote, ...notes] : notes, [notes, draftNote])
@@ -86,21 +91,46 @@ export function EnglishNotesPage({ embedded = false }: { embedded?: boolean }) {
   }, [])
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') document.querySelector('.notes-sidebar')?.classList.remove('notes-sidebar--open')
+      if (event.key !== 'Escape') return
+      document.querySelector('.notes-sidebar')?.classList.remove('notes-sidebar--open')
+      setMobileInspectorOpen(false)
     }
     window.addEventListener('keydown', closeOnEscape)
     return () => window.removeEventListener('keydown', closeOnEscape)
   }, [])
   useEffect(() => {
     const element = workspaceRef.current
-    if (!element || typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(([entry]) => {
-      const width = entry.contentRect.width
-      setLayoutMode(width < 700 ? 'narrow' : width < 1120 ? 'compact' : 'wide')
-    })
+    if (!element) return
+
+    const resolveMode = (width: number) =>
+      width < 700 ? 'narrow' : width < 1120 ? 'compact' : 'wide'
+
+    const syncMode = () => {
+      const width = Math.min(
+        element.getBoundingClientRect().width || element.clientWidth,
+        typeof window !== 'undefined' ? window.innerWidth : Number.POSITIVE_INFINITY,
+      )
+      setLayoutMode(resolveMode(width))
+    }
+
+    syncMode()
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', syncMode)
+      return () => window.removeEventListener('resize', syncMode)
+    }
+
+    const observer = new ResizeObserver(() => syncMode())
     observer.observe(element)
-    return () => observer.disconnect()
+    window.addEventListener('resize', syncMode)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', syncMode)
+    }
   }, [])
+
+  useEffect(() => {
+    if (layoutMode === 'wide') setMobileInspectorOpen(false)
+  }, [layoutMode])
   const toggleFolder = (folder: string) => setExpanded((current) => {
     setSelectedFolder(folder === 'Sin carpeta' ? null : folder)
     const next = current.includes(folder) ? current.filter((item) => item !== folder) : [...current, folder]
@@ -207,19 +237,49 @@ export function EnglishNotesPage({ embedded = false }: { embedded?: boolean }) {
       : <>
         <header className="notes-document-header">
           {layoutMode === 'narrow' && <button className="notes-mobile-menu" onClick={() => document.querySelector('.notes-sidebar')?.classList.toggle('notes-sidebar--open')} aria-label="Abrir lista de apuntes">☰</button>}
-          <div className="notes-breadcrumb"><span>{active?.category || 'Apuntes'}</span><b>/</b><strong>{active ? noteDisplayTitle(active.title) : 'Sin apuntes'}</strong>
+          <div className="notes-breadcrumb">
+            <span>{active?.category || 'Apuntes'}</span>
+            <b>/</b>
+            <strong>{active ? noteDisplayTitle(active.title) : 'Sin apuntes'}</strong>
             {active?.category && <span className="notes-chip">{active.category}</span>}
           </div>
-          <div className="notes-header-actions"><span className="notes-save-state">{active ? hasPendingEdits ? 'Cambios pendientes' : 'Guardado ✓' : ''}</span><button className="notes-share-button" onClick={() => void share()} disabled={!active}>♧ <span>Compartir</span></button></div>
+          <div className="notes-header-actions">
+            <span className="notes-save-state">{active ? hasPendingEdits ? 'Cambios pendientes' : 'Guardado ✓' : ''}</span>
+            {layoutMode !== 'wide' ? (
+              <button
+                type="button"
+                className="notes-inspector-toggle"
+                aria-expanded={mobileInspectorOpen}
+                aria-controls="notes-inspector-panel"
+                onClick={() => setMobileInspectorOpen((open) => !open)}
+              >
+                ☷ <span>Esquema</span>
+              </button>
+            ) : null}
+            <button className="notes-share-button" onClick={() => void share()} disabled={!active}>♧ <span>Compartir</span></button>
+          </div>
         </header>
         {active ? <NoteEditor note={active} userCedula={cedula} onPatch={patchNote} onUnsavedChange={setHasPendingEdits} isNotesLoading={isLoading} isNoteContentLoading={!!detailNoteId && isActiveDetailLoading && !activeDetail} hasSavedNotes={notes.length > 0} isDraft={isDraftNoteId(active.id)} />
           : <div className="notes-welcome"><div className="notes-welcome-icon">✿</div><h1>Aún no tienes apuntes aquí</h1><p>Crea un apunte para empezar a organizar tus ideas.</p><button className="notes-new-button" onClick={() => createNote()}>＋ Nuevo apunte</button></div>}
       </>}
     </main>
 
-    <aside className="notes-inspector">
+    <aside
+      id="notes-inspector-panel"
+      className={`notes-inspector${mobileInspectorOpen && layoutMode !== 'wide' ? ' notes-inspector--open' : ''}`}
+    >
+      {layoutMode !== 'wide' ? (
+        <button
+          type="button"
+          className="notes-inspector-close"
+          onClick={() => setMobileInspectorOpen(false)}
+          aria-label="Cerrar esquema"
+        >
+          ×
+        </button>
+      ) : null}
       <section className="notes-inspector-card"><h2><span>☷</span> Esquema</h2>
-        {outline.length ? <ol>{outline.map((item) => <li key={item.domIndex} className={`outline-level-${item.level}`}><a href={`#note-heading-${item.domIndex}`} onClick={(e) => { e.preventDefault(); const heading = document.querySelectorAll('[data-note-page] h1,[data-note-page] h2,[data-note-page] h3')[item.domIndex]; heading?.scrollIntoView({ behavior: 'smooth', block: 'center' }) }}>{item.text}</a></li>)}</ol> : <p>Los títulos del documento aparecerán aquí.</p>}
+        {outline.length ? <ol>{outline.map((item) => <li key={item.domIndex} className={`outline-level-${item.level}`}><a href={`#note-heading-${item.domIndex}`} onClick={(e) => { e.preventDefault(); const heading = document.querySelectorAll('[data-note-page] h1,[data-note-page] h2,[data-note-page] h3')[item.domIndex]; heading?.scrollIntoView({ behavior: 'smooth', block: 'center' }); setMobileInspectorOpen(false) }}>{item.text}</a></li>)}</ol> : <p>Los títulos del documento aparecerán aquí.</p>}
       </section>
       <section className="notes-inspector-card"><h2><span>ⓘ</span> Detalles</h2>
         {active ? <dl><div><dt>Creado</dt><dd>{new Date(active.createdAt).toLocaleDateString('es-CO')}</dd></div><div><dt>Última edición</dt><dd>{new Date(active.updatedAt).toLocaleDateString('es-CO')}</dd></div><div><dt>Palabras</dt><dd>{wordCount}</dd></div></dl> : <p>Selecciona un apunte.</p>}

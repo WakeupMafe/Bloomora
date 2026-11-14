@@ -115,14 +115,14 @@ function ToolFrame({
 }) {
   return (
     <div
-      className={`fixed z-[10060] flex flex-col overflow-hidden bg-bloomora-snow ${
+      className={`fixed z-[10060] flex min-w-0 max-w-[100vw] flex-col overflow-hidden bg-bloomora-snow ${
         minimized
           ? '-left-[10000px] top-0 h-dvh w-screen invisible pointer-events-none'
-        : 'inset-0 h-dvh max-h-dvh'
+        : 'inset-0 h-dvh max-h-dvh w-screen'
       }`}
       aria-hidden={minimized}
     >
-      <header className="z-10 flex h-14 shrink-0 items-center justify-between gap-3 border-b border-bloomora-line/40 bg-white/95 px-4 shadow-sm backdrop-blur sm:px-6">
+      <header className="z-10 flex h-14 min-w-0 shrink-0 items-center justify-between gap-2 border-b border-bloomora-line/40 bg-white/95 px-3 shadow-sm backdrop-blur sm:gap-3 sm:px-6">
         <div className="flex min-w-0 items-center gap-2">
           <span className="flex size-8 items-center justify-center rounded-xl bg-bloomora-lavender-50 text-bloomora-violet" aria-hidden>
             ✦
@@ -163,10 +163,12 @@ function ToolFrame({
         </div>
       </header>
       <div
-        className={`min-h-0 flex-1 ${
+        className={`min-h-0 min-w-0 w-full max-w-full flex-1 ${
           (title === 'Pomodoro' || title === 'Tabata') && !minimized
             ? 'overflow-hidden'
-            : 'overflow-y-auto'
+            : title === 'Apuntes'
+              ? 'overflow-x-hidden overflow-y-auto'
+              : 'overflow-y-auto'
         }`}
       >
         {children}
