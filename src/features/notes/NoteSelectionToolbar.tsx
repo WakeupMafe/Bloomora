@@ -57,13 +57,20 @@ export function coordsFromNoteSelection(editor: HTMLElement): NoteSelectionToolb
 }
 
 /** Barra flotante: Ctrl+O = formato con selección o al escribir. */
-export function useNoteSelectionToolbar(editorRef: React.RefObject<HTMLDivElement | null>) {
+export function useNoteSelectionToolbar(
+  editorRef: React.RefObject<HTMLDivElement | null>,
+  onRequestDismiss?: () => void,
+) {
   const savedSelectionRef = useRef<EditorSelectionBookmark | null>(null)
   const [panel, setPanel] = useState<{
     coords: NoteSelectionToolbarCoords
     mode: NoteSelectionToolbarMode
     target: NoteFormatTarget
   } | null>(null)
+  const onRequestDismissRef = useRef(onRequestDismiss)
+  useLayoutEffect(() => {
+    onRequestDismissRef.current = onRequestDismiss
+  }, [onRequestDismiss])
 
   const openFormatting = useCallback(
     (mode: NoteSelectionToolbarMode): boolean => {
@@ -91,10 +98,18 @@ export function useNoteSelectionToolbar(editorRef: React.RefObject<HTMLDivElemen
     savedSelectionRef.current = null
   }, [])
 
-  const dismissRef = useRef(dismiss)
-  useLayoutEffect(() => {
-    dismissRef.current = dismiss
+  const requestDismiss = useCallback(() => {
+    if (onRequestDismissRef.current) {
+      onRequestDismissRef.current()
+      return
+    }
+    dismiss()
   }, [dismiss])
+
+  const requestDismissRef = useRef(requestDismiss)
+  useLayoutEffect(() => {
+    requestDismissRef.current = requestDismiss
+  }, [requestDismiss])
 
   const preserveSelectionApply = useCallback(
     (fn: () => void) => {
@@ -131,8 +146,11 @@ export function useNoteSelectionToolbar(editorRef: React.RefObject<HTMLDivElemen
       if (target instanceof Element && target.closest('[data-note-selection-toolbar]')) {
         return
       }
+      if (target instanceof Element && target.closest('[data-bloomora-modal-backdrop], [role="dialog"]')) {
+        return
+      }
       if (!editor.contains(target)) {
-        dismissRef.current()
+        requestDismissRef.current()
       }
     }
 
@@ -146,10 +164,10 @@ export function useNoteSelectionToolbar(editorRef: React.RefObject<HTMLDivElemen
     if (!panel) return
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        dismissRef.current()
-      }
+      if (e.key !== 'Escape') return
+      if (document.querySelector('[data-bloomora-modal-backdrop]')) return
+      e.preventDefault()
+      requestDismissRef.current()
     }
 
     document.addEventListener('keydown', onKeyDown)

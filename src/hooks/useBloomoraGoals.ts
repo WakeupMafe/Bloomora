@@ -11,6 +11,7 @@ import {
   updateGoalTrackerColor,
 } from '@/services/supabase/goalsRepo'
 import {
+  ensureGoalDayMark,
   fetchMarksByUser,
   groupMarksByGoal,
   toggleGoalDayMark,
@@ -50,6 +51,30 @@ export function useToggleGoalDayMutation(cedula: string | null) {
     }) => {
       if (!cedula) throw new Error('Sin sesión')
       await toggleGoalDayMark(requireSupabase(), {
+        goalId: Number(vars.goalId),
+        userCedula: cedula,
+        yearMonth: monthKey(vars.year, vars.monthIndex0),
+        day: vars.day,
+      })
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['goals', cedula] })
+    },
+  })
+}
+
+/** Marca el día como cumplido sin desmarcar si ya existía (`ensure`, no toggle). */
+export function useEnsureGoalDayMutation(cedula: string | null) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (vars: {
+      goalId: string
+      year: number
+      monthIndex0: number
+      day: number
+    }) => {
+      if (!cedula) throw new Error('Sin sesión')
+      return ensureGoalDayMark(requireSupabase(), {
         goalId: Number(vars.goalId),
         userCedula: cedula,
         yearMonth: monthKey(vars.year, vars.monthIndex0),

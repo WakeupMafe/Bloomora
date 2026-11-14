@@ -1,5 +1,5 @@
-import { type FormEvent, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { type FormEvent, useMemo, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { BloomoraLogo } from '@/components/brand/BloomoraLogo'
 import { BackButton } from '@/components/navigation/BackButton'
 import { Button } from '@/components/ui/Button'
@@ -41,18 +41,38 @@ const ICON_OPTIONS = [
   '🧠',
   '🥦',
   '🏋️',
+  '🏃',
 ] as const
+
+type GoalIcon = (typeof ICON_OPTIONS)[number]
+
+function resolvePrefillIcon(raw: string | null): GoalIcon {
+  if (raw && (ICON_OPTIONS as readonly string[]).includes(raw)) {
+    return raw as GoalIcon
+  }
+  return '🌸'
+}
 
 export function NewGoalPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { showToast } = useBloomoraToast()
   const { cedula } = useUserPhone()
   const insertMut = useInsertGoalMutation(cedula)
 
-  const [title, setTitle] = useState('')
+  const prefill = useMemo(() => {
+    const titleParam = searchParams.get('title')?.trim() ?? ''
+    const iconParam = searchParams.get('icon')
+    return {
+      title: titleParam,
+      icon: resolvePrefillIcon(iconParam),
+    }
+  }, [searchParams])
+
+  const [title, setTitle] = useState(prefill.title)
   const [goalType, setGoalType] = useState<GoalTypeOption>('habit_daily')
   const [accent, setAccent] = useState<MockGoalRow['accent']>('lavender')
-  const [icon, setIcon] = useState<(typeof ICON_OPTIONS)[number]>('🌸')
+  const [icon, setIcon] = useState<GoalIcon>(prefill.icon)
   const [durationDays, setDurationDays] = useState('30')
   const [timesPerWeek, setTimesPerWeek] = useState('3')
   const [targetTotal, setTargetTotal] = useState('100')

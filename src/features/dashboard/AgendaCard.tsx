@@ -7,6 +7,7 @@ import {
 } from "react";
 import { Link } from "react-router-dom";
 import { defaultNewBlockDurationMin } from "@/data/dashboardMock";
+import { EmptyDayState } from "@/components/auth/EmptyDayState";
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
 import { AgendaTaskRow } from "@/features/dashboard/AgendaTaskRow";
 import { AgendaTaskSubsteps } from "@/features/dashboard/AgendaTaskSubsteps";
@@ -339,7 +340,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
   return (
     <DashboardCard
       className={cn(
-        "h-full min-h-0 bg-gradient-to-b from-bloomora-blush/90 via-bloomora-white/70 to-bloomora-rose/15 p-5 sm:p-6",
+        "h-full min-h-0 bg-bloomora-white p-5 max-[599px]:p-5 min-[600px]:p-7",
         className,
       )}
     >
@@ -426,54 +427,59 @@ export function AgendaCard({ className }: AgendaCardProps) {
           runDeleteTask(deleteIntent.id);
         }}
       />
-      <div className="mb-4 flex shrink-0 flex-wrap items-end justify-between gap-3 sm:mb-5">
+      <div className="mb-5 flex shrink-0 flex-wrap items-start justify-between gap-3 sm:mb-6">
         <div className="min-w-0">
-          <h2 className="text-lg font-bold tracking-tight text-bloomora-deep sm:text-xl">
+          <h2 className="text-xl font-bold tracking-tight text-bloomora-deep min-[1024px]:text-[1.375rem]">
             Tareas del día
           </h2>
-          <p className="mt-0.5 text-xs text-bloomora-text-muted sm:text-sm">
-            Marca lo que completes
+          <p className="mt-0.5 text-[0.9375rem] text-bloomora-violet">
+            Marca lo que completes ·{" "}
+            <span className="font-semibold text-bloomora-deep">
+              {completedCount} de {total}
+            </span>
           </p>
         </div>
         <button
           type="button"
           onClick={openCreateForm}
-          className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold text-bloomora-violet ring-1 ring-bloomora-line/40 transition hover:bg-white/80 sm:text-sm"
+          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-pill bg-bloomora-rose-deep px-[1.125rem] text-[0.9375rem] font-bold text-white shadow-[0_4px_12px_rgba(232,155,184,0.35)] transition hover:bg-bloomora-rose-deep/90"
         >
-          Añadir tarea
+          + Tarea
         </button>
       </div>
 
-      <div className="mb-5 flex shrink-0 flex-col items-center gap-2 sm:mb-6 lg:mb-4">
-        <div className="inline-flex max-w-full items-center gap-1 rounded-full bg-bloomora-white/90 px-3 py-2.5 text-xs font-semibold text-bloomora-deep shadow-[0_4px_16px_rgba(124,107,181,0.08)] ring-1 ring-bloomora-line/50 sm:gap-2 sm:px-4 sm:text-sm">
+      <div className="mb-5 flex shrink-0 flex-col items-stretch gap-2 sm:mb-6">
+        <div className="flex items-center justify-between gap-2 rounded-pill bg-bloomora-mist p-1.5">
           <button
             type="button"
             aria-label="Día anterior"
-            className="rounded-full px-2.5 py-1 text-bloomora-violet transition hover:bg-bloomora-lavender-50"
+            className="grid size-10 shrink-0 place-items-center rounded-full bg-bloomora-white text-lg text-bloomora-violet transition hover:bg-bloomora-lavender-50"
             onClick={() => shiftDay(-1)}
           >
             ‹
           </button>
-          <span className="min-w-0 flex-1 truncate px-1 text-center">
+          <span className="min-w-0 flex-1 truncate px-2 text-center text-base font-bold text-bloomora-deep">
             {headerLabel}
           </span>
           <button
             type="button"
             aria-label="Día siguiente"
-            className="rounded-full px-2.5 py-1 text-bloomora-violet transition hover:bg-bloomora-lavender-50"
+            className="grid size-10 shrink-0 place-items-center rounded-full bg-bloomora-white text-lg text-bloomora-violet transition hover:bg-bloomora-lavender-50"
             onClick={() => shiftDay(1)}
           >
             ›
           </button>
         </div>
-        <button
-          type="button"
-          disabled={isLoading || duplicateDay.isPending}
-          onClick={() => setDuplicateConfirmOpen(true)}
-          className="rounded-full px-3 py-1 text-[0.7rem] font-semibold text-bloomora-violet ring-1 ring-bloomora-line/40 transition hover:bg-bloomora-white/90 disabled:opacity-50 sm:text-xs"
-        >
-          Duplicar al día siguiente
-        </button>
+        {sortedTasks.length > 0 ? (
+          <button
+            type="button"
+            disabled={isLoading || duplicateDay.isPending}
+            onClick={() => setDuplicateConfirmOpen(true)}
+            className="self-center rounded-pill px-3 py-1.5 text-xs font-semibold text-bloomora-violet ring-1 ring-bloomora-line/50 transition hover:bg-bloomora-mist disabled:opacity-50"
+          >
+            Duplicar al día siguiente
+          </button>
+        ) : null}
       </div>
 
       {isViewingToday ? (
@@ -545,14 +551,11 @@ export function AgendaCard({ className }: AgendaCardProps) {
         ) : null}
 
         {!isLoading && sortedTasks.length === 0 && !showCreateForm ? (
-          <div className="flex min-h-[8rem] flex-1 flex-col items-center justify-center gap-5 px-2 py-6">
-            <p className="text-center text-sm text-bloomora-text-muted">
-              No hay tareas este día.
-            </p>
-            <Button type="button" size="lg" onClick={openCreateForm}>
-              Añadir tarea
-            </Button>
-          </div>
+          <EmptyDayState
+            onAddTask={openCreateForm}
+            onDuplicate={() => setDuplicateConfirmOpen(true)}
+            duplicateDisabled={isLoading || duplicateDay.isPending}
+          />
         ) : null}
 
         {!isLoading && sortedTasks.length > 0 ? (
@@ -876,12 +879,14 @@ export function AgendaCard({ className }: AgendaCardProps) {
         ) : null}
       </div>
 
-      <div className="mt-5 shrink-0 sm:mt-6">
-        <ProgressBar
-          value={progressPct}
-          label={`${completedCount} de ${total} completadas`}
-        />
-      </div>
+      {total > 0 ? (
+        <div className="mt-5 shrink-0 sm:mt-6">
+          <ProgressBar
+            value={progressPct}
+            label={`${completedCount} de ${total} completadas`}
+          />
+        </div>
+      ) : null}
 
     </DashboardCard>
   );

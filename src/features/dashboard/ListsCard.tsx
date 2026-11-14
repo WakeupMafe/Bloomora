@@ -1,64 +1,33 @@
-import { type FormEvent, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { DashboardCard } from '@/components/dashboard/DashboardCard'
-import { Button } from '@/components/ui/Button'
-import { ButtonLink } from '@/components/ui/ButtonLink'
-import { useUserPhone } from '@/contexts/UserPhoneContext'
 import { useBloomoraAlert } from '@/contexts/BloomoraAlertContext'
 import { useBloomoraToast } from '@/contexts/BloomoraToastContext'
-import {
-  useAddListMutation,
-  useBloomoraLists,
-} from '@/hooks/useBloomoraLists'
-import { cn } from '@/utils/cn'
+import { useListGadgets } from '@/contexts/ListGadgetsContext'
+import { useUserPhone } from '@/contexts/UserPhoneContext'
+import { useBloomoraLists } from '@/hooks/useBloomoraLists'
 import { useDeleteListMutation } from '@/hooks/useBloomoraListItems'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { cn } from '@/utils/cn'
 
-function ListBulletIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden
-    >
-      <path
-        d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}
+const LIST_IDEAS = [
+  { emoji: '✈️', label: 'Viaje' },
+  { emoji: '📖', label: 'Lecturas' },
+  { emoji: '🎁', label: 'Regalos' },
+  { emoji: '🍳', label: 'Recetas' },
+] as const
+
+const LIST_ICONS = ['🛒', '📝', '✨', '📦'] as const
 
 export function ListsCard() {
   const { cedula } = useUserPhone()
   const { data: lists = [], isLoading } = useBloomoraLists(cedula)
-  const addListMut = useAddListMutation(cedula)
   const deleteListMut = useDeleteListMutation(cedula)
   const { confirm } = useBloomoraAlert()
   const { showToast } = useBloomoraToast()
-
-  const [draftTitle, setDraftTitle] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
+  const { openListGadget, closeListGadget, isListGadgetOpen } = useListGadgets()
+  const canUseGadgets = useMediaQuery('(min-width: 768px)')
 
   const count = lists.length
-  const countLabel = count === 1 ? '1 lista' : `${count} listas`
-
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault()
-    const t = draftTitle.trim()
-    if (!t) return
-    addListMut.mutate(t)
-    setDraftTitle('')
-  }
-
-  const focusCreateInput = () => {
-    inputRef.current?.focus({ preventScroll: false })
-    inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-  }
 
   const handleDeleteList = async (listId: string, title: string) => {
     const confirmed = await confirm({
@@ -68,132 +37,188 @@ export function ListsCard() {
     })
     if (!confirmed) return
     deleteListMut.mutate(listId, {
-      onError: (error) => showToast(error instanceof Error ? error.message : 'No se pudo eliminar la lista.'),
-      onSuccess: () => showToast('Lista eliminada.'),
+      onError: (error) =>
+        showToast(
+          error instanceof Error ? error.message : 'No se pudo eliminar la lista.',
+        ),
+      onSuccess: () => {
+        closeListGadget(listId)
+        showToast('Lista eliminada.')
+      },
     })
   }
 
   return (
     <DashboardCard
       className={cn(
-        '!grid h-full min-h-0 self-stretch overflow-hidden border border-bloomora-line/50 bg-white',
-        'rounded-[clamp(1.25rem,1.05rem+1vw,1.75rem)]',
-        'p-[clamp(1rem,0.75rem+0.85vw,1.5rem)]',
-        'shadow-[0_5px_18px_rgba(91,74,140,0.06)] ring-0',
+        'flex h-full min-h-0 flex-col gap-4 self-stretch bg-bloomora-white',
+        'p-5 max-[599px]:p-5 min-[600px]:p-7',
       )}
     >
-      <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <h2 className="text-lg font-bold tracking-tight text-bloomora-deep">Tus listas</h2>
-          <span className="rounded-full bg-bloomora-lavender-50 px-2.5 py-1 text-[0.68rem] font-semibold text-bloomora-violet ring-1 ring-bloomora-line/30">
-            {isLoading ? '…' : countLabel}
-          </span>
+      <header className="flex shrink-0 flex-wrap items-start justify-between gap-x-4 gap-y-3">
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-2">
+            <h2 className="text-xl font-bold tracking-tight text-bloomora-deep min-[1024px]:text-[1.375rem]">
+              Tus listas
+            </h2>
+            <span className="inline-flex min-h-[1.625rem] min-w-[1.625rem] items-center justify-center rounded-pill bg-bloomora-blush px-2 text-sm font-bold text-bloomora-rose-deep">
+              {isLoading ? '…' : count}
+            </span>
+          </div>
+          <p className="mt-0.5 text-[0.9375rem] text-bloomora-violet">
+            Organiza listas para cualquier cosa
+          </p>
         </div>
-        <p className="order-3 w-full text-xs text-bloomora-text-muted">
-          Organiza listas para cualquier cosa
-        </p>
-        <div className="order-2 flex items-center gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={focusCreateInput}
-            className="text-xs"
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to="/app/lists"
+            className="inline-flex min-h-11 items-center justify-center rounded-pill border-2 border-bloomora-line bg-bloomora-white px-[1.125rem] text-[0.9375rem] font-bold text-bloomora-violet transition hover:bg-bloomora-mist/70"
           >
-            <span aria-hidden className="text-base leading-none">
-              +
-            </span>
-            Nueva lista
-          </Button>
-          <ButtonLink to="/app/lists" variant="primary" size="sm" className="gap-1 text-xs">
             Ver todas
-            <span aria-hidden className="text-xs opacity-90">
-              ›
-            </span>
-          </ButtonLink>
+          </Link>
+          <Link
+            to="/app/lists?crear=1"
+            className="inline-flex min-h-11 items-center justify-center rounded-pill bg-bloomora-rose-deep px-[1.125rem] text-[0.9375rem] font-bold text-white shadow-[0_4px_12px_rgba(232,155,184,0.35)] transition hover:bg-bloomora-rose-deep/90"
+          >
+            + Nueva
+          </Link>
         </div>
       </header>
 
       {isLoading ? (
-        <p className="text-sm text-bloomora-text-muted">Cargando listas…</p>
-      ) : null}
-
-      {!isLoading && count > 0 ? (
-        <ul className="grid max-h-[14rem] grid-cols-1 gap-2 overflow-y-auto pr-1" aria-label="Vista previa de listas">
-          {lists.map((list, idx) => (
-            <li key={list.id} className="group flex min-w-0 items-center gap-1 rounded-xl border border-bloomora-line/45 bg-white pr-1">
-              <Link
-                to={`/app/lists?list=${encodeURIComponent(list.id)}`}
-                className="group flex min-h-10 min-w-0 flex-1 items-center gap-3 rounded-xl px-3.5 py-2 text-sm font-semibold text-bloomora-deep transition-colors hover:bg-bloomora-lavender-50/35"
-              >
-                <span className={cn('size-2.5 shrink-0 rounded-full', ['bg-violet-300', 'bg-rose-400', 'bg-amber-400', 'bg-emerald-400'][idx % 4])} aria-hidden>
-                </span>
-                <span className="min-w-0 flex-1 truncate">
-                  {list.title}
-                </span>
-                <span className="text-bloomora-text-muted transition-transform group-hover:translate-x-0.5" aria-hidden>›</span>
-              </Link>
-              <button
-                type="button"
-                aria-label={`Eliminar lista ${list.title}`}
-                title="Eliminar lista"
-                disabled={deleteListMut.isPending}
-                onClick={() => void handleDeleteList(list.id, list.title)}
-                className="grid size-9 shrink-0 place-items-center rounded-full text-bloomora-text-muted opacity-60 transition hover:bg-rose-50 hover:text-rose-600 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
-              >
-                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : !isLoading ? (
-        <p className="rounded-xl border border-dashed border-bloomora-line/70 px-4 py-5 text-sm text-bloomora-text-muted">
-          No se han creado aún listas. Usa el formulario de abajo para la primera.
+        <p className="shrink-0 text-sm text-bloomora-text-muted">
+          Cargando listas…
         </p>
       ) : null}
 
-      <div
-        className="rounded-2xl border border-bloomora-line/45 bg-bloomora-snow/70 p-3"
-      >
-        <div
-          className={cn(
-            'grid gap-2',
-          )}
+      {!isLoading && count > 0 ? (
+        <ul
+          className="grid min-h-0 flex-1 grid-cols-1 content-start gap-3 overflow-y-auto overscroll-contain pr-1"
+          aria-label="Vista previa de listas"
         >
-          <h3 className="text-sm font-bold text-bloomora-deep">
-            Crear una nueva lista
-          </h3>
-          <form onSubmit={handleSubmit}>
-            <div className="flex min-h-10 items-center overflow-hidden rounded-full border border-bloomora-line/50 bg-white">
-              <span className="pl-3 text-bloomora-violet">
-                <ListBulletIcon className="size-[clamp(1rem,0.9rem+0.25vw,1.125rem)]" />
-              </span>
-              <input
-                ref={inputRef}
-                value={draftTitle}
-                onChange={(e) => setDraftTitle(e.target.value)}
-                placeholder="Ej. Compras, Viaje, Ideas…"
-                className="min-w-0 flex-1 bg-transparent px-2 py-2 text-xs text-bloomora-deep outline-none placeholder:text-bloomora-text-muted/60"
-                aria-label="Nombre de la nueva lista"
-              />
-              <Button
-                type="submit"
-                variant="primary"
-                size="sm"
-                disabled={!draftTitle.trim() || addListMut.isPending}
-                className="m-1 !min-h-8 px-4 text-xs"
+          {lists.map((list, idx) => {
+            const gadgetOpen = isListGadgetOpen(list.id)
+            return (
+              <li
+                key={list.id}
+                className="group flex min-w-0 items-center gap-1 rounded-[1.125rem] border border-bloomora-line bg-bloomora-white pr-1"
               >
-                {addListMut.isPending ? '…' : 'Añadir'}
-              </Button>
-            </div>
-          </form>
+                <Link
+                  to={`/app/lists?list=${encodeURIComponent(list.id)}`}
+                  className="group flex min-h-[4.25rem] min-w-0 flex-1 items-center gap-3.5 rounded-[1.125rem] px-4 py-3 text-left transition-colors hover:bg-bloomora-mist/40"
+                >
+                  <span
+                    className="grid size-11 shrink-0 place-items-center rounded-[0.875rem] bg-bloomora-mist text-xl"
+                    aria-hidden
+                  >
+                    {LIST_ICONS[idx % LIST_ICONS.length]}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-base font-bold text-bloomora-deep">
+                      {list.title}
+                    </span>
+                  </span>
+                  {canUseGadgets ? (
+                    <span
+                      className={cn(
+                        'hidden shrink-0 rounded-pill bg-bloomora-mist px-3 py-1.5 text-[0.8125rem] font-semibold text-bloomora-violet min-[600px]:inline-flex',
+                        gadgetOpen && 'bg-bloomora-sky/70',
+                      )}
+                    >
+                      📝 Post-it
+                    </span>
+                  ) : null}
+                  <span
+                    className="text-2xl leading-none text-bloomora-text-muted"
+                    aria-hidden
+                  >
+                    ›
+                  </span>
+                </Link>
+                {canUseGadgets ? (
+                  <button
+                    type="button"
+                    aria-label={
+                      gadgetOpen
+                        ? `Lista ${list.title} ya está en post-it`
+                        : `Abrir ${list.title} como post-it`
+                    }
+                    title={gadgetOpen ? 'Ya está en pantalla' : 'Abrir como post-it'}
+                    disabled={gadgetOpen}
+                    onClick={() => {
+                      openListGadget(list.id)
+                      showToast(
+                        gadgetOpen
+                          ? 'Esta lista ya está abierta como post-it.'
+                          : `«${list.title}» abierta como post-it.`,
+                      )
+                    }}
+                    className={cn(
+                      'inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloomora-sky-deep/50 min-[600px]:hidden',
+                      gadgetOpen
+                        ? 'bg-bloomora-sky/80 text-bloomora-violet ring-1 ring-bloomora-sky-deep/45'
+                        : 'bg-bloomora-sky/45 text-bloomora-violet ring-1 ring-bloomora-sky-deep/35 hover:bg-bloomora-sky/70',
+                    )}
+                  >
+                    Post-it
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  aria-label={`Eliminar lista ${list.title}`}
+                  title="Eliminar lista"
+                  disabled={deleteListMut.isPending}
+                  onClick={() => void handleDeleteList(list.id, list.title)}
+                  className="grid size-11 shrink-0 place-items-center rounded-full text-bloomora-text-muted opacity-60 transition hover:bg-rose-50 hover:text-rose-600 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+                >
+                  <svg
+                    aria-hidden="true"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <path
+                      d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      ) : !isLoading ? (
+        <div className="flex min-h-[5rem] flex-1 items-center rounded-[1.125rem] border border-dashed border-bloomora-line px-4">
+          <p className="text-sm text-bloomora-violet">
+            Aún no tienes listas. Usa{' '}
+            <span className="font-semibold">+ Nueva</span> o una idea de abajo.
+          </p>
+        </div>
+      ) : null}
+
+      <div className="mt-auto rounded-[1.125rem] border-2 border-dashed border-bloomora-line p-4">
+        <p className="text-sm font-semibold text-bloomora-violet">
+          Ideas para tu próxima lista
+        </p>
+        <div className="mt-2.5 flex flex-wrap gap-2">
+          {LIST_IDEAS.map((idea) => (
+            <Link
+              key={idea.label}
+              to="/app/lists?crear=1"
+              className="inline-flex min-h-10 items-center rounded-pill bg-bloomora-mist px-3.5 text-sm font-semibold text-bloomora-deep transition hover:bg-bloomora-lavender-50"
+            >
+              <span aria-hidden className="mr-1.5">
+                {idea.emoji}
+              </span>
+              {idea.label}
+            </Link>
+          ))}
         </div>
       </div>
-
-      <ButtonLink to="/app/lists" variant="ghost" size="sm" className="justify-self-center text-xs">
-        Ver todas las listas <span aria-hidden>›</span>
-      </ButtonLink>
     </DashboardCard>
   )
 }

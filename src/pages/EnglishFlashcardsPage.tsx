@@ -173,11 +173,6 @@ export function EnglishFlashcardsPage() {
               <span className="text-[#c084fc]">Flashcards</span>
               <SparkleIcon className="text-amber-400" />
             </h1>
-            <p className="mt-2 max-w-md text-sm leading-relaxed text-bloomora-text-muted sm:text-[0.9375rem]">
-              Aprende vocabulario en inglés con memoria visual. Usa{' '}
-              <strong className="font-semibold text-bloomora-violet">Modo rápido</strong>{' '}
-              para anotar palabra y significado (hasta 6 al día).
-            </p>
             <button
               type="button"
               onClick={() => void handleExportPdf()}

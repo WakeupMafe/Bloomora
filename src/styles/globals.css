@@ -973,15 +973,42 @@
     padding-bottom: var(--bloomora-page-padding-block-bottom);
   }
 
-  /* Dashboard: la barra fija lleva el espacio inferior; solo safe area aquí */
+  /* Dashboard / shell autenticado: mismo ancho que la nav (máx. 1184) */
+  .app-shell-nav-inner {
+    box-sizing: border-box;
+    padding-inline: 48px;
+  }
+
   .app-shell-padding--dashboard {
     box-sizing: border-box;
-    padding-inline: var(--bloomora-page-padding-inline);
-    padding-top: var(--bloomora-page-padding-block-top);
-    padding-bottom: max(
-      0.75rem,
-      var(--bloomora-page-padding-block-bottom)
-    );
+    padding-inline: 48px;
+    padding-top: 0;
+    padding-bottom: 2rem;
+  }
+
+  /* Contenido bajo nav sticky; deja hueco para tab bar móvil */
+  .app-shell-content {
+    box-sizing: border-box;
+    min-width: 0;
+  }
+
+  @media (max-width: 1023px) {
+    .app-shell-nav-inner,
+    .app-shell-padding--dashboard {
+      padding-inline: 32px;
+    }
+  }
+
+  @media (max-width: 599px) {
+    .app-shell-nav-inner,
+    .app-shell-padding--dashboard {
+      padding-inline: 20px;
+    }
+
+    /* Hueco para tab bar fija (72px) + safe area; una sola vez en el shell */
+    .app-shell-content {
+      padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px) + 0.75rem);
+    }
   }
 
   /* Vista de metas en desktop: menos padding lateral para aprovechar más ancho */

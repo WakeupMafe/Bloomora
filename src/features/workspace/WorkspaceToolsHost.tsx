@@ -7,8 +7,12 @@ import {
   type PointerEvent,
   type ReactNode,
 } from 'react'
+import { useBloomoraAlert } from '@/contexts/BloomoraAlertContext'
 import { useWorkspaceTools, type WorkspaceToolId } from '@/contexts/WorkspaceToolsContext'
+import { TabataMiniWidget, TabataPanel } from '@/features/tabata/TabataPanel'
 import { usePomodoroTimer } from '@/hooks/usePomodoroTimer'
+import { useTabataTimer } from '@/hooks/useTabataTimer'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { IconButton } from '@/components/ui/IconButton'
 import { phaseEmoji, phaseLabel } from '@/features/pomodoro/pomodoroSettings'
 
@@ -99,11 +103,13 @@ function formatPomodoroTime(ms: number) {
 function ToolFrame({
   title,
   onMinimize,
+  onClose,
   minimized = false,
   children,
 }: {
   title: string
   onMinimize: () => void
+  onClose?: () => void
   minimized?: boolean
   children: ReactNode
 }) {
@@ -123,26 +129,48 @@ function ToolFrame({
           </span>
           <h1 className="truncate text-sm font-bold text-bloomora-deep">{title}</h1>
         </div>
-        {title === 'Apuntes' ? <button
-          type="button"
-          onClick={() => window.dispatchEvent(new Event('bloomora:open-notes-shortcuts'))}
-          className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-bloomora-line/50 bg-white text-sm font-bold text-bloomora-violet shadow-sm hover:bg-bloomora-lavender-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-bloomora-lilac"
-          aria-label="Ver atajos de teclado y controles"
-          title="Atajos de teclado"
-        >
-          ⌨
-        </button> : null}
-        <button
-          type="button"
-          onClick={onMinimize}
-          className="inline-flex min-h-9 shrink-0 items-center gap-2 rounded-full bg-bloomora-lavender-50 px-4 text-xs font-bold text-bloomora-violet ring-1 ring-bloomora-line/40 transition hover:bg-bloomora-lavender-100"
-          aria-label={`Minimizar ${title} y seguir trabajando`}
-        >
-          <span aria-hidden>−</span>
-          Minimizar
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          {title === 'Apuntes' ? (
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event('bloomora:open-notes-shortcuts'))}
+              className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-bloomora-line/50 bg-white text-sm font-bold text-bloomora-violet shadow-sm hover:bg-bloomora-lavender-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-bloomora-lilac"
+              aria-label="Ver atajos de teclado y controles"
+              title="Atajos de teclado"
+            >
+              ⌨
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={onMinimize}
+            className="inline-flex size-11 shrink-0 items-center justify-center gap-2 rounded-full bg-bloomora-lavender-50 px-3 text-xs font-bold text-bloomora-violet ring-1 ring-bloomora-line/40 transition hover:bg-bloomora-lavender-100 sm:min-h-9 sm:w-auto sm:px-4"
+            aria-label={`Minimizar ${title} y seguir trabajando`}
+          >
+            <span aria-hidden>−</span>
+            <span className="hidden sm:inline">Minimizar</span>
+          </button>
+          {onClose ? (
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-white text-lg font-bold text-bloomora-violet ring-1 ring-bloomora-line/40 transition hover:bg-bloomora-mist"
+              aria-label={`Cerrar ${title}`}
+            >
+              ×
+            </button>
+          ) : null}
+        </div>
       </header>
-      <div className={`min-h-0 flex-1 ${title === 'Pomodoro' && !minimized ? 'overflow-hidden' : 'overflow-y-auto'}`}>{children}</div>
+      <div
+        className={`min-h-0 flex-1 ${
+          (title === 'Pomodoro' || title === 'Tabata') && !minimized
+            ? 'overflow-hidden'
+            : 'overflow-y-auto'
+        }`}
+      >
+        {children}
+      </div>
     </div>
   )
 }
@@ -151,6 +179,8 @@ function FloatingToolWidget({
   tool,
   title,
   onExpand,
+  onClose,
+  closeLabel,
   children,
   width = 288,
   initialY,
@@ -158,6 +188,8 @@ function FloatingToolWidget({
   tool: WorkspaceToolId
   title: string
   onExpand: () => void
+  onClose?: () => void
+  closeLabel?: string
   children: ReactNode
   width?: number
   initialY: number
@@ -182,17 +214,42 @@ function FloatingToolWidget({
           <span className="text-bloomora-violet" aria-hidden>⠿</span>
           <span className="truncate">{title}</span>
         </span>
-        <IconButton
-          label={`Expandir ${title}`}
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={onExpand}
-          className="size-8 rounded-xl"
-          title="Expandir"
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M8 4H4v4M16 4h4v4M4 16v4h4M20 16v4h-4M4 8l6-6M20 8l-6-6M4 16l6 6M20 16l-6 6" />
-          </svg>
-        </IconButton>
+        <div className="flex shrink-0 items-center gap-1">
+          <IconButton
+            label={`Expandir ${title}`}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={onExpand}
+            className="size-11 rounded-full"
+            title="Expandir"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M8 4H4v4M16 4h4v4M4 16v4h4M20 16v4h-4M4 8l6-6M20 8l-6-6M4 16l6 6M20 16l-6 6" />
+            </svg>
+          </IconButton>
+          {onClose ? (
+            <IconButton
+              label={closeLabel ?? `Cerrar gadget de ${title}`}
+              tone="neutral"
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={onClose}
+              className="size-11 rounded-full bg-white/90"
+              title="Cerrar"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.25"
+                strokeLinecap="round"
+                aria-hidden
+              >
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </IconButton>
+          ) : null}
+        </div>
       </div>
       <div className="p-3">{children}</div>
     </section>
@@ -200,10 +257,42 @@ function FloatingToolWidget({
 }
 
 export function WorkspaceToolsHost() {
-  const { modes, minimizeTool, expandTool } = useWorkspaceTools()
+  const { modes, minimizeTool, expandTool, closeTool } = useWorkspaceTools()
+  const { confirm } = useBloomoraAlert()
   const pomodoro = usePomodoroTimer()
+  const tabata = useTabataTimer()
+  const isMobile = useMediaQuery('(max-width: 599px)')
+  const [tabataChip, setTabataChip] = useState(false)
   const pomodoroMode = modes.pomodoro
   const notesMode = modes['english-notes']
+  const tabataMode = modes.tabata
+
+  useEffect(() => {
+    if (tabataMode === null || tabataMode === 'full') setTabataChip(false)
+  }, [tabataMode])
+
+  const closeTabata = async () => {
+    if (tabata.status === 'running' || tabata.status === 'paused') {
+      const ok = await confirm({
+        title: '¿Detener el Tabata?',
+        description: 'Se cancelará la sesión en curso.',
+        confirmLabel: 'Detener',
+        cancelLabel: 'Seguir',
+        tone: 'danger',
+      })
+      if (!ok) return
+      tabata.stop()
+    }
+    setTabataChip(false)
+    closeTool('tabata')
+  }
+
+  const showTabataFull =
+    tabataMode === 'full' || (tabataMode === 'minimized' && isMobile)
+  const showTabataGadget =
+    tabataMode === 'minimized' && !isMobile && !tabataChip
+  const showTabataMini =
+    tabataMode === 'minimized' && !isMobile && tabataChip
 
   return (
     <>
@@ -212,6 +301,26 @@ export function WorkspaceToolsHost() {
           <Suspense fallback={<p className="p-8 text-center text-sm text-bloomora-text-muted">Cargando Pomodoro…</p>}>
             <PomodoroPage embedded controller={pomodoro} />
           </Suspense>
+        </ToolFrame>
+      ) : null}
+
+      {showTabataFull ? (
+        <ToolFrame
+          title="Tabata"
+          onMinimize={() => {
+            if (isMobile) {
+              setTabataChip(false)
+              minimizeTool('tabata')
+              return
+            }
+            setTabataChip(false)
+            minimizeTool('tabata')
+          }}
+          onClose={() => void closeTabata()}
+        >
+          <div className="mx-auto flex h-full min-h-0 w-full max-w-lg flex-col">
+            <TabataPanel timer={tabata} embedded />
+          </div>
         </ToolFrame>
       ) : null}
 
@@ -232,6 +341,14 @@ export function WorkspaceToolsHost() {
           tool="pomodoro"
           title="Pomodoro"
           onExpand={() => expandTool('pomodoro')}
+          onClose={() => {
+            if (pomodoro.status === 'alarm') pomodoro.stopAlarm()
+            else if (pomodoro.status === 'running' || pomodoro.status === 'paused') {
+              pomodoro.reset()
+            }
+            closeTool('pomodoro')
+          }}
+          closeLabel="Cerrar gadget de Pomodoro"
           initialY={88}
         >
           <div className="flex items-center justify-between gap-3">
@@ -260,11 +377,49 @@ export function WorkspaceToolsHost() {
         </FloatingToolWidget>
       ) : null}
 
+      {showTabataGadget ? (
+        <section
+          role="region"
+          aria-label="Tabata"
+          className="fixed bottom-6 right-6 z-[10070] flex max-h-[calc(100vh-3rem)] w-[min(18rem,calc(100vw-3rem))] flex-col overflow-hidden rounded-[1.75rem] border border-bloomora-line/50 bg-white shadow-[0_18px_50px_-18px_rgba(53,39,91,0.45)]"
+          data-floating-tool="tabata"
+        >
+          <TabataPanel
+            timer={tabata}
+            showChrome
+            className="min-h-0 max-h-[calc(100vh-3rem)]"
+            onRequestMinimize={() => setTabataChip(true)}
+            onRequestClose={() => void closeTabata()}
+          />
+        </section>
+      ) : null}
+
+      {showTabataMini ? (
+        <FloatingToolWidget
+          tool="tabata"
+          title={tabata.active?.nombre ?? 'Tabata'}
+          onExpand={() => {
+            setTabataChip(false)
+            expandTool('tabata')
+          }}
+          onClose={() => void closeTabata()}
+          closeLabel="Cerrar gadget de Tabata"
+          initialY={260}
+        >
+          <TabataMiniWidget
+            timer={tabata}
+            onExpand={() => setTabataChip(false)}
+          />
+        </FloatingToolWidget>
+      ) : null}
+
       {notesMode === 'minimized' ? (
         <FloatingToolWidget
           tool="english-notes"
           title="Apuntes"
           onExpand={() => expandTool('english-notes')}
+          onClose={() => closeTool('english-notes')}
+          closeLabel="Cerrar gadget de apuntes"
           initialY={174}
         >
           <p className="text-xs leading-relaxed text-bloomora-text-muted">

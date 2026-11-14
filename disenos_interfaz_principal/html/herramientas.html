@@ -1,0 +1,100 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Q;src:url(../../redesign/fonts/Quicksand.ttf)}
+*{box-sizing:border-box;margin:0;padding:0}button{font-family:inherit;border:0;background:none}
+body{font-family:Q,sans-serif;background:#FBF6F9;width:1280px;padding:0 0 48px;color:#3F3468}
+.nav{height:64px;background:rgba(255,255,255,.85);border-bottom:1px solid #F0E7EE}.navin{max-width:1184px;margin:0 auto;padding:0 48px;height:64px;display:flex;align-items:center;gap:32px}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:20px;color:#E56B90}
+.logo img{height:30px}
+.links{display:flex;gap:4px;margin-left:8px}
+.links a{height:40px;padding:0 16px;border-radius:999px;display:flex;align-items:center;font-weight:600;font-size:15px;color:#544687}
+.links a.on{background:#FDECF2;color:#3F3468}
+.right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.icb{width:44px;height:44px;border-radius:999px;border:1px solid #F0E7EE;background:#fff;display:flex;align-items:center;justify-content:center}
+.av{cursor:pointer;width:44px;height:44px;border-radius:999px;background:#F4F0FA;border:2px solid #fff;box-shadow:0 0 0 2px #F0E7EE;overflow:hidden;display:flex;align-items:flex-end;justify-content:center}
+.av img{width:40px}
+.wrap{max-width:1184px;margin:0 auto;padding:0 48px}
+.hello{padding:40px 0 24px;display:flex;align-items:flex-end;justify-content:space-between}
+.hello h1{font-size:32px;font-weight:700;color:#3F3468}
+.hello p{font-size:17px;color:#544687;margin-top:4px}
+.streak{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #F0E7EE;border-radius:999px;padding:10px 16px;font-weight:600;font-size:15px;color:#544687}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.card{background:#fff;border:1px solid #F0E7EE;border-radius:28px;padding:28px;box-shadow:0 1px 2px rgba(84,70,135,.04),0 12px 32px rgba(84,70,135,.08)}
+.ch{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px}
+.ch h2{font-size:22px;font-weight:700}
+.ch p{font-size:15px;color:#544687;margin-top:2px}
+.pb{height:44px;padding:0 18px;border-radius:999px;background:#E56B90;color:#fff;font-weight:700;font-size:15px;box-shadow:0 4px 12px rgba(240,128,160,.3)}
+.days{display:flex;align-items:center;justify-content:space-between;background:#F4F0FA;border-radius:999px;padding:6px}
+.days .ar{width:40px;height:40px;border-radius:999px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;color:#544687}
+.days b{font-size:16px}
+.days small{font-size:14px;color:#544687;font-weight:500;margin-left:6px}
+.empty{text-align:center;padding:24px 0 8px}
+.empty img{width:150px}
+.empty h3{font-size:19px;margin-top:8px}
+.empty p{font-size:15px;color:#544687;margin-top:4px}
+.ghost{margin-top:16px;height:44px;padding:0 20px;border-radius:999px;border:2px solid #F0E7EE;color:#544687;font-weight:600;font-size:15px}
+.sum{display:flex;align-items:center;gap:24px;background:#F4F0FA;border-radius:22px;padding:24px}
+.ring{position:relative;width:124px;height:124px}
+.ring .c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.n{font-size:26px;font-weight:700}.nl{font-size:13px;color:#544687;font-weight:600}
+.msg{font-size:20px;font-weight:700}.msgd{font-size:15px;color:#544687;margin-top:4px}
+.pill{display:inline-block;margin-top:12px;background:#fff;color:#544687;font-weight:700;font-size:14px;padding:6px 12px;border-radius:999px;border:1px solid #F0E7EE}
+.it{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:18px;border:1px solid #F0E7EE;margin-top:16px}
+.ico{width:44px;height:44px;border-radius:14px;background:#FDECF2;display:flex;align-items:center;justify-content:center;font-size:22px}
+.g{flex:1}.gt{display:flex;justify-content:space-between;font-size:16px;font-weight:700}.gt span{font-size:14px;color:#544687;font-weight:600}
+.bar{height:10px;border-radius:5px;background:#EFEAFB;margin-top:8px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#B8A6F0,#F080A0);border-radius:5px}
+.more{width:32px;height:32px;border-radius:999px;color:#544687;font-size:20px;display:flex;align-items:center;justify-content:center}
+.chk{display:flex;gap:8px;margin-top:20px;justify-content:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px}
+.cnt{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;padding:0 8px;border-radius:999px;background:#FDECF2;color:#E56B90;font-size:14px;vertical-align:middle;margin-left:6px}
+.sec{height:44px;padding:0 18px;border-radius:999px;border:2px solid #F0E7EE;color:#544687;font-weight:700;font-size:15px;background:#fff}
+.row{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:18px;border:1px solid #F0E7EE;margin-top:12px;min-height:68px}
+.rt{font-size:16px;font-weight:700}.rs{font-size:14px;color:#544687;margin-top:2px}
+.tag{font-size:13px;font-weight:600;color:#544687;background:#F4F0FA;padding:6px 12px;border-radius:999px}
+.chev{font-size:24px;color:#968EAF;width:24px;text-align:center}
+.link{display:block;text-align:center;margin-top:20px;font-size:15px;font-weight:700;color:#544687}
+.grid>.card{display:flex;flex-direction:column}
+.idea{margin-top:16px;border:2px dashed #F0E7EE;border-radius:18px;padding:16px}.it2{font-size:14px;font-weight:600;color:#544687}.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.chips span{height:40px;padding:0 14px;border-radius:999px;background:#F4F0FA;color:#3F3468;font-size:14px;font-weight:600;display:flex;align-items:center}.tg{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.tc{background:#fff;border:1px solid #F0E7EE;border-radius:28px;padding:24px;box-shadow:0 1px 2px rgba(84,70,135,.04),0 12px 32px rgba(84,70,135,.08);display:flex;flex-direction:column}
+.art{height:150px;border-radius:20px;display:flex;align-items:center;justify-content:center;position:relative}
+.art img{height:140px}
+.big{font-size:44px;font-weight:700;color:#3F3468}
+.tc h3{font-size:21px;margin-top:20px}.tc p{font-size:15px;color:#544687;margin-top:4px;flex:1}
+.meta{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}.meta span{font-size:13px;font-weight:600;color:#544687;background:#F4F0FA;padding:6px 12px;border-radius:999px}
+.full{width:100%;height:52px;border-radius:999px;background:#E56B90;color:#fff;font-weight:700;font-size:16px;margin-top:20px;box-shadow:0 4px 12px rgba(240,128,160,.3)}
+.full.alt{background:#fff;color:#544687;border:2px solid #F0E7EE;box-shadow:none}
+.recent{margin-top:24px}
+
+body{width:auto!important}
+@media (max-width:1023px){.navin{padding:0 32px;gap:16px}.wrap{padding:0 32px}.grid,.grid2{grid-template-columns:1fr}.tg{grid-template-columns:1fr 1fr}}
+@media (max-width:599px){
+.nav{position:sticky;top:0}.navin{padding:0 20px}.links{display:none}
+.wrap{padding:0 20px 96px}.hello{padding:24px 0 16px}.hello h1{font-size:26px}
+.card,.tc{padding:20px;border-radius:24px}.grid,.grid2,.tg{gap:16px}.grid2{margin-top:16px}.tg{grid-template-columns:1fr}
+.ch{flex-wrap:wrap;gap:12px}.sum{flex-direction:column;text-align:center;gap:12px}
+.tab{display:flex!important}}
+body{position:relative;min-height:100vh}.tab{display:none;position:absolute;left:0;right:0;bottom:0;height:72px;background:#fff;border-top:1px solid #F0E7EE;justify-content:space-around;align-items:center;padding-bottom:6px}
+.tab a{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;font-weight:700;color:#968EAF;min-width:64px}
+.tab a span{font-size:22px}.tab a.on{color:#E56B90}
+</style></head><body>
+<div class="nav"><div class="navin">
+ <div class="logo"><img src="../assets/logo_tulip.png">Bloomora</div>
+ <div class="links"><a>Hoy</a><a>Metas</a><a>Listas</a><a class="on">Herramientas</a></div>
+ <div class="right"><div class="av"><img src="../assets/bunny_wave_512.png"></div></div>
+</div></div>
+<div class="wrap">
+ <div class="hello"><div><h1>Herramientas</h1><p>Todo lo que te ayuda a enfocarte, aprender y anotar</p></div></div>
+ <div class="tg">
+  <div class="tc"><div class="art" style="background:#FDECF2"><div class="big">25:00</div></div>
+   <h3>⏱️ Pomodoro</h3><p>Trabaja 25 minutos y descansa 5. Bloomy te avisa cuando toca pausa.</p>
+   <div class="meta"><span>Enfoque 25 min</span><span>Pausa 5 min</span></div>
+   <button class="full">Iniciar enfoque</button></div>
+  <div class="tc"><div class="art" style="background:#FFF3DD"><img src="../assets/bunny_think_512.png"></div>
+   <h3>🗂️ Flashcards</h3><p>Repasa palabras con tarjetas que se voltean.</p>
+   <div class="meta"><span>49 palabras</span><span>Inglés</span></div>
+   <button class="full">Repasar ahora</button></div>
+  <div class="tc"><div class="art" style="background:#EFEAFB"><img src="../assets/bunny_phone_512.png"></div>
+   <h3>📒 Apuntes</h3><p>Escribe y organiza tus notas de clase o ideas.</p>
+   <div class="meta"><span>Tus notas</span></div>
+   <button class="full alt">Abrir apuntes</button></div>
+ </div>
+</div><nav class="tab"><a class=""><span>🏠</span>Hoy</a><a class=""><span>🎯</span>Metas</a><a class=""><span>📋</span>Listas</a><a class="on"><span>🧰</span>Herramientas</a></nav></body></html>

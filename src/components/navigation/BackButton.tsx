@@ -10,6 +10,11 @@ type BackButtonProps = {
   onClick?: MouseEventHandler<HTMLButtonElement>
 }
 
+function canGoBackInHistory(): boolean {
+  if (typeof window === 'undefined') return false
+  return window.history.length > 1
+}
+
 export function BackButton({
   to,
   label = 'Volver',
@@ -41,7 +46,12 @@ export function BackButton({
       className={classes}
       onClick={(e) => {
         onClick?.(e)
-        if (!e.defaultPrevented) navigate(-1)
+        if (e.defaultPrevented) return
+        if (canGoBackInHistory()) {
+          navigate(-1)
+          return
+        }
+        navigate('/app')
       }}
     >
       <span aria-hidden>←</span>

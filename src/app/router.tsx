@@ -122,7 +122,10 @@ export const appRouter = createBrowserRouter([
           { path: 'goals/overview', element: <GoalsOverviewPage /> },
           { path: 'goals/:goalId/tracker', element: <GoalTrackerPage /> },
           { path: 'shopping', element: <PlaceholderFlowPage /> },
-          { path: 'lists/new', element: <PlaceholderFlowPage /> },
+          {
+            path: 'lists/new',
+            element: <Navigate to="/app/lists?crear=1" replace />,
+          },
           { path: 'lists', element: <ListsPage /> },
           { path: 'flashcards', element: <EnglishFlashcardsPage /> },
           { path: 'pomodoro', element: <PomodoroPage /> },

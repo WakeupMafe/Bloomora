@@ -1,0 +1,14 @@
+IMPORTANTE: termina primero lo que estás haciendo con /redesign (inicio y registro). Esta es una tarea APARTE para la interfaz principal (dashboard ya logueado y la página Herramientas). No modifiques lo de /redesign.
+
+Referencia: /disenos_interfaz_principal/screens (inicio_pc, inicio_tablet, inicio_movil, herramientas_pc, herramientas_tablet, herramientas_movil). Los HTML de /disenos_interfaz_principal/html son solo maqueta de referencia, no los copies tal cual.
+
+Enfoque de los cambios:
+1. Navbar moderno: 64px, blanco, logo + accesos (Hoy, Metas, Listas, Herramientas) con pill activo en --pinkl y solo el avatar a la derecha. Quita el saludo, la fecha y el nombre del navbar (estaban repetidos). En móvil los accesos pasan a una barra inferior fija de 4 pestañas.
+2. Un solo ancho: navbar, saludo y cards dentro del mismo contenedor (máx. 1184px, padding 48px en PC, 32px en tablet y 20px en móvil). Grid de 2 columnas iguales en PC y 1 columna en tablet/móvil.
+3. Saludo fuera del navbar: "Hola, {nombre} 👋" + fecha, alineado a la izquierda.
+4. Cards claras: fondo blanco, borde 1px --line, radius 28px, sombra suave. Las secciones internas en --lavsoft. Mismo estilo para Tareas, Metas, Listas y Herramientas.
+5. Nada de textos tipo enlace ("Ver todas →" abajo). Las acciones van arriba a la derecha como botones: "+ Nueva" (pill --pinkd) y "Ver todas" (pill con borde).
+6. Estados vacíos con Bloomy (bunny_sleep en tareas vacías) e ideas sugeridas que se puedan tocar en Listas.
+7. Página Herramientas (nueva ruta): 3 cards grandes (Pomodoro, Flashcards, Apuntes) con ilustración, descripción, datos en chips y botón para empezar. La card del dashboard es solo un atajo hacia ahí.
+
+Usa solo los tokens existentes y Quicksand. Botones y zonas táctiles de 44–48px mínimo, contraste AA. Los assets están en /disenos_interfaz_principal/assets. No cambies la lógica de datos, solo la presentación. Al terminar, lista los archivos que cambiaste.

@@ -77,7 +77,7 @@ export function GoalTrackerPage() {
     <div className="bloomora-goal-tracker-page app-shell-padding app-content-fluid mx-auto flex min-h-dvh flex-col gap-6 bg-bloomora-snow pb-16">
       <header className="flex items-center justify-between gap-4">
         <BloomoraLogo size="sm" />
-        <BackButton />
+        <BackButton to="/app/goals/overview" label="Volver a metas" />
       </header>
 
       {editingTitle ? (

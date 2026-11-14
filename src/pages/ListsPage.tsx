@@ -3,6 +3,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 import { createPortal } from 'react-dom'
@@ -12,8 +13,10 @@ import { BloomoraLogo } from '@/components/brand/BloomoraLogo'
 import { BackButton } from '@/components/navigation/BackButton'
 import { Button } from '@/components/ui/Button'
 import { useBloomoraAlert } from '@/contexts/BloomoraAlertContext'
+import { useListGadgets } from '@/contexts/ListGadgetsContext'
 import { useUserPhone } from '@/contexts/UserPhoneContext'
 import { useAddListMutation, useBloomoraLists } from '@/hooks/useBloomoraLists'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import {
   computeNextAgendaBlockMinutes,
   useListItemAgendaMutations,
@@ -40,12 +43,16 @@ import { cn } from '@/utils/cn'
 export function ListsPage() {
   const { cedula } = useUserPhone()
   const { confirm } = useBloomoraAlert()
+  const { openListGadget, closeListGadget, isListGadgetOpen } = useListGadgets()
+  const canUseGadgets = useMediaQuery('(min-width: 768px)')
   const { data: lists = [], isLoading: listsLoading } = useBloomoraLists(cedula)
   const addListMut = useAddListMutation(cedula)
   const updateTitleMut = useUpdateListTitleMutation(cedula)
   const deleteListMut = useDeleteListMutation(cedula)
   const [searchParams, setSearchParams] = useSearchParams()
   const listParam = searchParams.get('list')
+  const crearParam = searchParams.get('crear')
+  const newListInputRef = useRef<HTMLInputElement>(null)
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [newListTitle, setNewListTitle] = useState('')
@@ -63,7 +70,16 @@ export function ListsPage() {
   useEffect(() => {
     if (lists.length === 0) {
       setSelectedId(null)
-      if (listParam) setSearchParams({}, { replace: true })
+      if (listParam) {
+        setSearchParams(
+          (prev) => {
+            const next = new URLSearchParams(prev)
+            next.delete('list')
+            return next
+          },
+          { replace: true },
+        )
+      }
       return
     }
     if (listParam && lists.some((l) => l.id === listParam)) {
@@ -71,7 +87,14 @@ export function ListsPage() {
       return
     }
     if (listParam) {
-      setSearchParams({}, { replace: true })
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          next.delete('list')
+          return next
+        },
+        { replace: true },
+      )
     }
     if (selectedId && lists.some((l) => l.id === selectedId)) return
     setSelectedId(lists[0]!.id)
@@ -85,6 +108,26 @@ export function ListsPage() {
   useEffect(() => {
     if (selected) setListTitleEdit(selected.title)
   }, [selected])
+
+  useEffect(() => {
+    if (crearParam !== '1') return
+    const frame = window.requestAnimationFrame(() => {
+      const input = newListInputRef.current
+      if (!input) return
+      input.focus({ preventScroll: false })
+      input.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
+    setSearchParams(
+      (prev) => {
+        if (!prev.has('crear')) return prev
+        const next = new URLSearchParams(prev)
+        next.delete('crear')
+        return next
+      },
+      { replace: true },
+    )
+    return () => window.cancelAnimationFrame(frame)
+  }, [crearParam, setSearchParams])
 
   const { data: items = [], isLoading: itemsLoading } = useBloomoraListItems(
     cedula,
@@ -255,7 +298,7 @@ export function ListsPage() {
     <div className="app-shell-padding app-content-fluid mx-auto flex min-h-dvh flex-col gap-5 bg-bloomora-snow pb-[max(4rem,env(safe-area-inset-bottom))] sm:gap-6">
       <header className="flex items-center justify-between gap-3">
         <BloomoraLogo size="sm" />
-        <BackButton to="/app" />
+        <BackButton to="/app" label="Volver al inicio" />
       </header>
 
       <h1 className="app-fluid-title font-bold text-bloomora-deep">Tus listas</h1>
@@ -301,9 +344,11 @@ export function ListsPage() {
             className="space-y-2 border-t border-bloomora-line/20 pt-3"
           >
             <input
+              ref={newListInputRef}
               value={newListTitle}
               onChange={(e) => setNewListTitle(e.target.value)}
               placeholder="Nueva lista…"
+              aria-label="Nombre de la nueva lista"
               className="bloomora-form-input w-full rounded-xl border border-bloomora-line/50 px-3 py-2.5 text-sm font-semibold outline-none ring-bloomora-lilac/20 focus:ring-2"
             />
             <Button
@@ -345,6 +390,20 @@ export function ListsPage() {
                   >
                     Guardar nombre
                   </Button>
+                  {canUseGadgets ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="min-h-10 touch-manipulation"
+                      disabled={isListGadgetOpen(selected.id)}
+                      onClick={() => openListGadget(selected.id)}
+                    >
+                      {isListGadgetOpen(selected.id)
+                        ? 'Ya en post-it'
+                        : 'Abrir como post-it'}
+                    </Button>
+                  ) : null}
                   <Button
                     type="button"
                     variant="ghost"
@@ -359,6 +418,7 @@ export function ListsPage() {
                       if (!ok) return
                       deleteListMut.mutate(selected.id, {
                         onSuccess: () => {
+                          closeListGadget(selected.id)
                           setSelectedId(null)
                           setSearchParams({}, { replace: true })
                         },

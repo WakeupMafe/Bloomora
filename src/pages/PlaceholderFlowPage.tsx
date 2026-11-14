@@ -5,12 +5,8 @@ import { Card } from '@/components/ui/Card'
 
 const titles: Record<string, string> = {
   '/app/tasks/new': 'Nueva tarea',
-  '/app/goals/new': 'Nueva meta',
   '/app/agenda': 'Toda la agenda',
   '/app/shopping': 'Lista de compras',
-  '/app/lists': 'Tus listas',
-  '/app/lists/new': 'Nueva lista',
-  '/app/apuntes': 'Apuntes',
 }
 
 export function PlaceholderFlowPage() {
@@ -32,4 +28,3 @@ export function PlaceholderFlowPage() {
     </div>
   )
 }
-

@@ -7,7 +7,6 @@ import conejoLofi from '@/assets/ConejoLofi.png'
 import { BackButton } from '@/components/navigation/BackButton'
 import { BloomoraImage } from '@/components/ui/BloomoraImage'
 import { Button } from '@/components/ui/Button'
-import { DashboardAppHeader } from '@/features/dashboard/DashboardAppHeader'
 import { useBloomoraAlert } from '@/contexts/BloomoraAlertContext'
 import { useBloomoraToast } from '@/contexts/BloomoraToastContext'
 import { useUserPhone } from '@/contexts/UserPhoneContext'
@@ -166,12 +165,10 @@ export function EditProfilePage() {
         <div className="absolute -left-16 top-1/3 h-56 w-56 rounded-full bg-bloomora-lilac/12 blur-3xl" />
       </div>
 
-      <main className="app-shell-padding--dashboard app-content-fluid mx-auto w-full pb-16">
-        <DashboardAppHeader firstName={name || undefined} avatarSrc={circleSrc} />
-
+      <main className="app-shell-padding--dashboard mx-auto w-full max-w-[1184px] pb-8">
         <article
           className={cn(
-            'bloomora-elevated-panel app-principal-card overflow-hidden ring-1 ring-bloomora-line/25',
+            'bloomora-elevated-panel app-principal-card mt-6 overflow-hidden ring-1 ring-bloomora-line/25 max-[599px]:mt-4',
           )}
         >
           <div className="flex flex-wrap items-start justify-between gap-3">

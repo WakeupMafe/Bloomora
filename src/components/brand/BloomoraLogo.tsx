@@ -1,4 +1,4 @@
-import navbarFlower from '@/assets/logos/bloomora_navbar_flor.png'
+import navbarFlower from '@/assets/bloomy/logo_tulip.png'
 import { BloomoraImage } from '@/components/ui/BloomoraImage'
 import { cn } from '@/utils/cn'
 

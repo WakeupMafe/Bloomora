@@ -1,31 +1,56 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { BloomoraLogo } from '@/components/brand/BloomoraLogo'
-import { BackButton } from '@/components/navigation/BackButton'
-import { Button } from '@/components/ui/Button'
+import { AuthErrorBanner } from '@/components/auth/AuthErrorBanner'
+import { BunnyPassword } from '@/components/auth/BunnyPassword'
+import { RegisterShell } from '@/components/auth/RegisterShell'
+import { BloomyPose } from '@/components/brand/BloomyPose'
+import { useBloomoraAlert } from '@/contexts/BloomoraAlertContext'
 import { useBloomoraToast } from '@/contexts/BloomoraToastContext'
 import { useUserPhone } from '@/contexts/UserPhoneContext'
+import { presentAuthError } from '@/lib/authErrorUi'
 import { isValidCedula } from '@/lib/cedula'
 import { isValidPhone, normalizePhone } from '@/lib/userPhone'
-import { findProfileForQuickEntry } from '@/services/supabase/profilesRepo'
+import {
+  PROFILE_PASSWORD_MIN_LENGTH,
+  findProfileForQuickEntry,
+  setProfilePassword,
+  verifyProfilePassword,
+  type FormattedAuthError,
+  type ProfileRow,
+} from '@/services/supabase/profilesRepo'
 import { getSupabaseBrowserClient } from '@/services/supabase/client'
-
-const fieldClass =
-  'mt-1.5 w-full rounded-full border border-bloomora-line/50 bg-bloomora-white px-4 py-3 text-base font-semibold text-bloomora-deep outline-none ring-bloomora-lilac/25 focus:ring-2'
+import '@/styles/auth-flow.css'
 
 export function QuickEntryPage() {
   const navigate = useNavigate()
   const { showToast } = useBloomoraToast()
+  const { alert } = useBloomoraAlert()
   const { setSession, phone } = useUserPhone()
   const [raw, setRaw] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [password, setPassword] = useState('')
+  const [passwordConfirm, setPasswordConfirm] = useState('')
+  const [mode, setMode] = useState<'login' | 'createPassword'>('login')
+  const [pendingProfile, setPendingProfile] = useState<ProfileRow | null>(null)
+  const [error, setError] = useState<FormattedAuthError | null>(null)
   const [loading, setLoading] = useState(false)
+  const [idFocused, setIdFocused] = useState(false)
 
   const digits = normalizePhone(raw)
+  const isCreate = mode === 'createPassword'
 
   useEffect(() => {
     if (phone) navigate('/app', { replace: true })
   }, [phone, navigate])
+
+  const setUserError = (message: string) => {
+    setError({ message, isSystem: false, fullText: message })
+  }
+
+  const enterWithProfile = (profile: ProfileRow) => {
+    showToast('¡Bienvenida!')
+    setSession(profile.numero_celular, profile.cedula)
+    navigate('/app', { replace: true })
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,11 +58,11 @@ export function QuickEntryPage() {
 
     const d = digits
     if (!d) {
-      setError('Escribe tu cédula o tu número de celular.')
+      setUserError('Escribe tu cédula o tu número de celular.')
       return
     }
     if (!isValidPhone(d) && !isValidCedula(d)) {
-      setError(
+      setUserError(
         'Usa un celular (10 a 15 dígitos) o una cédula (6 a 12 dígitos), solo números.',
       )
       return
@@ -45,28 +70,85 @@ export function QuickEntryPage() {
 
     const sb = getSupabaseBrowserClient()
     if (!sb) {
-      setError(
-        'Falta configurar Supabase (VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en .env.local).',
+      presentAuthError(
+        new Error(
+          'Falta configurar Supabase (VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY).',
+        ),
+        { setError, showToast, alert },
       )
       return
     }
 
     setLoading(true)
     try {
+      if (mode === 'createPassword') {
+        const profile = pendingProfile
+        if (!profile) {
+          setMode('login')
+          setUserError('Vuelve a escribir tu cédula o celular e intenta de nuevo.')
+          return
+        }
+        if (password.length < PROFILE_PASSWORD_MIN_LENGTH) {
+          setUserError(
+            `La contraseña debe tener al menos ${PROFILE_PASSWORD_MIN_LENGTH} caracteres.`,
+          )
+          return
+        }
+        if (password !== passwordConfirm) {
+          setUserError(
+            'Las contraseñas no coinciden. Revísalas e inténtalo de nuevo.',
+          )
+          return
+        }
+        try {
+          await setProfilePassword(sb, profile.cedula, password)
+        } catch (pwdErr) {
+          presentAuthError(pwdErr, { setError, showToast, alert })
+          return
+        }
+        showToast('¡Contraseña creada! Bienvenida.')
+        setSession(profile.numero_celular, profile.cedula)
+        navigate('/app', { replace: true })
+        return
+      }
+
+      if (!password) {
+        setUserError('Escribe tu contraseña.')
+        return
+      }
+
       const profile = await findProfileForQuickEntry(sb, raw)
       if (!profile) {
-        setError(
-          'No encontramos ese dato. Revisa cédula o celular, o crea tu cuenta en Registrarme.',
+        setUserError(
+          'No hay perfil con ese dato. Revisa cédula o celular, o crea tu cuenta en Registrarme.',
         )
         return
       }
-      showToast('¡Bienvenida!')
-      setSession(profile.numero_celular, profile.cedula)
-      navigate('/app', { replace: true })
+
+      if (!profile.password_hash) {
+        setPendingProfile(profile)
+        setMode('createPassword')
+        setPassword('')
+        setPasswordConfirm('')
+        setError(null)
+        showToast('Crea una contraseña para tu cuenta (primera vez).')
+        return
+      }
+
+      let ok = false
+      try {
+        ok = await verifyProfilePassword(sb, d, password)
+      } catch (verifyErr) {
+        presentAuthError(verifyErr, { setError, showToast, alert })
+        return
+      }
+      if (!ok) {
+        setUserError('Contraseña incorrecta. Inténtalo de nuevo.')
+        return
+      }
+      enterWithProfile(profile)
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'No se pudo conectar con Supabase.',
-      )
+      presentAuthError(err, { setError, showToast, alert })
     } finally {
       setLoading(false)
     }
@@ -75,52 +157,138 @@ export function QuickEntryPage() {
   if (phone) return null
 
   return (
-    <div className="app-shell-padding app-content-fluid mx-auto flex min-h-dvh flex-col justify-center gap-8 bg-bloomora-snow">
-      <BloomoraLogo size="md" className="mx-auto" />
-      <div className="app-principal-card bg-white/90 shadow-[0_10px_40px_-12px_rgba(91,74,140,0.12)] ring-1 ring-bloomora-line/25">
-        <div className="mb-4 flex justify-start">
-          <BackButton to="/" />
-        </div>
-        <h1 className="app-fluid-title text-center font-bold text-bloomora-deep">
-          Ingresar
-        </h1>
-        <p className="mt-2 text-center text-sm text-bloomora-text-muted">
-          Escribe la <span className="font-semibold text-bloomora-deep/90">cédula</span>{' '}
-          o el <span className="font-semibold text-bloomora-deep/90">celular</span> con el
-          que te registraste.
-        </p>
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <label className="block text-xs font-semibold text-bloomora-text-muted">
-            Cédula o celular (solo números)
-            <input
-              type="text"
-              inputMode="numeric"
-              autoComplete="username"
-              value={raw}
-              onChange={(e) => setRaw(e.target.value)}
-              placeholder="Ej. 1234567890 o 3001234567"
-              className={fieldClass}
-            />
-          </label>
-          {error ? (
-            <p className="text-sm font-medium text-red-600" role="alert">
-              {error}
-            </p>
-          ) : null}
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Entrando…' : 'Continuar'}
-          </Button>
-        </form>
-        <p className="mt-6 text-center text-sm text-bloomora-text-muted">
-          ¿Primera vez aquí?{' '}
-          <Link
-            to="/phone"
-            className="font-semibold text-bloomora-violet underline-offset-2 hover:underline"
+    <RegisterShell
+      backTo="/"
+      footer={
+        <>
+          <button
+            type="submit"
+            form="entrar-form"
+            className="auth-flow__btn auth-flow__btn--pri"
+            disabled={loading}
           >
-            Registrarme
-          </Link>
-        </p>
-      </div>
-    </div>
+            {loading
+              ? isCreate
+                ? 'Guardando…'
+                : 'Entrando…'
+              : isCreate
+                ? 'Guardar y entrar'
+                : 'Entrar'}
+          </button>
+          {isCreate ? (
+            <button
+              type="button"
+              className="auth-flow__btn auth-flow__btn--ghost"
+              onClick={() => {
+                setMode('login')
+                setPendingProfile(null)
+                setPassword('')
+                setPasswordConfirm('')
+                setError(null)
+              }}
+            >
+              Volver
+            </button>
+          ) : (
+            <Link to="/phone" className="auth-flow__btn auth-flow__btn--ghost">
+              ¿Primera vez aquí? <b>Crear cuenta</b>
+            </Link>
+          )}
+        </>
+      }
+    >
+      <form
+        id="entrar-form"
+        onSubmit={handleSubmit}
+        className="flex flex-1 flex-col pb-2"
+      >
+        {!isCreate ? (
+          <>
+            <BloomyPose pose="wave" sizePx={140} priority />
+            <h1 className="auth-flow__title">¡Qué bueno verte!</h1>
+            <p className="auth-flow__sub">Entra con tu celular o cédula.</p>
+          </>
+        ) : (
+          <>
+            <h1 className="auth-flow__title">Crear contraseña</h1>
+            <p className="auth-flow__sub">
+              Tu cuenta aún no tiene contraseña. Elige una (mín.{' '}
+              {PROFILE_PASSWORD_MIN_LENGTH} caracteres).
+            </p>
+          </>
+        )}
+
+        <label className="auth-flow__label" htmlFor="entrar-id">
+          Celular o cédula
+        </label>
+        <div
+          className={`auth-flow__field ${idFocused ? 'auth-flow__field--focus' : ''}`}
+        >
+          <input
+            id="entrar-id"
+            type="text"
+            inputMode="numeric"
+            autoComplete="username"
+            value={raw}
+            readOnly={isCreate}
+            onFocus={() => setIdFocused(true)}
+            onBlur={() => setIdFocused(false)}
+            onChange={(e) => {
+              setRaw(e.target.value)
+              if (isCreate) {
+                setMode('login')
+                setPendingProfile(null)
+                setPasswordConfirm('')
+              }
+            }}
+            placeholder="300 123 4567"
+          />
+        </div>
+
+        <div className="mt-2">
+          <BunnyPassword
+            value={password}
+            onChange={setPassword}
+            id="entrar-password"
+            label={
+              isCreate
+                ? `Nueva contraseña (mín. ${PROFILE_PASSWORD_MIN_LENGTH})`
+                : 'Contraseña'
+            }
+            autoComplete={isCreate ? 'new-password' : 'current-password'}
+            bunnySizePx={isCreate ? 160 : 140}
+            showBunny={isCreate}
+          />
+        </div>
+
+        {isCreate ? (
+          <>
+            <label className="auth-flow__label" htmlFor="entrar-password-confirm">
+              Confirmar contraseña
+            </label>
+            <div className="auth-flow__field">
+              <input
+                id="entrar-password-confirm"
+                type="password"
+                autoComplete="new-password"
+                value={passwordConfirm}
+                onChange={(e) => setPasswordConfirm(e.target.value)}
+                placeholder="Repite tu contraseña"
+              />
+            </div>
+          </>
+        ) : (
+          <p className="mt-4 text-right text-base font-bold text-bloomora-deep">
+            <span className="underline decoration-2 underline-offset-4 opacity-60">
+              ¿La olvidaste?
+            </span>
+          </p>
+        )}
+
+        <div className="mt-3">
+          <AuthErrorBanner error={error} />
+        </div>
+      </form>
+    </RegisterShell>
   )
 }

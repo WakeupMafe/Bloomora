@@ -1,51 +1,187 @@
-import { Link } from 'react-router-dom'
-import { BackButton } from '@/components/navigation/BackButton'
-import { buttonClassName } from '@/components/ui/buttonRecipe'
+import { useState } from 'react'
+import bunnyHandsUp from '@/assets/bloomy/bunny_hands_up_512.png'
+import bunnyPhone from '@/assets/bloomy/bunny_phone_512.png'
+import bunnyThink from '@/assets/bloomy/bunny_think_512.png'
+import { Button } from '@/components/ui/Button'
+import { DashboardGreeting } from '@/features/dashboard/DashboardGreeting'
 import { StudyToolCard } from '@/features/study-tools/StudyToolCard'
-
-function TomatoIcon() {
-  return <span className="text-xl">🍅</span>
-}
-
-function NotesIcon() {
-  return <span className="text-xl">📝</span>
-}
+import { useWorkspaceTools, type WorkspaceToolId } from '@/contexts/WorkspaceToolsContext'
+import { useUserPhone } from '@/contexts/UserPhoneContext'
+import { useBloomoraEnglishFlashcardsDashboard } from '@/hooks/useBloomoraEnglishFlashcards'
+import { useTabatas } from '@/hooks/useTabatas'
+import { formatMmSs, totalSeconds } from '@/features/tabata/tabataPlan'
 
 export function StudyToolsPage() {
+  const { openTool } = useWorkspaceTools()
+  const { cedula } = useUserPhone()
+  const { data: flashcards, isLoading } =
+    useBloomoraEnglishFlashcardsDashboard(cedula)
+  const { tabatas, isLoading: tabatasLoading } = useTabatas()
+  const [toolChoice, setToolChoice] = useState<
+    'pomodoro' | 'english-notes' | 'tabata' | null
+  >(null)
+
+  const wordCount = flashcards?.count ?? 0
+  const tabataChip =
+    tabatasLoading
+      ? '…'
+      : tabatas.length === 0
+        ? 'Sin guardados'
+        : `${tabatas.length} guardado${tabatas.length === 1 ? '' : 's'}`
+  const firstTabataChip =
+    tabatas[0] != null
+      ? `${tabatas[0].nombre} ${formatMmSs(totalSeconds(tabatas[0]))}`
+      : 'Intervalos'
+
+  const toolLabel = (id: WorkspaceToolId) =>
+    id === 'pomodoro' ? 'Pomodoro' : id === 'tabata' ? 'Tabata' : 'Apuntes'
+
   return (
-    <div className="app-shell-padding app-content-fluid mx-auto min-h-dvh bg-bloomora-snow pb-16">
-      <div className="mb-6 flex items-center justify-between">
-        <BackButton to="/app" label="Volver al inicio" />
-        <Link
-          to="/app"
-          className={buttonClassName({ variant: 'ghost', size: 'sm' })}
-        >
-          Inicio
-        </Link>
-      </div>
-      <header className="mb-6">
-        <h1 className="text-[clamp(1.4rem,1.1rem+1.2vw,2rem)] font-bold text-bloomora-deep">
-          Herramientas de estudio
-        </h1>
-        <p className="mt-1 text-sm text-bloomora-text-muted">
-          Elige la herramienta que necesitas hoy.
-        </p>
-      </header>
-      <div className="grid gap-4 sm:grid-cols-2">
+    <main className="app-shell-padding--dashboard mx-auto w-full max-w-[1184px]">
+      <DashboardGreeting
+        title="Herramientas"
+        subtitle="Todo lo que te ayuda a enfocarte, aprender y anotar"
+      />
+
+      <div className="grid grid-cols-1 gap-4 min-[600px]:grid-cols-2 min-[600px]:gap-6 min-[1024px]:grid-cols-3">
         <StudyToolCard
-          title="Pomodoro"
-          description="Temporizador con alarma para enfoque y descansos."
+          title="⏱️ Pomodoro"
+          description="Trabaja 25 minutos y descansa 5. Bloomy te avisa cuando toca pausa."
           to="/app/pomodoro"
-          icon={<TomatoIcon />}
+          ctaLabel="Iniciar enfoque"
+          chips={['Enfoque 25 min', 'Pausa 5 min']}
+          visualClassName="bg-bloomora-blush"
+          visual={
+            <span className="text-[2.75rem] font-bold tabular-nums text-bloomora-deep">
+              25:00
+            </span>
+          }
+          onClick={() => setToolChoice('pomodoro')}
         />
         <StudyToolCard
-          title="Apuntes"
-          description="Editor visual en formato A4, listo para imprimir."
+          title="🗂️ Flashcards"
+          description="Repasa palabras con tarjetas que se voltean."
+          to="/app/flashcards"
+          ctaLabel="Repasar ahora"
+          chips={[
+            isLoading ? '…' : `${wordCount} palabras`,
+            'Inglés',
+          ]}
+          visualClassName="bg-[#FFF3DD]"
+          visual={
+            <img
+              src={bunnyThink}
+              alt=""
+              className="h-[140px] w-auto object-contain object-center"
+              aria-hidden
+            />
+          }
+        />
+        <StudyToolCard
+          title="📒 Apuntes"
+          description="Escribe y organiza tus notas de clase o ideas."
           to="/app/english-notes"
-          icon={<NotesIcon />}
+          ctaLabel="Abrir apuntes"
+          ctaVariant="secondary"
+          chips={['Tus notas']}
+          visualClassName="bg-bloomora-mist"
+          visual={
+            <img
+              src={bunnyPhone}
+              alt=""
+              className="h-[140px] w-auto object-contain object-center"
+              aria-hidden
+            />
+          }
+          onClick={() => setToolChoice('english-notes')}
+        />
+        <StudyToolCard
+          title="🏃 Tabata"
+          description="Arma circuitos con trabajo, descanso y series. Guarda tus favoritos."
+          to="/app/study-tools"
+          ctaLabel="Abrir Tabata"
+          chips={[tabataChip, firstTabataChip]}
+          visualClassName="bg-emerald-50"
+          visual={
+            <img
+              src={bunnyHandsUp}
+              alt=""
+              className="h-[140px] w-auto object-contain object-center"
+              aria-hidden
+            />
+          }
+          onClick={() => setToolChoice('tabata')}
         />
       </div>
-    </div>
+
+      {toolChoice ? (
+        <div
+          className="fixed inset-0 z-[10080] flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-sm"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setToolChoice(null)
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="study-tool-choice-title"
+            className="w-full max-w-sm rounded-3xl border border-bloomora-line/50 bg-white p-6 shadow-2xl"
+          >
+            <h2
+              id="study-tool-choice-title"
+              className="text-lg font-bold text-bloomora-deep"
+            >
+              ¿Cómo quieres abrir {toolLabel(toolChoice)}?
+            </h2>
+            <p className="mt-1 text-sm text-bloomora-text-muted">
+              Puedes cambiar de modo cuando quieras.
+            </p>
+            <div className="mt-5 grid gap-3">
+              <Button
+                variant="secondary"
+                fullWidth
+                className="h-auto min-h-0 justify-start rounded-2xl px-4 py-3 text-left"
+                onClick={() => {
+                  openTool(toolChoice, 'full')
+                  setToolChoice(null)
+                }}
+              >
+                <span>
+                  <span className="block text-sm font-bold">Pantalla completa</span>
+                  <span className="mt-0.5 block text-xs font-normal text-bloomora-text-muted">
+                    Ocupa el espacio de trabajo; puedes minimizarlo después.
+                  </span>
+                </span>
+              </Button>
+              <Button
+                variant="secondary"
+                fullWidth
+                className="h-auto min-h-0 justify-start rounded-2xl px-4 py-3 text-left"
+                onClick={() => {
+                  openTool(toolChoice, 'minimized')
+                  setToolChoice(null)
+                }}
+              >
+                <span>
+                  <span className="block text-sm font-bold">Modo gadget</span>
+                  <span className="mt-0.5 block text-xs font-normal text-bloomora-text-muted">
+                    Abre una ventana flotante que puedes mover por la pantalla.
+                  </span>
+                </span>
+              </Button>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              fullWidth
+              className="mt-3"
+              onClick={() => setToolChoice(null)}
+            >
+              Cancelar
+            </Button>
+          </section>
+        </div>
+      ) : null}
+    </main>
   )
 }
-

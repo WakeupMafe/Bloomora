@@ -544,6 +544,37 @@ export async function purgeAgendaMonth(
   return { deletedPlans: data?.length ?? 0 }
 }
 
+/**
+ * Tareas de la agenda de `planDate` vinculadas a una meta vía `task_goal_links`.
+ * Útil para ofrecer marcar la tarea del día al completar la meta desde el dashboard.
+ */
+export async function listAgendaTasksLinkedToGoal(
+  sb: SupabaseClient,
+  params: {
+    userCedula: string
+    planDate: string
+    goalId: number
+  },
+): Promise<AgendaTaskRow[]> {
+  const { userCedula, planDate, goalId } = params
+  const tasks = await listAgendaTasks(sb, userCedula, planDate)
+  if (!tasks.length) return []
+
+  const taskIds = tasks.map((t) => t.id)
+  const { data: links, error } = await sb
+    .from('task_goal_links')
+    .select('task_id')
+    .eq('user_cedula', userCedula)
+    .eq('goal_id', goalId)
+    .in('task_id', taskIds)
+  if (error) throw error
+
+  const linkedIds = new Set(
+    (links ?? []).map((l) => (l as { task_id: number }).task_id),
+  )
+  return tasks.filter((t) => linkedIds.has(t.id))
+}
+
 export async function markLinkedGoalsDoneForDay(
   sb: SupabaseClient,
   params: {

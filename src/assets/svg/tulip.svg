@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="Tulipán">
+  <path d="M24 26v18" stroke="#6FA98A" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <path d="M24 38c-6 0-10-4-11-9 5 0 9 3 11 9z" fill="#6FA98A"/>
+  <path d="M24 36c5-1 9-5 9-10-5 1-8 5-9 10z" fill="#8CC0A2"/>
+  <path d="M14 10c0 9 4 16 10 16s10-7 10-16l-5 4-5-8-5 8z" fill="#F080A0"/>
+  <path d="M24 6l-5 8c1 7 3 12 5 12s4-5 5-12z" fill="#E56B90"/>
+</svg>

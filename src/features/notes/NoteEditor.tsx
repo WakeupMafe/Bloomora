@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Card } from '@/components/ui/Card'
 import { bloomoraInputClass, bloomoraPanelCardClass } from '@/components/ui/formControls'
+import { useBloomoraAlert } from '@/contexts/BloomoraAlertContext'
 import { useBloomoraToast } from '@/contexts/BloomoraToastContext'
 import { NotePagesEditor } from '@/features/notes/NotePagesEditor'
 import {
@@ -137,6 +138,7 @@ export function NoteEditor({
   onUnsavedChange,
 }: NoteEditorProps) {
   const { showToast } = useBloomoraToast()
+  const { confirm } = useBloomoraAlert()
   const editorRef = useRef<HTMLDivElement>(null)
   const pageContentRefsRef = useRef<Array<HTMLDivElement | null>>([])
   const insertPageBreakRef = useRef<(() => void) | null>(null)
@@ -147,6 +149,22 @@ export function NoteEditor({
   const [saveLabel, setSaveLabel] = useState(isDraft ? 'Apunte nuevo · sin guardar' : 'Guardado')
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const optionsSessionRef = useRef<{
+    pagesHtml: string
+    typingDefaults: NoteTypingDefaults
+    panelFormat: NoteTextOptionsValues
+    highlightColor: string | null
+    dirty: boolean
+    changeVersion: number
+    saveLabel: string
+  } | null>(null)
+  const optionsCloseBusyRef = useRef(false)
+  const panelFormatRef = useRef<NoteTextOptionsValues>(
+    defaultsToPanelFormat(BODY_TYPING_DEFAULTS, null),
+  )
+  const highlightColorRef = useRef<string | null>(null)
+  const dismissSelectionToolbarRef = useRef<() => void>(() => {})
+  const saveLabelRef = useRef(saveLabel)
   const [changeCount, setChangeCount] = useState(0)
   const dirtyRef = useRef(false)
   const changeVersionRef = useRef(0)
@@ -178,7 +196,11 @@ export function NoteEditor({
   )
   const typingDefaultsRef = useRef<NoteTypingDefaults>({ ...BODY_TYPING_DEFAULTS })
   const patchPanelFormat = useCallback((patch: Partial<NoteTextOptionsValues>) => {
-    setPanelFormat((prev) => ({ ...prev, ...patch }))
+    setPanelFormat((prev) => {
+      const next = { ...prev, ...patch }
+      panelFormatRef.current = next
+      return next
+    })
   }, [])
 
   const refreshToolbarFormat = useCallback(() => {
@@ -189,8 +211,16 @@ export function NoteEditor({
     setActiveMarks(readActiveNoteMarks(editor))
     setParagraphStyle(readNoteParagraphStyle(editor))
     const read = readFormatFromEditorCaret(editor)
-    if (read) setPanelFormat((previous) => ({ ...previous, ...readToPanelFormatPatch(read) }))
-    setHighlightColor(readNoteHighlightColor(editor))
+    if (read) {
+      setPanelFormat((previous) => {
+        const next = { ...previous, ...readToPanelFormatPatch(read) }
+        panelFormatRef.current = next
+        return next
+      })
+    }
+    const nextHighlight = readNoteHighlightColor(editor)
+    highlightColorRef.current = nextHighlight
+    setHighlightColor(nextHighlight)
   }, [])
 
   useEffect(() => {
@@ -208,7 +238,10 @@ export function NoteEditor({
     onPatchRef.current = onPatch
     onUnsavedChangeRef.current = onUnsavedChange
     typingDefaultsRef.current = typingDefaults
-  }, [note, titleDraft, categoryDraft, pageSizeDraft, pageNumberEnabledDraft, twoColumnsDraft, onPatch, onUnsavedChange, typingDefaults])
+    panelFormatRef.current = panelFormat
+    highlightColorRef.current = highlightColor
+    saveLabelRef.current = saveLabel
+  }, [note, titleDraft, categoryDraft, pageSizeDraft, pageNumberEnabledDraft, twoColumnsDraft, onPatch, onUnsavedChange, typingDefaults, panelFormat, highlightColor, saveLabel])
 
   const markUnsaved = useCallback(() => {
     changeVersionRef.current += 1
@@ -219,6 +252,84 @@ export function NoteEditor({
     setSaveLabel('Cambios sin guardar')
   }, [])
 
+  const captureOptionsSession = useCallback(() => {
+    optionsSessionRef.current = {
+      pagesHtml: serializeNotePagesHtml(
+        collectPagesHtmlFromRefs(pageContentRefsRef.current),
+      ),
+      typingDefaults: { ...typingDefaultsRef.current },
+      panelFormat: { ...panelFormatRef.current },
+      highlightColor: highlightColorRef.current,
+      dirty: dirtyRef.current,
+      changeVersion: changeVersionRef.current,
+      saveLabel: saveLabelRef.current,
+    }
+  }, [])
+
+  const optionsSessionIsDirty = useCallback(() => {
+    const snap = optionsSessionRef.current
+    if (!snap) return false
+    const pagesHtml = serializeNotePagesHtml(
+      collectPagesHtmlFromRefs(pageContentRefsRef.current),
+    )
+    if (pagesHtml !== snap.pagesHtml) return true
+    if (JSON.stringify(typingDefaultsRef.current) !== JSON.stringify(snap.typingDefaults)) {
+      return true
+    }
+    if (JSON.stringify(panelFormatRef.current) !== JSON.stringify(snap.panelFormat)) {
+      return true
+    }
+    return highlightColorRef.current !== snap.highlightColor
+  }, [])
+
+  const restoreOptionsSession = useCallback(() => {
+    const snap = optionsSessionRef.current
+    if (!snap) return
+    setPages(parseNotePagesFromHtml(optimizeNoteHtmlForDisplay(snap.pagesHtml)))
+    typingDefaultsRef.current = { ...snap.typingDefaults }
+    setTypingDefaults({ ...snap.typingDefaults })
+    panelFormatRef.current = { ...snap.panelFormat }
+    setPanelFormat({ ...snap.panelFormat })
+    highlightColorRef.current = snap.highlightColor
+    setHighlightColor(snap.highlightColor)
+    dirtyRef.current = snap.dirty
+    changeVersionRef.current = snap.changeVersion
+    setHasUnsavedChanges(snap.dirty)
+    onUnsavedChangeRef.current?.(snap.dirty)
+    setSaveLabel(
+      snap.dirty
+        ? 'Cambios sin guardar'
+        : snap.saveLabel === 'Cambios sin guardar'
+          ? isDraftNoteId(noteRef.current?.id ?? '')
+            ? 'Apunte nuevo · sin guardar'
+            : 'Guardado'
+          : snap.saveLabel,
+    )
+  }, [])
+
+  const handleRequestDismissTextOptions = useCallback(async () => {
+    if (optionsCloseBusyRef.current) return
+    optionsCloseBusyRef.current = true
+    try {
+      if (optionsSessionRef.current && optionsSessionIsDirty()) {
+        const apply = await confirm({
+          title: '¿Aplicar los cambios?',
+          description:
+            'Detectamos cambios en Opciones de texto. Puedes aplicarlos o cancelarlos y volver al estilo anterior.',
+          confirmLabel: 'Aplicar',
+          cancelLabel: 'Cancelar cambios',
+        })
+        if (!apply) {
+          restoreOptionsSession()
+        }
+      }
+      optionsSessionRef.current = null
+      dismissSelectionToolbarRef.current()
+    } finally {
+      optionsCloseBusyRef.current = false
+    }
+  }, [confirm, optionsSessionIsDirty, restoreOptionsSession])
+
   const {
     coords: selectionCoords,
     mode: selectionMode,
@@ -227,7 +338,11 @@ export function NoteEditor({
     dismiss: dismissSelectionToolbar,
     preserveSelectionApply,
     prepareSelectionForFormat,
-  } = useNoteSelectionToolbar(editorRef)
+  } = useNoteSelectionToolbar(editorRef, handleRequestDismissTextOptions)
+
+  useLayoutEffect(() => {
+    dismissSelectionToolbarRef.current = dismissSelectionToolbar
+  }, [dismissSelectionToolbar])
 
   const applyTypingFormat = useCallback(
     (patch: Partial<NoteTypingDefaults>) => {
@@ -261,7 +376,10 @@ export function NoteEditor({
   )
 
   useEffect(() => {
-    if (!selectionCoords || selectionMode !== 'options') return
+    if (!selectionCoords || selectionMode !== 'options') {
+      optionsSessionRef.current = null
+      return
+    }
     const editor = editorRef.current
     if (!editor) return
     if (formatTarget === 'selection') {
@@ -272,11 +390,28 @@ export function NoteEditor({
         ? readFormatFromEditorSelection(editor)
         : readFormatFromEditorCaret(editor)
     if (read) {
-      setPanelFormat((prev) => ({ ...prev, ...readToPanelFormatPatch(read) }))
+      setPanelFormat((prev) => {
+        const next = { ...prev, ...readToPanelFormatPatch(read) }
+        panelFormatRef.current = next
+        return next
+      })
     } else {
-      setPanelFormat(defaultsToPanelFormat(typingDefaultsRef.current, highlightColor))
+      const next = defaultsToPanelFormat(typingDefaultsRef.current, highlightColor)
+      panelFormatRef.current = next
+      setPanelFormat(next)
     }
-  }, [selectionCoords, selectionMode, formatTarget, prepareSelectionForFormat, highlightColor])
+    const frame = window.requestAnimationFrame(() => {
+      if (!optionsSessionRef.current) captureOptionsSession()
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [
+    selectionCoords,
+    selectionMode,
+    formatTarget,
+    prepareSelectionForFormat,
+    highlightColor,
+    captureOptionsSession,
+  ])
 
   const optionValues = panelFormat
 
@@ -806,7 +941,9 @@ export function NoteEditor({
         mode={selectionMode}
         formatTarget={formatTarget}
         optionValues={optionValues}
-        onClose={dismissSelectionToolbar}
+        onClose={() => {
+          void handleRequestDismissTextOptions()
+        }}
         onPrepareSelection={prepareSelectionForFormat}
         onApplyTextoPreset={() => {
           const next = { ...BODY_TYPING_DEFAULTS }

@@ -1,115 +1,168 @@
 import { Link } from 'react-router-dom'
 import { BloomoraLogo } from '@/components/brand/BloomoraLogo'
-import { MascotAvatar } from '@/components/brand/MascotAvatar'
+import { BloomyPose } from '@/components/brand/BloomyPose'
+import iconCheck from '@/assets/svg/icon_check.svg'
+import iconHabit from '@/assets/svg/icon_habit.svg'
+import iconProgress from '@/assets/svg/icon_progress.svg'
+import iconTask from '@/assets/svg/icon_task.svg'
+import tulip from '@/assets/svg/tulip.svg'
 import '@/styles/welcome-hero.css'
 
-function CheckIcon() {
-  return <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.2" /><path d="m6.7 10.1 2.1 2.1 4.5-4.6" /></svg>
-}
-
-function RoseIcon() {
-  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-8m0 2c-4 0-6-2-6-5 3 0 5 1 6 4m0-1c0-3 2-5 5-5 0 3-1 5-5 6m0-7c-2-1-3-3-2-5 2 1 3 2 3 4 1-2 3-3 5-2 0 2-2 4-5 4m-3-1C8 6 9 3 12 2c3 1 4 4 2 7-1 1-2 2-2 2s-1-1-2-2Z" /></svg>
-}
-
-function HabitIcon() {
-  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21V9m0 5c-4 0-6-2-6-6 3 0 5 1 6 4m0 0c0-4 2-6 6-6 0 4-2 6-6 7M8 21h8" /></svg>
-}
-
-function ProgressIcon() {
-  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M6 16v-4m6 4V6m6 10V9" /><path d="m5 9 5-4 4 2 5-4" /></svg>
-}
-
-const features = [
-  { label: 'Tareas diarias', icon: <RoseIcon /> },
-  { label: 'Hábitos', icon: <HabitIcon /> },
-  { label: 'Progreso', icon: <ProgressIcon /> },
+const dayItems = [
+  {
+    title: 'Tareas diarias',
+    desc: 'Anota lo importante y táchalo al terminar.',
+    icon: iconTask,
+  },
+  {
+    title: 'Hábitos',
+    desc: 'Repite pequeñas acciones cada día.',
+    icon: iconHabit,
+  },
+  {
+    title: 'Progreso',
+    desc: 'Mira cuánto has avanzado esta semana.',
+    icon: iconProgress,
+  },
 ]
 
 export function WelcomePage() {
   return (
     <div className="welcome-site">
       <section className="welcome-screen" aria-labelledby="welcome-title">
-        <header className="welcome-header">
-          <Link to="/" className="welcome-brand-link" aria-label="Bloomora, inicio">
-            <BloomoraLogo size="md" priority className="welcome-brand-logo" />
-          </Link>
+        <div className="welcome-hero-shell">
+          <header className="welcome-header">
+            <Link to="/" className="welcome-brand-link" aria-label="Bloomora, inicio">
+              <BloomoraLogo size="md" priority className="welcome-brand-logo" />
+              <span className="welcome-beta">BETA</span>
+            </Link>
+            <Link to="/entrar" className="welcome-header-login">
+              Ya tengo cuenta
+            </Link>
+          </header>
 
-          <nav className="welcome-nav" aria-label="Navegación principal">
-            <a href="#como-funciona">Cómo funciona</a>
-            <a href="#beneficios">Beneficios</a>
-            <a href="#contacto">Contacto</a>
-          </nav>
+          <main className="welcome-main">
+            <div className="welcome-hero-art" aria-hidden>
+              <BloomyPose pose="hero" sizePx={232} priority className="welcome-bloomy" />
+              <div className="welcome-float welcome-float--task">
+                <img src={iconCheck} alt="" />
+                <p>
+                  <strong>Leer 15 min</strong>
+                  <span>Tarea completada</span>
+                </p>
+              </div>
+              <div className="welcome-float welcome-float--goal">
+                <img src={iconProgress} alt="" />
+                <p>
+                  <strong>3 de 5 metas</strong>
+                  <span>¡Vas muy bien!</span>
+                </p>
+              </div>
+            </div>
 
-          <div className="welcome-auth-links">
-            <Link to="/entrar" className="welcome-login-link">Ingresar</Link>
-            <Link to="/phone" className="welcome-register-link">Crear cuenta</Link>
-          </div>
-        </header>
-
-        <main className="welcome-main">
-          <div className="welcome-hero">
             <div className="welcome-copy">
-              <div className="welcome-beta"><span>BETA</span><i aria-hidden="true">·</i>Tu planner diario</div>
+              <p className="welcome-kicker">
+                <img src={tulip} alt="" aria-hidden />
+                Tu planner diario
+              </p>
               <h1 id="welcome-title" className="welcome-title">
-                Organiza tu día con<br className="welcome-title-break" /> <em>calma</em> y propósito.
+                Organiza tu día con <span className="welcome-mark">calma</span> y
+                propósito
               </h1>
-              <p className="welcome-subtitle">Convierte pequeñas tareas en grandes<br className="welcome-subtitle-break" /> logros, a tu ritmo.</p>
+              <p className="welcome-subtitle">
+                <span className="welcome-subtitle-short">
+                  Pequeñas tareas, grandes logros.
+                  <br />
+                  A tu ritmo.
+                </span>
+                <span className="welcome-subtitle-long">
+                  Pequeñas tareas, grandes logros. Planea tu día, cumple tus metas y
+                  avanza a tu ritmo.
+                </span>
+              </p>
 
               <div className="welcome-actions">
                 <Link to="/phone" className="welcome-button welcome-button--primary">
-                  Comenzar gratis <span aria-hidden="true">→</span>
+                  Comenzar gratis
                 </Link>
-                <Link to="/entrar" className="welcome-button welcome-button--outline">Ya tengo cuenta</Link>
+                <Link
+                  to="/entrar"
+                  className="welcome-button welcome-button--outline welcome-header-login-mobile"
+                >
+                  Ya tengo cuenta
+                </Link>
               </div>
 
-              <ul className="welcome-trust" aria-label="Ventajas de Bloomora">
-                <li><CheckIcon />Sin tarjeta</li>
-                <li><span className="welcome-trust-dot" aria-hidden="true">·</span>Ingresa con tu cédula o celular</li>
-                <li><CheckIcon />Gratis</li>
+              <ul className="welcome-trust" aria-label="Ventajas">
+                <li className="welcome-trust-item welcome-trust-item--compact">
+                  <img src={iconCheck} alt="" aria-hidden />
+                  Gratis y sin tarjeta
+                </li>
+                <li className="welcome-trust-item welcome-trust-item--split">
+                  <img src={iconCheck} alt="" aria-hidden />
+                  Gratis
+                </li>
+                <li className="welcome-trust-item welcome-trust-item--split">
+                  <img src={iconCheck} alt="" aria-hidden />
+                  Sin tarjeta
+                </li>
+                <li className="welcome-trust-item welcome-trust-item--split">
+                  <img src={iconCheck} alt="" aria-hidden />
+                  Con tu cédula o celular
+                </li>
               </ul>
-
-              <div className="welcome-feature-list" aria-label="Herramientas de Bloomora">
-                {features.map((feature) => (
-                  <div className="welcome-feature" key={feature.label}>
-                    <span className="welcome-feature-icon">{feature.icon}</span>
-                    <span>{feature.label}</span>
-                  </div>
-                ))}
-              </div>
             </div>
+          </main>
 
-            <div className="welcome-art" aria-hidden="true">
-              <div className="welcome-art-halo" />
-              <MascotAvatar className="welcome-mascot" priority alt="" />
-            </div>
+          <a
+            href="#welcome-day"
+            className="welcome-scroll"
+            aria-label="Ver más contenido"
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden>
+              <path
+                d="M6 9l6 6 6-6"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </a>
+        </div>
+
+        <section
+          id="welcome-day"
+          className="welcome-day-section"
+          aria-labelledby="day-title"
+        >
+          <p className="welcome-day-kicker">UN DÍA A LA VEZ</p>
+          <h2 id="day-title" className="welcome-day-title">
+            Todo lo que necesitas,
+            <br />
+            nada más
+          </h2>
+          <div className="welcome-day-list">
+            {dayItems.map((item) => (
+              <article key={item.title} className="welcome-day-item">
+                <div className="welcome-day-icon">
+                  <img src={item.icon} alt="" aria-hidden />
+                </div>
+                <div>
+                  <h3>{item.title}</h3>
+                  <p>{item.desc}</p>
+                </div>
+              </article>
+            ))}
           </div>
-        </main>
-      </section>
+        </section>
 
-      <section id="como-funciona" className="welcome-info-section" aria-labelledby="how-title">
-        <p className="welcome-section-kicker">A tu manera, un día a la vez</p>
-        <h2 id="how-title">Un espacio para avanzar con calma</h2>
-        <div className="welcome-info-grid">
-          <article><span>01</span><h3>Organiza tus tareas</h3><p>Reúne tus pendientes del día en un solo lugar y decide qué va primero.</p></article>
-          <article><span>02</span><h3>Construye hábitos</h3><p>Convierte las pequeñas acciones en una rutina que se sienta posible.</p></article>
-          <article><span>03</span><h3>Reconoce tu progreso</h3><p>Marca tus avances y celebra cada paso, a tu propio ritmo.</p></article>
-        </div>
+        <footer className="welcome-footer">
+          <img src={tulip} alt="" aria-hidden />
+          Hecho con calma · Bloomora 2026
+        </footer>
       </section>
-
-      <section id="beneficios" className="welcome-benefits-section" aria-labelledby="benefits-title">
-        <p className="welcome-section-kicker">Menos ruido, más intención</p>
-        <h2 id="benefits-title">Todo lo que necesitas para cuidar tu día</h2>
-        <p>Tareas, hábitos y progreso en una experiencia sencilla y amable.</p>
-        <div className="welcome-benefit-pills">
-          {features.map((feature) => <span key={feature.label}>{feature.icon}{feature.label}</span>)}
-        </div>
-      </section>
-
-      <footer id="contacto" className="welcome-contact-section">
-        <div><p className="welcome-section-kicker">Empieza cuando quieras</p><h2>Tu día puede sentirse más ligero.</h2></div>
-        <Link to="/phone" className="welcome-button welcome-button--primary">Crear cuenta <span aria-hidden="true">→</span></Link>
-        <span className="welcome-contact-brand">Bloomora · Tu planner diario</span>
-      </footer>
     </div>
   )
 }
