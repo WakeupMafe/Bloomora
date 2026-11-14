@@ -119,6 +119,7 @@
 }
 
 .auth-flow__btn--ghost b {
+  margin-left: 0.35em;
   color: var(--color-bloomora-deep);
   text-decoration: underline;
   text-underline-offset: 3px;

@@ -180,7 +180,8 @@ export function PhoneGatePage() {
               Empezar
             </button>
             <Link to="/entrar" className="auth-flow__btn auth-flow__btn--ghost">
-              ¿Ya tienes cuenta? <b>Entrar</b>
+              ¿Ya tienes cuenta?{' '}
+              <b>Entrar</b>
             </Link>
           </>
         }
