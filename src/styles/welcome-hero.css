@@ -90,8 +90,7 @@
 .welcome-kicker,
 .welcome-float,
 .welcome-scroll,
-.welcome-subtitle-long,
-.welcome-trust-item--split {
+.welcome-subtitle-long {
   display: none;
 }
 
@@ -164,9 +163,10 @@
 
 .welcome-trust {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.5rem 1rem;
   margin: 1rem 0 0;
   padding: 0;
   list-style: none;
@@ -179,11 +179,18 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  white-space: nowrap;
+}
+
+/* Tras .welcome-trust-item: misma especificidad; debe ir después para ocultar en móvil. */
+.welcome-trust-item.welcome-trust-item--split {
+  display: none;
 }
 
 .welcome-trust img {
   width: 1.125rem;
   height: 1.125rem;
+  flex-shrink: 0;
 }
 
 .welcome-day-section {
@@ -460,11 +467,11 @@
     font-size: 0.9375rem;
   }
 
-  .welcome-trust-item--compact {
+  .welcome-trust-item.welcome-trust-item--compact {
     display: none;
   }
 
-  .welcome-trust-item--split {
+  .welcome-trust-item.welcome-trust-item--split {
     display: inline-flex;
   }
 
