@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import conejoAvatar from '@/assets/ConejoAvatar.png'
 import conejoBoy from '@/assets/ConejoBoy.png'
@@ -15,7 +15,11 @@ import {
   useUpdateProfileMutation,
 } from '@/hooks/useBloomoraProfile'
 import { isValidCedula, normalizeCedula } from '@/lib/cedula'
-import { resolveAppThemeId, type AppThemeId } from '@/theme/bloomoraAppThemes'
+import {
+  applyBloomoraThemeCssVars,
+  resolveAppThemeId,
+  type AppThemeId,
+} from '@/theme/bloomoraAppThemes'
 import { cn } from '@/utils/cn'
 
 const THEME_SWATCHES = [
@@ -99,23 +103,67 @@ export function EditProfilePage() {
   const [themeId, setThemeId] = useState<AppThemeId>('pink')
   const [avatarId, setAvatarId] = useState<AvatarOptionId>('bunny')
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [themeSaving, setThemeSaving] = useState(false)
+  /** Tema confirmado en perfil / última mutación exitosa (para restaurar al salir). */
+  const savedThemeRef = useRef<AppThemeId>('pink')
+  const themeSaveGen = useRef(0)
 
   useEffect(() => {
     if (!profile) return
     setName(profile.full_name?.trim() || 'Usuario')
     setCedula(profile.cedula ?? '')
     setEmail(profile.email ?? '')
-    setThemeId(resolveAppThemeId(profile.preferred_theme))
+    const saved = resolveAppThemeId(profile.preferred_theme)
+    savedThemeRef.current = saved
+    setThemeId(saved)
     setAvatarId(avatarIdFromProfile(profile.avatar_preset))
   }, [profile])
+
+  useEffect(() => {
+    return () => {
+      // Si salió con un preview que no quedó guardado, restaura el del perfil.
+      applyBloomoraThemeCssVars(savedThemeRef.current)
+    }
+  }, [])
 
   const circleSrc =
     AVATAR_OPTIONS.find((opt) => opt.id === avatarId)?.image ?? conejoAvatar
 
+  const handleThemeSelect = (id: AppThemeId) => {
+    setThemeId(id)
+    applyBloomoraThemeCssVars(id)
+    if (!phone) return
+    if (id === savedThemeRef.current) return
+
+    const gen = ++themeSaveGen.current
+    setThemeSaving(true)
+    updateMut.mutate(
+      { preferred_theme: id },
+      {
+        onSuccess: () => {
+          if (gen !== themeSaveGen.current) return
+          savedThemeRef.current = id
+          showToast('Tema actualizado')
+        },
+        onError: (err) => {
+          if (gen !== themeSaveGen.current) return
+          applyBloomoraThemeCssVars(savedThemeRef.current)
+          setThemeId(savedThemeRef.current)
+          showToast(
+            err instanceof Error ? err.message : 'No se pudo guardar el tema.',
+          )
+        },
+        onSettled: () => {
+          if (gen === themeSaveGen.current) setThemeSaving(false)
+        },
+      },
+    )
+  }
+
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setSaveError(null)
-    if (!phone) return
+    if (!phone || !profile) return
     const cedulaDigits = normalizeCedula(cedula)
     if (!isValidCedula(cedulaDigits)) {
       setSaveError('Ingresa una cédula válida (6 a 12 dígitos).')
@@ -125,12 +173,16 @@ export function EditProfilePage() {
       full_name: name.trim() || 'Usuario',
       cedula: cedulaDigits,
       email: email.trim() || null,
-      preferred_theme: themeId,
+      avatar_preset: avatarId,
     }
-    patch.avatar_url = null
-    patch.avatar_public_url = null
-    patch.avatar_storage_path = null
-    patch.avatar_preset = avatarId
+
+    const previousPreset = avatarIdFromProfile(profile.avatar_preset)
+    if (avatarId !== previousPreset) {
+      // Solo al cambiar de preset se descarta una foto subida.
+      patch.avatar_url = null
+      patch.avatar_public_url = null
+      patch.avatar_storage_path = null
+    }
 
     try {
       await updateMut.mutateAsync(patch)
@@ -140,6 +192,13 @@ export function EditProfilePage() {
         err instanceof Error ? err.message : 'No se pudo guardar el perfil.',
       )
     }
+  }
+
+  const handleCancel = () => {
+    setSaveError(null)
+    applyBloomoraThemeCssVars(savedThemeRef.current)
+    setThemeId(savedThemeRef.current)
+    navigate('/app')
   }
 
   const handleDeleteAccount = async () => {
@@ -273,10 +332,7 @@ export function EditProfilePage() {
                         type="button"
                         variant="outline"
                         className="order-2 border-bloomora-line/60 text-bloomora-deep hover:bg-bloomora-blush/50 sm:order-1"
-                        onClick={() => {
-                          setSaveError(null)
-                          navigate('/app')
-                        }}
+                        onClick={handleCancel}
                       >
                         Cancelar
                       </Button>
@@ -284,7 +340,7 @@ export function EditProfilePage() {
                         type="submit"
                         variant="primary"
                         className="order-1 gap-2 sm:order-2"
-                        disabled={updateMut.isPending}
+                        disabled={updateMut.isPending || themeSaving}
                       >
                         <span aria-hidden className="text-base leading-none">
                           💾
@@ -325,13 +381,15 @@ export function EditProfilePage() {
                           role="radio"
                           aria-checked={selected}
                           aria-label={'label' in t && t.label ? t.label : `Tema ${t.id}`}
-                          onClick={() => setThemeId(t.id)}
+                          disabled={themeSaving && themeId !== t.id}
+                          onClick={() => handleThemeSelect(t.id)}
                           className={cn(
                             'relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full shadow-sm ring-2 ring-offset-2 ring-offset-bloomora-blush transition hover:scale-105 active:scale-95 sm:h-12 sm:w-12',
                             t.className,
                             selected
                               ? 'ring-bloomora-violet/70'
                               : 'ring-transparent hover:ring-bloomora-line/40',
+                            themeSaving && themeId !== t.id && 'opacity-60',
                           )}
                         >
                           {selected ? (

@@ -342,9 +342,13 @@ export async function updateProfile(
     >
   >,
 ): Promise<void> {
-  const { error } = await sb
+  const { data, error } = await sb
     .from('profiles')
     .update({ ...patch, updated_at: new Date().toISOString() })
     .eq('numero_celular', phone)
+    .select('numero_celular')
   if (error) throw error
+  if (!data?.length) {
+    throw new Error('No se pudo guardar, revisa permisos')
+  }
 }

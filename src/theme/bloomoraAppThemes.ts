@@ -240,13 +240,56 @@ const THEME_CHROME: Record<AppThemeId, Record<string, string>> = {
   dark: DARK_CHROME,
 }
 
+export const BLOOMORA_THEME_STORAGE_KEY = 'bloomora_theme'
+
 export function resolveAppThemeId(db: string | null | undefined): AppThemeId {
   if (!db || db === 'bloomora_pastel') return 'pink'
   if ((APP_THEME_IDS as readonly string[]).includes(db)) return db as AppThemeId
   return 'pink'
 }
 
-export function applyBloomoraThemeCssVars(themeId: AppThemeId): void {
+export function readStoredBloomoraTheme(): AppThemeId | null {
+  try {
+    const raw = localStorage.getItem(BLOOMORA_THEME_STORAGE_KEY)
+    if (!raw) return null
+    return resolveAppThemeId(raw)
+  } catch {
+    return null
+  }
+}
+
+export function persistBloomoraTheme(themeId: AppThemeId): void {
+  try {
+    localStorage.setItem(BLOOMORA_THEME_STORAGE_KEY, themeId)
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+export function clearStoredBloomoraTheme(): void {
+  try {
+    localStorage.removeItem(BLOOMORA_THEME_STORAGE_KEY)
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Color de barra del navegador / PWA según el fondo del tema. */
+export function applyBloomoraThemeColorMeta(themeId: AppThemeId): void {
+  const snow = THEME_PALETTES[themeId].snow
+  let meta = document.querySelector('meta[name="theme-color"]')
+  if (!meta) {
+    meta = document.createElement('meta')
+    meta.setAttribute('name', 'theme-color')
+    document.head.appendChild(meta)
+  }
+  meta.setAttribute('content', snow)
+}
+
+export function applyBloomoraThemeCssVars(
+  themeId: AppThemeId,
+  options?: { persist?: boolean },
+): void {
   const palette = THEME_PALETTES[themeId]
   const root = document.documentElement
   for (const key of KEYS) {
@@ -261,6 +304,10 @@ export function applyBloomoraThemeCssVars(themeId: AppThemeId): void {
   } else {
     root.removeAttribute('data-bloomora-theme')
   }
+  applyBloomoraThemeColorMeta(themeId)
+  if (options?.persist !== false) {
+    persistBloomoraTheme(themeId)
+  }
 }
 
 export function clearBloomoraThemeCssVars(): void {
@@ -272,4 +319,5 @@ export function clearBloomoraThemeCssVars(): void {
     root.style.removeProperty(name)
   }
   root.removeAttribute('data-bloomora-theme')
+  applyBloomoraThemeColorMeta('pink')
 }

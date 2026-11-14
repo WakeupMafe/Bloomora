@@ -4,12 +4,15 @@ import { useBloomoraProfile } from '@/hooks/useBloomoraProfile'
 import {
   applyBloomoraThemeCssVars,
   clearBloomoraThemeCssVars,
+  clearStoredBloomoraTheme,
+  readStoredBloomoraTheme,
   resolveAppThemeId,
 } from '@/theme/bloomoraAppThemes'
 
 /**
- * Aplica `preferred_theme` del perfil a las variables CSS de Tailwind (`--color-bloomora-*`).
- * Sin sesión restaura los valores del stylesheet por defecto.
+ * Aplica `preferred_theme` del perfil a las variables CSS.
+ * Antes de que llegue el perfil, respeta `localStorage` (boot en index.html).
+ * Sin sesión restaura el stylesheet por defecto.
  */
 export function BloomoraThemeSync() {
   const { phone } = useUserPhone()
@@ -17,10 +20,15 @@ export function BloomoraThemeSync() {
 
   useLayoutEffect(() => {
     if (!phone) {
+      clearStoredBloomoraTheme()
       clearBloomoraThemeCssVars()
       return
     }
-    if (!profile) return
+    if (!profile) {
+      const stored = readStoredBloomoraTheme()
+      if (stored) applyBloomoraThemeCssVars(stored)
+      return
+    }
     applyBloomoraThemeCssVars(resolveAppThemeId(profile.preferred_theme))
   }, [phone, profile, profile?.preferred_theme])
 
