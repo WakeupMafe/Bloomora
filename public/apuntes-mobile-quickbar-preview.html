@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="es" data-bloomora-mode="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Apuntes · barra móvil preview</title>
+  <style>
+    :root {
+      --color-bloomora-white: #ffffff;
+      --color-bloomora-snow: #fbf6f9;
+      --color-bloomora-line: #f0e7ee;
+      --color-bloomora-violet: #544687;
+      --color-bloomora-deep: #3f3468;
+      --color-bloomora-lilac: #b8a6f0;
+      --color-bloomora-lavender-50: #efeafb;
+      --color-bloomora-rose-deep: #e56b90;
+      --color-bloomora-text-muted: #6e6690;
+      --bloomora-surface-1: #ffffff;
+      --bloomora-border: #f0e7ee;
+      --bloomora-text: #3f3468;
+    }
+    html[data-bloomora-mode='dark'] {
+      --color-bloomora-white: #1a1428;
+      --color-bloomora-snow: #120e1c;
+      --color-bloomora-line: #3a3152;
+      --color-bloomora-violet: #d4c8f5;
+      --color-bloomora-deep: #f3eefc;
+      --color-bloomora-lilac: #9b87e0;
+      --color-bloomora-lavender-50: #2a2140;
+      --color-bloomora-rose-deep: #f080a0;
+      --bloomora-surface-1: #1a1428;
+      --bloomora-border: #3a3152;
+      --bloomora-text: #f3eefc;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Quicksand, Poppins, system-ui, sans-serif;
+      background: var(--color-bloomora-snow);
+      color: var(--color-bloomora-deep);
+      min-height: 100dvh;
+    }
+    .frame {
+      width: 390px;
+      height: 340px;
+      margin: 36px auto 8px;
+      position: relative;
+      overflow: hidden;
+      background: var(--color-bloomora-snow);
+      border: 1px solid var(--color-bloomora-line);
+      border-radius: 18px;
+      box-shadow: 0 12px 40px rgba(63,52,104,.12);
+    }
+    .eh {
+      height: 64px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--color-bloomora-line);
+      background: color-mix(in srgb, var(--color-bloomora-snow) 92%, transparent);
+    }
+    .bb {
+      width: 44px; height: 44px; border-radius: 999px;
+      border: 1px solid var(--color-bloomora-line);
+      background: var(--bloomora-surface-1);
+      color: var(--color-bloomora-violet);
+      display: grid; place-items: center;
+    }
+    .title { flex: 1; min-width: 0; font-weight: 700; font-size: 17px; }
+    .save {
+      height: 40px; padding: 0 14px; border-radius: 999px;
+      background: var(--color-bloomora-rose-deep); color: #fff;
+      font-weight: 700; border: 0; font-size: 14px;
+    }
+    .cv { padding: 12px 10px calc(62px + env(safe-area-inset-bottom, 0px) + 12px); }
+    .sheet {
+      background: var(--bloomora-surface-1);
+      border: 1px solid var(--color-bloomora-line);
+      border-radius: 20px;
+      padding: 22px 20px;
+      min-height: 420px;
+      box-shadow: 0 12px 32px color-mix(in srgb, var(--color-bloomora-deep) 8%, transparent);
+    }
+    .sheet h2 { font-size: 23px; margin-bottom: 10px; }
+    .sheet p { margin-bottom: 9px; line-height: 1.55; font-weight: 500; }
+    .controls {
+      position: fixed; top: 8px; right: 8px; z-index: 10080;
+      display: flex; gap: 6px;
+    }
+    .controls button {
+      height: 36px; padding: 0 12px; border-radius: 999px;
+      border: 1px solid var(--color-bloomora-line);
+      background: var(--bloomora-surface-1);
+      color: var(--color-bloomora-violet);
+      font-weight: 700; font-size: 12px;
+    }
+
+    /* Copied from englishNotesWorkspace.css (quickbar) */
+    .note-mobile-quickbar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 10065;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 62px;
+      height: auto;
+      padding: 4px 6px;
+      border-top: 1px solid var(--color-bloomora-line);
+      background: var(--bloomora-surface-1, var(--color-bloomora-white));
+      color: var(--color-bloomora-violet);
+      box-shadow: 0 -4px 16px color-mix(in srgb, var(--color-bloomora-deep) 8%, transparent);
+    }
+    html[data-bloomora-mode='dark'] .note-mobile-quickbar {
+      background: var(--bloomora-surface-1);
+      border-top-color: var(--bloomora-border, var(--color-bloomora-line));
+      box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.35);
+      color: var(--bloomora-text, var(--color-bloomora-violet));
+    }
+    .note-mobile-quickbar__btn {
+      box-sizing: border-box;
+      flex: 1 1 0;
+      width: auto;
+      max-width: 56px;
+      height: 54px;
+      min-width: 44px;
+      min-height: 44px;
+      padding: 0;
+      border: 0;
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      color: inherit;
+      background: transparent;
+      font: inherit;
+      font-size: 10.5px;
+      font-weight: 700;
+      line-height: 1.1;
+      cursor: pointer;
+    }
+    .note-mobile-quickbar__btn--active {
+      background: var(--color-bloomora-lavender-50);
+      color: var(--color-bloomora-deep);
+    }
+    html[data-bloomora-mode='dark'] .note-mobile-quickbar__btn--active {
+      background: color-mix(in srgb, var(--color-bloomora-lilac) 28%, transparent);
+      color: var(--bloomora-text, var(--color-bloomora-white));
+    }
+    .note-mobile-quickbar__btn--accent { color: var(--color-bloomora-rose-deep); }
+    .note-mobile-quickbar__sep {
+      width: 1px; height: 30px;
+      background: var(--color-bloomora-line); flex: none;
+    }
+    html[data-bloomora-mode='dark'] .note-mobile-quickbar__sep {
+      background: var(--bloomora-border, var(--color-bloomora-line));
+    }
+    .note-mobile-quickbar__aa {
+      font-size: 17px; font-weight: 700; line-height: 20px; height: 20px; letter-spacing: -0.5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <button type="button" id="w390">390</button>
+    <button type="button" id="w430">430</button>
+    <button type="button" id="theme">Noche</button>
+  </div>
+  <div class="frame" id="frame">
+    <header class="eh">
+      <button class="bb" type="button" aria-label="Volver">‹</button>
+      <div class="title">Verbos irregulares</div>
+      <button class="save" type="button">Guardar</button>
+    </header>
+    <div class="cv">
+      <div class="sheet">
+        <h2>Verbos irregulares</h2>
+        <p>Los verbos irregulares no siguen la regla de agregar <b>-ed</b> en pasado.</p>
+        <p>Barra fija abajo sin teclado (como en el diseño).</p>
+      </div>
+    </div>
+    <div role="toolbar" aria-label="Formato rápido" data-note-mobile-quickbar class="note-mobile-quickbar" style="bottom:0px">
+      <button type="button" class="note-mobile-quickbar__btn" aria-label="Deshacer">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M9 14L4 9l5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 9h11a5 5 0 010 10h-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Deshacer</span>
+      </button>
+      <button type="button" class="note-mobile-quickbar__btn note-mobile-quickbar__btn--active" aria-label="Negrita">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M7 5h6a3.5 3.5 0 010 7H7z" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M7 12h7a3.5 3.5 0 010 7H7z" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></svg>
+        <span>Negrita</span>
+      </button>
+      <button type="button" class="note-mobile-quickbar__btn" aria-label="Cursiva">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M19 4h-9M14 20H5M15 4L9 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Cursiva</span>
+      </button>
+      <button type="button" class="note-mobile-quickbar__btn" aria-label="Lista">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor"/></svg>
+        <span>Lista</span>
+      </button>
+      <span class="note-mobile-quickbar__sep" aria-hidden="true"></span>
+      <button type="button" class="note-mobile-quickbar__btn" aria-label="Aa Formato">
+        <span class="note-mobile-quickbar__aa">Aa</span><span>Formato</span>
+      </button>
+      <button type="button" class="note-mobile-quickbar__btn note-mobile-quickbar__btn--accent" aria-label="+ Insertar">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+        <span>Insertar</span>
+      </button>
+      <button type="button" class="note-mobile-quickbar__btn" aria-label="Teclado" id="kb">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6 15l6-6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Teclado</span>
+      </button>
+    </div>
+  </div>
+  <script>
+    const html = document.documentElement
+    const frame = document.getElementById('frame')
+    document.getElementById('theme').onclick = () => {
+      const dark = html.getAttribute('data-bloomora-mode') === 'dark'
+      html.setAttribute('data-bloomora-mode', dark ? 'light' : 'dark')
+      document.getElementById('theme').textContent = dark ? 'Noche' : 'Claro'
+    }
+    document.getElementById('w390').onclick = () => { frame.style.width = '390px' }
+    document.getElementById('w430').onclick = () => { frame.style.width = '430px' }
+    // Preview only: absolute inside .frame so screenshots show the bar.
+    // App code uses position:fixed + visualViewport dock.
+  </script>
+</body>
+</html>
