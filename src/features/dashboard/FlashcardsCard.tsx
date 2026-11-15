@@ -109,7 +109,7 @@ export function FlashcardsCard() {
         </ul>
       ) : !isLoading ? (
         <p className="mt-4 text-sm text-bloomora-text-muted">
-          Crea tu primera palabra con una imagen para memorizarla mejor.
+          Crea tu primera palabra. Puedes añadir una imagen después si quieres.
         </p>
       ) : null}
     </DashboardCard>

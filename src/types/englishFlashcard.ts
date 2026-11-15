@@ -41,5 +41,13 @@ export const QUICK_FLASHCARD_PLACEHOLDER_IMAGE =
     '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect fill="#f3f0fa" width="400" height="300" rx="16"/><text x="200" y="145" text-anchor="middle" fill="#7c6bb5" font-family="system-ui,sans-serif" font-size="15" font-weight="600">Pendiente</text><text x="200" y="168" text-anchor="middle" fill="#a89bc4" font-family="system-ui,sans-serif" font-size="12">Añade imagen</text></svg>',
   )
 
+/** Placeholder para flashcards completas creadas sin imagen (image_url NOT NULL en BD). */
+export const FLASHCARD_NO_IMAGE_PLACEHOLDER =
+  'data:image/svg+xml,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect fill="#f7f4fc" width="400" height="300" rx="16"/><text x="200" y="155" text-anchor="middle" fill="#9b8ec4" font-family="system-ui,sans-serif" font-size="15" font-weight="600">Sin imagen</text></svg>',
+  )
+
+/** @deprecated La imagen ya no es obligatoria al crear flashcards. */
 export const FLASHCARD_IMAGE_REQUIRED_MESSAGE =
-  'Para guardar esta palabra necesitas asociarla con una imagen. Esto ayuda a memorizar mejor.'
+  'Puedes guardar sin imagen; añádela después si quieres memorizar mejor.'

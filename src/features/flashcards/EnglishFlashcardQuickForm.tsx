@@ -43,7 +43,7 @@ export function EnglishFlashcardQuickForm({
         <div>
           <h2 className="text-lg font-bold text-bloomora-deep">Modo rápido</h2>
           <p className="mt-1 text-sm text-bloomora-text-muted">
-            Solo palabra y significado. Después podrás añadir imagen, ejemplos y categoría.
+            Solo palabra y significado. Después podrás añadir ejemplos, categoría e imagen (opcional).
           </p>
         </div>
         <span className="rounded-full bg-bloomora-lavender-50 px-3 py-1 text-xs font-bold text-bloomora-violet ring-1 ring-bloomora-violet/20">

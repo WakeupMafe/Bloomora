@@ -1,13 +1,14 @@
 import { type FormEvent, useRef, useState } from 'react'
 import { Button } from '@/components/ui/Button'
-import { useBloomoraAlert } from '@/contexts/BloomoraAlertContext'
 import { useBloomoraToast } from '@/contexts/BloomoraToastContext'
 import { uploadFlashcardImage } from '@/services/supabase/flashcardImageUpload'
 import { requireSupabase } from '@/services/supabase/typedClient'
 import type { EnglishFlashcard } from '@/types/englishFlashcard'
-import { QUICK_FLASHCARD_PLACEHOLDER_IMAGE } from '@/types/englishFlashcard'
-import { FLASHCARD_IMAGE_REQUIRED_MESSAGE } from '@/types/englishFlashcard'
-import { isQuickFlashcardComplete, isQuickFlashcardDraft } from '@/features/flashcards/flashcardQuickMode'
+import {
+  hasRealFlashcardImage,
+  isQuickFlashcardComplete,
+  isQuickFlashcardDraft,
+} from '@/features/flashcards/flashcardQuickMode'
 import {
   FLASHCARD_CATEGORY_OPTIONS,
   isGrammarCategory,
@@ -29,6 +30,7 @@ import {
 import { PinkBoldRichTextArea } from '@/features/flashcards/PinkBoldRichTextArea'
 import { VerbFormsFields } from '@/features/flashcards/VerbFormsFields'
 import { BloomoraImage } from '@/components/ui/BloomoraImage'
+import { FLASHCARD_NO_IMAGE_SURFACE } from '@/features/flashcards/FlashcardImageFrame'
 import { cn } from '@/utils/cn'
 
 type EnglishFlashcardFormProps = {
@@ -47,7 +49,6 @@ export function EnglishFlashcardForm({
   onSave,
 }: EnglishFlashcardFormProps) {
   const { showToast } = useBloomoraToast()
-  const { alert: showAlert } = useBloomoraAlert()
   const fileRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState<FlashcardFormState>(() =>
     editing ? flashcardToFormState(editing) : emptyFlashcardFormState(),
@@ -58,11 +59,8 @@ export function EnglishFlashcardForm({
     setForm((prev) => ({ ...prev, ...patch }))
 
   const isQuickDraftEdit = editing ? isQuickFlashcardDraft(editing) : false
-  const hasImage = !!(form.imageUrl.trim() || form.imagePreview)
-  const showPlaceholderImage =
-    isQuickDraftEdit &&
-    form.imageUrl === QUICK_FLASHCARD_PLACEHOLDER_IMAGE &&
-    !form.imagePreview?.startsWith('blob:')
+  const hasImage =
+    !!(form.imagePreview?.startsWith('blob:') || hasRealFlashcardImage(form.imageUrl))
 
   const handleFile = async (file: File | undefined) => {
     if (!file) return
@@ -86,6 +84,11 @@ export function EnglishFlashcardForm({
     }
   }
 
+  const clearImage = () => {
+    set({ imageUrl: '', imagePreview: null })
+    if (fileRef.current) fileRef.current.value = ''
+  }
+
   const isVerb = isVerbsCategory(form.category)
   const isGrammar = isGrammarCategory(form.category)
 
@@ -101,13 +104,6 @@ export function EnglishFlashcardForm({
       )
       return
     }
-    if (!isQuickDraftEdit && !form.imageUrl.trim()) {
-      await showAlert({
-        title: 'Imagen requerida',
-        description: FLASHCARD_IMAGE_REQUIRED_MESSAGE,
-      })
-      return
-    }
     onSave(formStateToInputForCard(form, editing))
   }
 
@@ -121,42 +117,32 @@ export function EnglishFlashcardForm({
       </h2>
       <p className="mt-1 text-sm text-bloomora-text-muted">
         {isQuickDraftEdit
-          ? 'Añade imagen y ejemplos en inglés y español para terminar esta tarjeta.'
-          : 'Asocia cada palabra con una imagen para memorizar mejor.'}
+          ? 'Añade ejemplos en inglés y español para terminar esta tarjeta. La imagen es opcional.'
+          : 'Puedes guardar solo con palabra y significado; la imagen es opcional.'}
       </p>
       {editing && isQuickDraftEdit && !isQuickFlashcardComplete(editing) ? (
         <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900 ring-1 ring-amber-200/80">
-          Pendiente: imagen + ejemplo en inglés + traducción del ejemplo.
+          Pendiente: ejemplo en inglés + traducción del ejemplo.
         </p>
       ) : null}
 
-      <FlashcardFormField
-        className="mt-5"
-        label={
-          <>
-            Imagen <span className="text-bloomora-violet">*</span>
-          </>
-        }
-      >
+      <FlashcardFormField className="mt-5" label="Imagen (opcional)">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
           <div
             className={cn(
-              'relative flex h-32 w-full shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-bloomora-lavender-50/70 ring-1 ring-bloomora-line/35 sm:h-28 sm:w-40',
-              !hasImage && 'justify-center',
+              'relative flex h-32 w-full shrink-0 items-center justify-center overflow-hidden rounded-2xl ring-1 ring-bloomora-line/35 sm:h-28 sm:w-40',
+              hasImage ? 'bg-bloomora-lavender-50/70' : FLASHCARD_NO_IMAGE_SURFACE,
             )}
+            aria-label={hasImage ? undefined : 'Sin imagen'}
           >
-            {form.imagePreview && !showPlaceholderImage ? (
+            {hasImage && form.imagePreview ? (
               <BloomoraImage
                 src={form.imagePreview}
                 alt=""
                 size="full"
                 className="mx-auto max-h-full max-w-full object-contain p-1"
               />
-            ) : (
-              <span className="px-3 text-center text-xs font-medium text-bloomora-text-muted">
-                {isQuickDraftEdit ? 'Sin imagen aún' : 'Sin imagen aún'}
-              </span>
-            )}
+            ) : null}
           </div>
           <div className="flex flex-col gap-2 sm:pt-0.5">
             <input
@@ -173,12 +159,21 @@ export function EnglishFlashcardForm({
               disabled={uploading || isPending}
               onClick={() => fileRef.current?.click()}
             >
-              {uploading ? 'Subiendo…' : 'Elegir imagen'}
+              {uploading ? 'Subiendo…' : hasImage ? 'Cambiar imagen' : 'Elegir imagen'}
             </Button>
+            {hasImage ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={uploading || isPending}
+                onClick={clearImage}
+              >
+                Quitar imagen
+              </Button>
+            ) : null}
             <p className="text-xs text-bloomora-text-muted">
-              {isQuickDraftEdit
-                ? 'Obligatoria para completar la tarjeta rápida.'
-                : 'Obligatoria para guardar la palabra.'}
+              Opcional. Ayuda a memorizar, pero puedes crear la tarjeta sin ella.
             </p>
           </div>
         </div>

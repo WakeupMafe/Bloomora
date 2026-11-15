@@ -10,8 +10,15 @@ import {
   type VerbForms,
 } from '@/features/flashcards/verbFormsCodec'
 import type { EnglishFlashcard, EnglishFlashcardInput } from '@/types/englishFlashcard'
-import { QUICK_FLASHCARD_PLACEHOLDER_IMAGE } from '@/types/englishFlashcard'
-import { isQuickFlashcardComplete, isQuickFlashcardDraft } from '@/features/flashcards/flashcardQuickMode'
+import {
+  FLASHCARD_NO_IMAGE_PLACEHOLDER,
+  QUICK_FLASHCARD_PLACEHOLDER_IMAGE,
+} from '@/types/englishFlashcard'
+import {
+  hasRealFlashcardImage,
+  isQuickFlashcardComplete,
+  isQuickFlashcardDraft,
+} from '@/features/flashcards/flashcardQuickMode'
 
 export type FlashcardFormState = {
   englishWord: string
@@ -64,8 +71,7 @@ export function flashcardToFormState(card: EnglishFlashcard): FlashcardFormState
     exampleSpanish: card.exampleSpanish ?? '',
     category: card.category ?? '',
     imageUrl: card.imageUrl,
-    imagePreview:
-      card.imageUrl === QUICK_FLASHCARD_PLACEHOLDER_IMAGE ? null : card.imageUrl,
+    imagePreview: hasRealFlashcardImage(card.imageUrl) ? card.imageUrl : null,
   }
 }
 
@@ -80,6 +86,14 @@ export function resolveEnglishWordForSave(state: FlashcardFormState): string {
   return state.englishWord.trim()
 }
 
+export function resolveFlashcardImageUrlForSave(imageUrl: string): string {
+  const trimmed = imageUrl.trim()
+  if (!trimmed || trimmed === QUICK_FLASHCARD_PLACEHOLDER_IMAGE) {
+    return FLASHCARD_NO_IMAGE_PLACEHOLDER
+  }
+  return trimmed
+}
+
 export function formStateToInput(state: FlashcardFormState): EnglishFlashcardInput {
   return {
     englishWord: resolveEnglishWordForSave(state),
@@ -88,7 +102,7 @@ export function formStateToInput(state: FlashcardFormState): EnglishFlashcardInp
     spanishMeaning: state.spanishMeaning,
     exampleEnglish: state.exampleEnglish || null,
     exampleSpanish: state.exampleSpanish || null,
-    imageUrl: state.imageUrl,
+    imageUrl: resolveFlashcardImageUrlForSave(state.imageUrl),
     category: state.category || null,
     entryMode: 'full',
     isQuickDraft: false,
@@ -136,7 +150,11 @@ export function formStateToInputForCard(
     ...input,
     entryMode: 'quick',
     isQuickDraft: !complete,
-    imageUrl: complete ? input.imageUrl : input.imageUrl || QUICK_FLASHCARD_PLACEHOLDER_IMAGE,
+    imageUrl: hasRealFlashcardImage(input.imageUrl)
+      ? input.imageUrl
+      : complete
+        ? FLASHCARD_NO_IMAGE_PLACEHOLDER
+        : QUICK_FLASHCARD_PLACEHOLDER_IMAGE,
   }
 }
 

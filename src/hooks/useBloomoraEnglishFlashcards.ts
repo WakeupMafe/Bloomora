@@ -23,10 +23,16 @@ const FLASHCARDS_STALE_MS = 5 * 60_000
 
 function rowToFlashcard(r: FlashcardEnglishRow): EnglishFlashcard {
   const category = r.category
-  const quickByImage = r.image_url === QUICK_FLASHCARD_PLACEHOLDER_IMAGE
-  const entryMode =
-    r.entry_mode === 'quick' || quickByImage ? 'quick' : 'full'
-  const isQuickDraft = r.is_quick_draft === true || quickByImage
+  const entryModeFromCol =
+    r.entry_mode === 'quick' || r.entry_mode === 'full' ? r.entry_mode : null
+  // Legacy: solo el placeholder de borrador rápido implica modo quick si no hay columna.
+  const quickByLegacyImage =
+    !entryModeFromCol && r.image_url === QUICK_FLASHCARD_PLACEHOLDER_IMAGE
+  const entryMode = entryModeFromCol ?? (quickByLegacyImage ? 'quick' : 'full')
+  const isQuickDraft =
+    entryMode === 'full'
+      ? false
+      : r.is_quick_draft === true || (!entryModeFromCol && quickByLegacyImage)
 
   return {
     id: String(r.id),

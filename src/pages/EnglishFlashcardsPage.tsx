@@ -202,10 +202,10 @@ export function EnglishFlashcardsPage() {
           </h1>
           <p className="mt-1 text-sm text-bloomora-text-muted">
             {editing?.isQuickDraft
-              ? 'Añade imagen y ejemplos para finalizar.'
+              ? 'Añade ejemplos para finalizar. La imagen es opcional.'
               : createMode === 'quick'
                 ? 'Solo palabra y significado por ahora.'
-                : 'Completa los campos y asocia una imagen.'}
+                : 'Completa palabra y significado. La imagen es opcional.'}
           </p>
         </header>
       )}
@@ -250,7 +250,7 @@ export function EnglishFlashcardsPage() {
                 ) : (
                   '.'
                 )}{' '}
-                Edítalas cuando quieras para añadir imagen y ejemplos.
+                Edítalas cuando quieras para añadir ejemplos (y una imagen si quieres).
               </p>
               <ul className="mt-2 flex flex-wrap gap-2">
                 {pendingQuickCards.slice(0, 6).map((card) => (

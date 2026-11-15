@@ -1,5 +1,8 @@
 import type { EnglishFlashcard } from '@/types/englishFlashcard'
-import { QUICK_FLASHCARD_PLACEHOLDER_IMAGE } from '@/types/englishFlashcard'
+import {
+  FLASHCARD_NO_IMAGE_PLACEHOLDER,
+  QUICK_FLASHCARD_PLACEHOLDER_IMAGE,
+} from '@/types/englishFlashcard'
 
 export const QUICK_FLASHCARD_DAILY_LIMIT = 6
 
@@ -16,13 +19,18 @@ export function isSameLocalCalendarDay(iso: string, ref = new Date()): boolean {
 
 export function hasRealFlashcardImage(imageUrl: string): boolean {
   const trimmed = imageUrl.trim()
-  return !!trimmed && trimmed !== QUICK_FLASHCARD_PLACEHOLDER_IMAGE
+  return (
+    !!trimmed &&
+    trimmed !== QUICK_FLASHCARD_PLACEHOLDER_IMAGE &&
+    trimmed !== FLASHCARD_NO_IMAGE_PLACEHOLDER
+  )
 }
 
-/** Tarjeta creada en modo rápido (placeholder o columna entry_mode en Supabase). */
+/** Tarjeta creada en modo rápido (flags o placeholder legacy de borrador). */
 export function isQuickFlashcardDraft(
   card: Pick<EnglishFlashcard, 'isQuickDraft' | 'imageUrl' | 'entryMode'>,
 ): boolean {
+  if (card.entryMode === 'full') return false
   return (
     card.isQuickDraft ||
     card.entryMode === 'quick' ||
@@ -31,9 +39,14 @@ export function isQuickFlashcardDraft(
 }
 
 export function wasQuickFlashcardEntry(
-  card: Pick<EnglishFlashcard, 'entryMode' | 'imageUrl'>,
+  card: Pick<EnglishFlashcard, 'entryMode' | 'imageUrl' | 'isQuickDraft'>,
 ): boolean {
-  return card.entryMode === 'quick' || card.imageUrl === QUICK_FLASHCARD_PLACEHOLDER_IMAGE
+  if (card.entryMode === 'full') return false
+  return (
+    card.entryMode === 'quick' ||
+    card.isQuickDraft ||
+    card.imageUrl === QUICK_FLASHCARD_PLACEHOLDER_IMAGE
+  )
 }
 
 /** Tarjetas rápidas creadas hoy (completas o pendientes). */
@@ -46,7 +59,7 @@ export function countQuickFlashcardsToday(
   ).length
 }
 
-/** Tarjeta rápida completada: imagen real + ejemplos en ambos idiomas. */
+/** Tarjeta rápida completada: ejemplos en ambos idiomas (imagen opcional). */
 export function isQuickFlashcardComplete(
   card: Pick<
     EnglishFlashcard,
@@ -54,11 +67,7 @@ export function isQuickFlashcardComplete(
   >,
 ): boolean {
   if (!isQuickFlashcardDraft(card)) return true
-  return (
-    hasRealFlashcardImage(card.imageUrl) &&
-    !!card.exampleEnglish?.trim() &&
-    !!card.exampleSpanish?.trim()
-  )
+  return !!card.exampleEnglish?.trim() && !!card.exampleSpanish?.trim()
 }
 
 export type QuickFlashcardQuota =
@@ -107,5 +116,5 @@ export function evaluateQuickFlashcardQuota(
 
 export function quickQuotaMessage(quota: QuickFlashcardQuota): string {
   if (quota.canCreate) return ''
-  return `Ya creaste ${quota.limit} tarjetas rápidas hoy. Completa las pendientes con imagen y ejemplos, o vuelve mañana.`
+  return `Ya creaste ${quota.limit} tarjetas rápidas hoy. Completa las pendientes con ejemplos, o vuelve mañana.`
 }

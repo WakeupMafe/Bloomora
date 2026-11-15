@@ -3,6 +3,8 @@ import { BloomoraImage } from '@/components/ui/BloomoraImage'
 import { EnglishFlashcardCard } from '@/features/flashcards/EnglishFlashcardCard'
 import { getCategoryTheme } from '@/features/flashcards/flashcardCategoryTheme'
 import { ChevronDownIcon } from '@/features/flashcards/FlashcardIcons'
+import { FLASHCARD_NO_IMAGE_SURFACE } from '@/features/flashcards/FlashcardImageFrame'
+import { hasRealFlashcardImage } from '@/features/flashcards/flashcardQuickMode'
 import type { CategoryPack } from '@/features/flashcards/groupFlashcardsByCategory'
 import { primaryEnglishDisplay } from '@/features/flashcards/verbFormsCodec'
 import type { EnglishFlashcard } from '@/types/englishFlashcard'
@@ -62,15 +64,22 @@ export const FlashcardCategoryPack = memo(function FlashcardCategoryPack({
               {previews.map((card, i) => (
                 <div
                   key={card.id}
-                  className="relative flex size-14 items-center justify-center overflow-hidden rounded-xl bg-bloomora-lavender-50/90 ring-2 ring-white sm:size-16"
+                  className={cn(
+                    'relative flex size-14 items-center justify-center overflow-hidden rounded-xl ring-2 ring-white sm:size-16',
+                    hasRealFlashcardImage(card.imageUrl)
+                      ? 'bg-bloomora-lavender-50/90'
+                      : FLASHCARD_NO_IMAGE_SURFACE,
+                  )}
                   style={{ zIndex: PREVIEW_IMAGES_MAX - i }}
                 >
-                  <BloomoraImage
-                    src={card.imageUrl}
-                    alt=""
-                    size="thumb"
-                    className="max-h-full max-w-full object-contain p-0.5"
-                  />
+                  {hasRealFlashcardImage(card.imageUrl) ? (
+                    <BloomoraImage
+                      src={card.imageUrl}
+                      alt=""
+                      size="thumb"
+                      className="max-h-full max-w-full object-contain p-0.5"
+                    />
+                  ) : null}
                 </div>
               ))}
             </div>

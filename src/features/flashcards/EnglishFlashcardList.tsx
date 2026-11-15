@@ -122,7 +122,7 @@ export function EnglishFlashcardList({
           </p>
           <p className="mt-2 text-sm text-bloomora-text-muted">
             {cards.length === 0
-              ? 'Pulsa «Nueva palabra» para crear la primera con imagen.'
+              ? 'Pulsa «Nueva palabra» para crear la primera.'
               : 'Prueba otro término o cambia el filtro de categoría.'}
           </p>
         </div>
