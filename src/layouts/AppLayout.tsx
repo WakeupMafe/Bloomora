@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom'
 import { ListGadgetsProvider } from '@/contexts/ListGadgetsContext'
 import { TaskBlockCountdownProvider } from '@/contexts/TaskBlockCountdownContext'
 import { WorkspaceToolsProvider } from '@/contexts/WorkspaceToolsContext'
+import { AgendaStartSoonHost } from '@/features/dashboard/AgendaStartSoonHost'
 import { DashboardShellNav } from '@/features/dashboard/DashboardShellNav'
 import { ListGadgetsHost } from '@/features/lists/ListGadgetsHost'
 import { WorkspaceToolsHost } from '@/features/workspace/WorkspaceToolsHost'
@@ -24,6 +25,7 @@ export function AppLayout() {
               </div>
               <WorkspaceToolsHost />
               <ListGadgetsHost />
+              <AgendaStartSoonHost />
             </RequirePhone>
           </ListGadgetsProvider>
         </WorkspaceToolsProvider>

@@ -1,5 +1,8 @@
 import type { MockGoalRow } from '@/data/dashboardMock'
-import { buildGoalProgressInsights } from '@/features/goals/goalTrackerUtils'
+import {
+  buildGoalProgressInsights,
+  monthKey,
+} from '@/features/goals/goalTrackerUtils'
 import type { GoalDbRow } from '@/services/supabase/goalsRepo'
 
 function goalPercent(row: GoalDbRow): number {
@@ -45,8 +48,13 @@ export function dbGoalToUi(
   completedDaysByMonth: Record<string, number[]>,
 ): MockGoalRow {
   const insights = buildGoalProgressInsights(completedDaysByMonth)
+  const now = new Date()
   const objetivo = row.target_value != null ? Number(row.target_value) : 30
-  const progreso = row.current_value != null ? Number(row.current_value) : 0
+  const progreso = (
+    completedDaysByMonth[monthKey(now.getFullYear(), now.getMonth())] ?? []
+  ).length
+  const percent =
+    objetivo > 0 ? Math.min(100, Math.round((progreso / objetivo) * 100)) : 0
   const tipo: MockGoalRow['tipo'] =
     row.goal_type === 'habit'
       ? row.frequency?.startsWith('weekly')
@@ -86,7 +94,7 @@ export function dbGoalToUi(
   return {
     id: String(row.id),
     title: row.title,
-    percent: goalPercent(row),
+    percent,
     variant: uiVariant(row),
     tipo,
     frecuencia,

@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { canMarkGoalDay } from '@/features/goals/goalTrackerUtils'
+import { canMarkGoalDay, monthKey } from '@/features/goals/goalTrackerUtils'
 
 export type GoalDayMarkRow = {
   goal_id: number
@@ -195,11 +195,14 @@ async function syncGoalProgressFromMarks(
   userCedula: string,
   goal: GoalForSync,
 ) {
+  const now = new Date()
+  const yearMonth = monthKey(now.getFullYear(), now.getMonth())
   const { count, error: countErr } = await sb
     .from('goal_day_marks')
     .select('goal_id', { count: 'exact', head: true })
     .eq('goal_id', goalId)
     .eq('user_cedula', userCedula)
+    .eq('year_month', yearMonth)
   if (countErr) throw countErr
 
   const progreso = count ?? 0
@@ -208,6 +211,7 @@ async function syncGoalProgressFromMarks(
   const percentDisplay = objetivo > 0 ? Math.min(100, Math.round((progreso / objetivo) * 100)) : 0
   const unit = goal.unit?.trim() || 'dias'
   const progressLabel = `${progreso} / ${objetivo} ${unit}`
+  const status = progreso >= objetivo ? 'completed' : 'active'
 
   const { error: updErr } = await sb
     .from('goals')
@@ -215,6 +219,7 @@ async function syncGoalProgressFromMarks(
       current_value: progreso,
       percent_display: percentDisplay,
       progress_label: progressLabel,
+      status,
     })
     .eq('id', goalId)
     .eq('user_cedula', userCedula)
@@ -224,6 +229,7 @@ async function syncGoalProgressFromMarks(
       .from('goals')
       .update({
         current_value: progreso,
+        status,
       })
       .eq('id', goalId)
       .eq('user_cedula', userCedula)

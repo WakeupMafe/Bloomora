@@ -165,7 +165,7 @@ export function GoalsOverviewPage() {
                     <h2 className="text-lg font-bold text-[color:var(--bloomora-text)]">{goal.title}</h2>
                     <p className="mt-1 text-sm text-[color:var(--bloomora-text-muted)]">{goal.categoria}</p>
                     <p className="mt-1 text-sm font-semibold text-[color:var(--bloomora-text)]">
-                      {goal.progreso} / {goal.objetivo} dias
+                      {getCompletedDaysForMonth(goal, viewYear, viewMonthIndex0).length} / {goal.objetivo} días
                     </p>
                     <p className="mt-1 text-xs font-medium text-[color:var(--bloomora-accent)]">
                       🔥 {goal.streak} {goal.streak === 1 ? 'dia seguido' : 'dias seguidos'}
@@ -220,7 +220,7 @@ export function GoalsOverviewPage() {
                     }
                   />
                 </div>
-                <p className="mt-1 text-sm font-semibold text-[color:var(--bloomora-text)]">{goal.progreso} / {goal.objetivo} dias</p>
+                <p className="mt-1 text-sm font-semibold text-[color:var(--bloomora-text)]">{getCompletedDaysForMonth(goal, viewYear, viewMonthIndex0).length} / {goal.objetivo} días</p>
                 <div className="mt-2 flex items-center justify-between">
                   <span className="text-xs font-medium text-[color:var(--bloomora-accent)]">
                     🔥 {goal.streak} {goal.streak === 1 ? 'dia' : 'dias'} seguidos
@@ -250,7 +250,7 @@ export function GoalsOverviewPage() {
                     </h2>
                     <p className="mt-1 text-sm text-[color:var(--bloomora-text-muted)]">{goal.categoria}</p>
                     <p className="text-xs font-medium text-[color:var(--bloomora-text-muted)]">
-                      {goal.progreso} / {goal.objetivo} dias · 🔥 {goal.streak}{' '}
+                      {getCompletedDaysForMonth(goal, viewYear, viewMonthIndex0).length} / {goal.objetivo} días · 🔥 {goal.streak}{' '}
                       {goal.streak === 1 ? 'dia' : 'dias'}
                     </p>
                   </div>

@@ -31,6 +31,26 @@ function isGoalComplete(goal: MockGoalRow): boolean {
   return goal.estado === "Completada" || goal.percent >= 100;
 }
 
+function averageGoalsCompletionPercent(
+  goals: MockGoalRow[],
+  now: Date,
+): number {
+  if (goals.length === 0) return 0;
+  const sum = goals.reduce((acc, goal) => {
+    const completed = getCompletedDaysForMonth(
+      goal,
+      now.getFullYear(),
+      now.getMonth(),
+    ).length;
+    const ratio =
+      goal.objetivo > 0
+        ? (completed / goal.objetivo) * 100
+        : goal.percent;
+    return acc + Math.min(100, Math.max(0, ratio));
+  }, 0);
+  return Math.min(100, Math.round(sum / goals.length));
+}
+
 /** Presentación: "n de m días" / label existente / ✅ Lista — sin nueva lógica de negocio. */
 function goalProgressCaption(goal: MockGoalRow): string {
   if (isGoalComplete(goal)) return "✅ Lista";
@@ -258,8 +278,7 @@ export function GoalProgressCard({ className }: GoalProgressCardProps) {
 
   const total = goals.length;
   const completed = goals.filter(isGoalComplete).length;
-  const monthPercent =
-    total === 0 ? 0 : Math.round((completed / total) * 100);
+  const monthPercent = averageGoalsCompletionPercent(goals, now);
   const previewGoals = goals.slice(0, 3);
   const motivation = motivationalCopy(completed, total);
   const ringAria = `${completed} de ${total} metas cumplidas este mes`;
