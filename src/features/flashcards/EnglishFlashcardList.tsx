@@ -136,7 +136,50 @@ export function EnglishFlashcardList({
   };
 
   return (
-    <>
+    <div className="flex min-w-0 flex-col gap-4">
+      {cards.length > 0 ? (
+        <section className="rounded-[1.25rem] bg-white p-4 shadow-[0_8px_28px_-16px_rgba(62,44,65,0.16)] ring-1 ring-[#F0E4E8]">
+          <h2
+            className="text-base font-semibold tracking-tight text-[#3E2C41]"
+            style={{ fontFamily: "Fraunces, Georgia, serif" }}
+          >
+            Repaso
+          </h2>
+          <p className="mt-0.5 text-xs leading-relaxed text-[#8A7A8C]">
+            {errorReviewPack.cards.length > 0
+              ? `${errorReviewPack.cards.length} marcada${errorReviewPack.cards.length === 1 ? "" : "s"} para enfocar.`
+              : "Revisa todo el mazo cuando quieras."}
+          </p>
+          <div className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-2">
+            <button
+              type="button"
+              onClick={() => setReviewPack(allReviewPack)}
+              className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[#D67A93] px-4 text-sm font-bold text-white shadow-[0_8px_24px_-10px_rgba(214,122,147,0.5)] transition hover:brightness-[1.03]"
+            >
+              Repasar todas
+            </button>
+            {errorReviewPack.cards.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => setReviewPack(errorReviewPack)}
+                className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[#FBE3EA] px-4 text-sm font-bold text-[#3E2C41] ring-1 ring-[#F0E4E8] transition hover:bg-[#F7F2F4]"
+              >
+                {`Repasar mis errores (${errorReviewPack.cards.length})`}
+              </button>
+            ) : null}
+            {errorReviewPack.cards.length > 0 ? (
+              <button
+                type="button"
+                onClick={clear}
+                className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[#FFF9F7] px-4 text-sm font-semibold text-[#8A7A8C] ring-1 ring-[#F0E4E8] transition hover:text-[#3E2C41]"
+              >
+                Quitar marcas
+              </button>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
       <EnglishFlashcardToolbar
         search={search}
         categoryFilter={categoryFilter}
@@ -144,51 +187,24 @@ export function EnglishFlashcardList({
         onCategoryFilterChange={onCategoryFilterChange}
       />
 
-      {cards.length > 0 ? (
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setReviewPack(allReviewPack)}
-            className="inline-flex items-center rounded-full bg-bloomora-violet px-4 py-2 text-sm font-bold text-white transition hover:brightness-[1.03]"
-          >
-            Repasar todas
-          </button>
-          {errorReviewPack.cards.length > 0 ? (
-            <button
-              type="button"
-              onClick={() => setReviewPack(errorReviewPack)}
-              className="inline-flex items-center rounded-full bg-[#D67A93] px-4 py-2 text-sm font-bold text-white transition hover:brightness-[1.03]"
-            >
-              {`Repasar mis errores (${errorReviewPack.cards.length})`}
-            </button>
-          ) : null}
-          {errorReviewPack.cards.length > 0 ? (
-            <button
-              type="button"
-              onClick={clear}
-              className="inline-flex items-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-bloomora-violet ring-1 ring-bloomora-violet/25 transition hover:bg-[#F7F2F4]"
-            >
-              Quitar marcas
-            </button>
-          ) : null}
-        </div>
-      ) : null}
-
       {packs.length === 0 ? (
-        <div className="mt-10 rounded-[1.35rem] bg-white/80 px-6 py-12 text-center shadow-[0_4px_24px_-4px_rgba(91,74,140,0.08)] ring-1 ring-bloomora-line/15">
-          <p className="text-base font-bold text-bloomora-deep">
+        <div className="rounded-[1.25rem] bg-white px-6 py-12 text-center shadow-[0_8px_28px_-16px_rgba(62,44,65,0.12)] ring-1 ring-[#F0E4E8]">
+          <p
+            className="text-base font-semibold text-[#3E2C41]"
+            style={{ fontFamily: "Fraunces, Georgia, serif" }}
+          >
             {cards.length === 0
               ? "Aún no tienes flashcards"
               : "Ninguna coincide con tu búsqueda"}
           </p>
-          <p className="mt-2 text-sm text-bloomora-text-muted">
+          <p className="mt-2 text-sm text-[#8A7A8C]">
             {cards.length === 0
               ? "Pulsa «Nueva palabra» para crear la primera."
               : "Prueba otro término o cambia el filtro de categoría."}
           </p>
         </div>
       ) : (
-        <ul className="mt-8 flex list-none flex-col gap-5 p-0">
+        <ul className="flex list-none flex-col gap-5 p-0">
           {packs.map((pack) => (
             <FlashcardCategoryPack
               key={pack.key}
@@ -228,6 +244,6 @@ export function EnglishFlashcardList({
         onConfirm={onConfirmDelete}
         onCancel={onCancelDelete}
       />
-    </>
+    </div>
   );
 }

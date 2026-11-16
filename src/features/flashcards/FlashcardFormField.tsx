@@ -1,18 +1,21 @@
-import type { ReactNode } from 'react'
-import { cn } from '@/utils/cn'
-import { bloomoraInputClass, bloomoraSelectClass } from '@/components/ui/formControls'
+import type { ReactNode } from "react";
+import { cn } from "@/utils/cn";
+import {
+  bloomoraInputClass,
+  bloomoraSelectClass,
+} from "@/components/ui/formControls";
 
-export const flashcardControlClass = bloomoraInputClass
+export const flashcardControlClass = bloomoraInputClass;
 
-export const flashcardSelectClass = bloomoraSelectClass
+export const flashcardSelectClass = bloomoraSelectClass;
 
 type FlashcardFormFieldProps = {
-  label: ReactNode
-  hint?: string
-  children: ReactNode
-  className?: string
-  htmlFor?: string
-}
+  label: ReactNode;
+  hint?: string;
+  children: ReactNode;
+  className?: string;
+  htmlFor?: string;
+};
 
 /** Label y control alineados (mismo ancho, espacio fijo entre título y casilla). */
 export function FlashcardFormField({
@@ -23,7 +26,7 @@ export function FlashcardFormField({
   htmlFor,
 }: FlashcardFormFieldProps) {
   return (
-    <div className={cn('flex min-w-0 flex-col', className)}>
+    <div className={cn("flex min-w-0 flex-col", className)}>
       <label
         htmlFor={htmlFor}
         className="block text-sm font-semibold leading-snug text-bloomora-deep"
@@ -37,5 +40,5 @@ export function FlashcardFormField({
       ) : null}
       <div className="mt-1.5 min-w-0">{children}</div>
     </div>
-  )
+  );
 }

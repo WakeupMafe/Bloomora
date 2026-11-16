@@ -1,17 +1,20 @@
-import { FLASHCARD_CATEGORY_OPTIONS } from '@/features/flashcards/flashcardCategories'
+import { FLASHCARD_CATEGORY_OPTIONS } from "@/features/flashcards/flashcardCategories";
 import {
   ChevronDownIcon,
   FilterIcon,
   SearchIcon,
-} from '@/features/flashcards/FlashcardIcons'
-import { cn } from '@/utils/cn'
+} from "@/features/flashcards/FlashcardIcons";
+import { cn } from "@/utils/cn";
 
 type EnglishFlashcardToolbarProps = {
-  search: string
-  categoryFilter: string
-  onSearchChange: (v: string) => void
-  onCategoryFilterChange: (v: string) => void
-}
+  search: string;
+  categoryFilter: string;
+  onSearchChange: (v: string) => void;
+  onCategoryFilterChange: (v: string) => void;
+};
+
+const fieldClass =
+  "bloomora-form-input h-12 min-h-12 w-full max-w-full rounded-full border-0 bg-white pl-12 pr-4 text-sm font-medium text-[#3E2C41] shadow-[0_4px_18px_-10px_rgba(62,44,65,0.12)] ring-1 ring-[#F0E4E8] outline-none placeholder:text-[#8A7A8C]/80 focus:ring-2 focus:ring-[#FBE3EA]";
 
 export function EnglishFlashcardToolbar({
   search,
@@ -20,31 +23,28 @@ export function EnglishFlashcardToolbar({
   onCategoryFilterChange,
 }: EnglishFlashcardToolbarProps) {
   return (
-    <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-      <div className="relative min-w-0 flex-1">
-        <SearchIcon className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-bloomora-text-muted/70" />
+    <div className="grid w-full min-w-0 grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] items-center gap-2">
+      <div className="relative min-w-0">
+        <SearchIcon className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#8A7A8C]" />
         <input
           type="search"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Buscar por palabra o significado..."
           aria-label="Buscar flashcards"
-          className={cn(
-            'bloomora-form-input h-12 w-full rounded-full border-0 bg-white pl-12 pr-4 text-sm font-medium text-bloomora-deep shadow-[0_2px_16px_-4px_rgba(91,74,140,0.1)] ring-1 ring-bloomora-line/20 outline-none',
-            'placeholder:text-bloomora-text-muted/60 focus:ring-2 focus:ring-[#ddd6fe]/80',
-          )}
+          className={fieldClass}
         />
       </div>
 
-      <div className="relative w-full shrink-0 lg:w-[15.5rem]">
-        <FilterIcon className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-bloomora-text-muted/70" />
+      <div className="relative min-w-0">
+        <FilterIcon className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-[#8A7A8C]" />
         <select
           value={categoryFilter}
           onChange={(e) => onCategoryFilterChange(e.target.value)}
           aria-label="Filtrar por categoría"
           className={cn(
-            'bloomora-form-input h-12 w-full cursor-pointer appearance-none rounded-full border-0 bg-white pl-12 pr-10 text-sm font-semibold text-bloomora-deep shadow-[0_2px_16px_-4px_rgba(91,74,140,0.1)] ring-1 ring-bloomora-line/20 outline-none',
-            'focus:ring-2 focus:ring-[#ddd6fe]/80',
+            fieldClass,
+            "cursor-pointer appearance-none pr-10 font-semibold",
           )}
         >
           <option value="">Todas las categorías</option>
@@ -54,8 +54,8 @@ export function EnglishFlashcardToolbar({
             </option>
           ))}
         </select>
-        <ChevronDownIcon className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-bloomora-text-muted" />
+        <ChevronDownIcon className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#8A7A8C]" />
       </div>
     </div>
-  )
+  );
 }

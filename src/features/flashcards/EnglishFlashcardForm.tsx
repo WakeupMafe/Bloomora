@@ -1,24 +1,24 @@
-import { type FormEvent, useRef, useState } from 'react'
-import { Button } from '@/components/ui/Button'
-import { useBloomoraToast } from '@/contexts/BloomoraToastContext'
-import { uploadFlashcardImage } from '@/services/supabase/flashcardImageUpload'
-import { requireSupabase } from '@/services/supabase/typedClient'
-import type { EnglishFlashcard } from '@/types/englishFlashcard'
+import { type FormEvent, useRef, useState } from "react";
+import { Button } from "@/components/ui/Button";
+import { useBloomoraToast } from "@/contexts/BloomoraToastContext";
+import { uploadFlashcardImage } from "@/services/supabase/flashcardImageUpload";
+import { requireSupabase } from "@/services/supabase/typedClient";
+import type { EnglishFlashcard } from "@/types/englishFlashcard";
 import {
   hasRealFlashcardImage,
   isQuickFlashcardComplete,
   isQuickFlashcardDraft,
-} from '@/features/flashcards/flashcardQuickMode'
+} from "@/features/flashcards/flashcardQuickMode";
 import {
   FLASHCARD_CATEGORY_OPTIONS,
   isGrammarCategory,
   isVerbsCategory,
-} from '@/features/flashcards/flashcardCategories'
+} from "@/features/flashcards/flashcardCategories";
 import {
   FlashcardFormField,
   flashcardControlClass,
   flashcardSelectClass,
-} from '@/features/flashcards/FlashcardFormField'
+} from "@/features/flashcards/FlashcardFormField";
 import {
   emptyFlashcardFormState,
   flashcardToFormState,
@@ -26,20 +26,20 @@ import {
   formStateToInputForCard,
   isVerbFormValid,
   type FlashcardFormState,
-} from '@/features/flashcards/englishFlashcardFormUtils'
-import { PinkBoldRichTextArea } from '@/features/flashcards/PinkBoldRichTextArea'
-import { VerbFormsFields } from '@/features/flashcards/VerbFormsFields'
-import { BloomoraImage } from '@/components/ui/BloomoraImage'
-import { FLASHCARD_NO_IMAGE_SURFACE } from '@/features/flashcards/FlashcardImageFrame'
-import { cn } from '@/utils/cn'
+} from "@/features/flashcards/englishFlashcardFormUtils";
+import { PinkBoldRichTextArea } from "@/features/flashcards/PinkBoldRichTextArea";
+import { VerbFormsFields } from "@/features/flashcards/VerbFormsFields";
+import { BloomoraImage } from "@/components/ui/BloomoraImage";
+import { FLASHCARD_NO_IMAGE_SURFACE } from "@/features/flashcards/FlashcardImageFrame";
+import { cn } from "@/utils/cn";
 
 type EnglishFlashcardFormProps = {
-  cedula: string
-  editing: EnglishFlashcard | null
-  isPending: boolean
-  onCancel: () => void
-  onSave: (input: ReturnType<typeof formStateToInput>) => void
-}
+  cedula: string;
+  editing: EnglishFlashcard | null;
+  isPending: boolean;
+  onCancel: () => void;
+  onSave: (input: ReturnType<typeof formStateToInput>) => void;
+};
 
 export function EnglishFlashcardForm({
   cedula,
@@ -48,64 +48,66 @@ export function EnglishFlashcardForm({
   onCancel,
   onSave,
 }: EnglishFlashcardFormProps) {
-  const { showToast } = useBloomoraToast()
-  const fileRef = useRef<HTMLInputElement>(null)
+  const { showToast } = useBloomoraToast();
+  const fileRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<FlashcardFormState>(() =>
     editing ? flashcardToFormState(editing) : emptyFlashcardFormState(),
-  )
-  const [uploading, setUploading] = useState(false)
+  );
+  const [uploading, setUploading] = useState(false);
 
   const set = (patch: Partial<FlashcardFormState>) =>
-    setForm((prev) => ({ ...prev, ...patch }))
+    setForm((prev) => ({ ...prev, ...patch }));
 
-  const isQuickDraftEdit = editing ? isQuickFlashcardDraft(editing) : false
-  const hasImage =
-    !!(form.imagePreview?.startsWith('blob:') || hasRealFlashcardImage(form.imageUrl))
+  const isQuickDraftEdit = editing ? isQuickFlashcardDraft(editing) : false;
+  const hasImage = !!(
+    form.imagePreview?.startsWith("blob:") ||
+    hasRealFlashcardImage(form.imageUrl)
+  );
 
   const handleFile = async (file: File | undefined) => {
-    if (!file) return
-    if (!file.type.startsWith('image/')) {
-      showToast('Elige un archivo de imagen.')
-      return
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      showToast("Elige un archivo de imagen.");
+      return;
     }
-    setUploading(true)
+    setUploading(true);
     try {
       const { url, compressed } = await uploadFlashcardImage(
         requireSupabase(),
         cedula,
         file,
-      )
-      const preview = URL.createObjectURL(compressed)
-      set({ imageUrl: url, imagePreview: preview })
+      );
+      const preview = URL.createObjectURL(compressed);
+      set({ imageUrl: url, imagePreview: preview });
     } catch {
-      showToast('No se pudo subir la imagen. Revisa la conexión o el bucket.')
+      showToast("No se pudo subir la imagen. Revisa la conexión o el bucket.");
     } finally {
-      setUploading(false)
+      setUploading(false);
     }
-  }
+  };
 
   const clearImage = () => {
-    set({ imageUrl: '', imagePreview: null })
-    if (fileRef.current) fileRef.current.value = ''
-  }
+    set({ imageUrl: "", imagePreview: null });
+    if (fileRef.current) fileRef.current.value = "";
+  };
 
-  const isVerb = isVerbsCategory(form.category)
-  const isGrammar = isGrammarCategory(form.category)
+  const isVerb = isVerbsCategory(form.category);
+  const isGrammar = isGrammarCategory(form.category);
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!isVerbFormValid(form) || !form.spanishMeaning.trim()) {
       showToast(
         isVerb
-          ? 'Completa las tres formas del verbo y el significado en español.'
+          ? "Completa las tres formas del verbo y el significado en español."
           : isGrammar
-            ? 'Indica el tema en inglés, en español y la explicación.'
-            : 'La palabra en inglés y el significado en español son obligatorios.',
-      )
-      return
+            ? "Indica el tema en inglés, en español y la explicación."
+            : "La palabra en inglés y el significado en español son obligatorios.",
+      );
+      return;
     }
-    onSave(formStateToInputForCard(form, editing))
-  }
+    onSave(formStateToInputForCard(form, editing));
+  };
 
   return (
     <form
@@ -113,12 +115,16 @@ export function EnglishFlashcardForm({
       className="rounded-[20px] bg-white/80 p-5 ring-1 ring-bloomora-line/35 shadow-[0_8px_28px_-10px_rgba(91,74,140,0.15)] sm:p-6"
     >
       <h2 className="text-lg font-bold text-bloomora-deep">
-        {editing ? (isQuickDraftEdit ? 'Completar tarjeta rápida' : 'Editar palabra') : 'Nueva flashcard'}
+        {editing
+          ? isQuickDraftEdit
+            ? "Completar tarjeta rápida"
+            : "Editar palabra"
+          : "Nueva flashcard"}
       </h2>
       <p className="mt-1 text-sm text-bloomora-text-muted">
         {isQuickDraftEdit
-          ? 'Añade ejemplos en inglés y español para terminar esta tarjeta. La imagen es opcional.'
-          : 'Puedes guardar solo con palabra y significado; la imagen es opcional.'}
+          ? "Añade ejemplos en inglés y español para terminar esta tarjeta. La imagen es opcional."
+          : "Puedes guardar solo con palabra y significado; la imagen es opcional."}
       </p>
       {editing && isQuickDraftEdit && !isQuickFlashcardComplete(editing) ? (
         <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900 ring-1 ring-amber-200/80">
@@ -130,10 +136,12 @@ export function EnglishFlashcardForm({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
           <div
             className={cn(
-              'relative flex h-32 w-full shrink-0 items-center justify-center overflow-hidden rounded-2xl ring-1 ring-bloomora-line/35 sm:h-28 sm:w-40',
-              hasImage ? 'bg-bloomora-lavender-50/70' : FLASHCARD_NO_IMAGE_SURFACE,
+              "relative flex h-32 w-full shrink-0 items-center justify-center overflow-hidden rounded-2xl ring-1 ring-bloomora-line/35 sm:h-28 sm:w-40",
+              hasImage
+                ? "bg-bloomora-lavender-50/70"
+                : FLASHCARD_NO_IMAGE_SURFACE,
             )}
-            aria-label={hasImage ? undefined : 'Sin imagen'}
+            aria-label={hasImage ? undefined : "Sin imagen"}
           >
             {hasImage && form.imagePreview ? (
               <BloomoraImage
@@ -159,7 +167,11 @@ export function EnglishFlashcardForm({
               disabled={uploading || isPending}
               onClick={() => fileRef.current?.click()}
             >
-              {uploading ? 'Subiendo…' : hasImage ? 'Cambiar imagen' : 'Elegir imagen'}
+              {uploading
+                ? "Subiendo…"
+                : hasImage
+                  ? "Cambiar imagen"
+                  : "Elegir imagen"}
             </Button>
             {hasImage ? (
               <Button
@@ -173,7 +185,8 @@ export function EnglishFlashcardForm({
               </Button>
             ) : null}
             <p className="text-xs text-bloomora-text-muted">
-              Opcional. Ayuda a memorizar, pero puedes crear la tarjeta sin ella.
+              Opcional. Ayuda a memorizar, pero puedes crear la tarjeta sin
+              ella.
             </p>
           </div>
         </div>
@@ -230,13 +243,15 @@ export function EnglishFlashcardForm({
         ) : (
           <FlashcardFormField
             className="sm:col-span-2"
-            label={isGrammar ? 'Tema en inglés *' : 'Palabra en inglés *'}
+            label={isGrammar ? "Tema en inglés *" : "Palabra en inglés *"}
           >
             <input
               className={flashcardControlClass}
               value={form.englishWord}
               onChange={(e) => set({ englishWord: e.target.value })}
-              placeholder={isGrammar ? 'e.g. Present Perfect' : 'e.g. butterfly'}
+              placeholder={
+                isGrammar ? "e.g. Present Perfect" : "e.g. butterfly"
+              }
               autoComplete="off"
             />
           </FlashcardFormField>
@@ -256,7 +271,7 @@ export function EnglishFlashcardForm({
             <input
               className={cn(
                 flashcardControlClass,
-                'text-bloomora-violet placeholder:text-bloomora-violet/40',
+                "text-bloomora-violet placeholder:text-bloomora-violet/40",
               )}
               value={form.shortMeaning}
               onChange={(e) => set({ shortMeaning: e.target.value })}
@@ -266,14 +281,14 @@ export function EnglishFlashcardForm({
         ) : null}
 
         <FlashcardFormField
-          className={isGrammar ? 'sm:col-span-2' : undefined}
-          label={isGrammar ? 'Tema en español *' : 'Significado en español *'}
+          className={isGrammar ? "sm:col-span-2" : undefined}
+          label={isGrammar ? "Tema en español *" : "Significado en español *"}
         >
           <input
             className={flashcardControlClass}
             value={form.spanishMeaning}
             onChange={(e) => set({ spanishMeaning: e.target.value })}
-            placeholder={isGrammar ? 'e.g. Presente perfecto' : 'mariposa'}
+            placeholder={isGrammar ? "e.g. Presente perfecto" : "mariposa"}
           />
         </FlashcardFormField>
 
@@ -303,10 +318,19 @@ export function EnglishFlashcardForm({
         <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
           Cancelar
         </Button>
-        <Button type="submit" variant="primary" size="sm" disabled={isPending || uploading}>
-          {isPending ? 'Guardando…' : editing ? 'Guardar cambios' : 'Crear flashcard'}
+        <Button
+          type="submit"
+          variant="primary"
+          size="sm"
+          disabled={isPending || uploading}
+        >
+          {isPending
+            ? "Guardando…"
+            : editing
+              ? "Guardar cambios"
+              : "Crear flashcard"}
         </Button>
       </div>
     </form>
-  )
+  );
 }

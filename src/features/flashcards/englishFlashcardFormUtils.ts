@@ -2,77 +2,82 @@ import {
   isGrammarCategory,
   isVerbsCategory,
   VERBS_CATEGORY,
-} from '@/features/flashcards/flashcardCategories'
-import { plainTextFromFlashcardHtml } from '@/features/flashcards/flashcardRichText'
+} from "@/features/flashcards/flashcardCategories";
+import { plainTextFromFlashcardHtml } from "@/features/flashcards/flashcardRichText";
 import {
   encodeVerbFormsToEnglishWord,
   resolveVerbForms,
   type VerbForms,
-} from '@/features/flashcards/verbFormsCodec'
-import type { EnglishFlashcard, EnglishFlashcardInput } from '@/types/englishFlashcard'
+} from "@/features/flashcards/verbFormsCodec";
+import type {
+  EnglishFlashcard,
+  EnglishFlashcardInput,
+} from "@/types/englishFlashcard";
 import {
   FLASHCARD_NO_IMAGE_PLACEHOLDER,
   QUICK_FLASHCARD_PLACEHOLDER_IMAGE,
-} from '@/types/englishFlashcard'
+} from "@/types/englishFlashcard";
 import {
   hasRealFlashcardImage,
   isQuickFlashcardComplete,
   isQuickFlashcardDraft,
-} from '@/features/flashcards/flashcardQuickMode'
+} from "@/features/flashcards/flashcardQuickMode";
 
 export type FlashcardFormState = {
-  englishWord: string
-  verbV1: string
-  verbV2: string
-  verbV3: string
-  pronunciation: string
-  shortMeaning: string
-  spanishMeaning: string
-  exampleEnglish: string
-  exampleSpanish: string
-  category: string
-  imageUrl: string
-  imagePreview: string | null
-}
+  englishWord: string;
+  verbV1: string;
+  verbV2: string;
+  verbV3: string;
+  pronunciation: string;
+  shortMeaning: string;
+  spanishMeaning: string;
+  exampleEnglish: string;
+  exampleSpanish: string;
+  category: string;
+  imageUrl: string;
+  imagePreview: string | null;
+};
 
 export const emptyFlashcardFormState = (): FlashcardFormState => ({
-  englishWord: '',
-  verbV1: '',
-  verbV2: '',
-  verbV3: '',
-  pronunciation: '',
-  shortMeaning: '',
-  spanishMeaning: '',
-  exampleEnglish: '',
-  exampleSpanish: '',
-  category: '',
-  imageUrl: '',
+  englishWord: "",
+  verbV1: "",
+  verbV2: "",
+  verbV3: "",
+  pronunciation: "",
+  shortMeaning: "",
+  spanishMeaning: "",
+  exampleEnglish: "",
+  exampleSpanish: "",
+  category: "",
+  imageUrl: "",
   imagePreview: null,
-})
+});
 
 function verbFormsFromCard(card: EnglishFlashcard): VerbForms {
-  const resolved = resolveVerbForms(card.englishWord, card.category)
-  return resolved ?? { v1: card.englishWord, v2: '', v3: '' }
+  const resolved = resolveVerbForms(card.englishWord, card.category);
+  return resolved ?? { v1: card.englishWord, v2: "", v3: "" };
 }
 
-export function flashcardToFormState(card: EnglishFlashcard): FlashcardFormState {
-  const isVerb = isVerbsCategory(card.category)
-  const forms = isVerb ? verbFormsFromCard(card) : null
+export function flashcardToFormState(
+  card: EnglishFlashcard,
+): FlashcardFormState {
+  const isVerb = isVerbsCategory(card.category);
+  const forms = isVerb ? verbFormsFromCard(card) : null;
 
   return {
-    englishWord: isVerb ? '' : card.englishWord,
-    verbV1: forms?.v1 ?? '',
-    verbV2: forms?.v2 ?? '',
-    verbV3: forms?.v3 ?? '',
-    pronunciation: card.pronunciation ?? '',
-    shortMeaning: card.shortMeaning ?? '',
+    englishWord: isVerb ? "" : card.englishWord,
+    verbV1: forms?.v1 ?? "",
+    verbV2: forms?.v2 ?? "",
+    verbV3: forms?.v3 ?? "",
+    pronunciation: card.pronunciation ?? "",
+    shortMeaning: card.shortMeaning ?? "",
     spanishMeaning: card.spanishMeaning,
-    exampleEnglish: card.exampleEnglish ?? '',
-    exampleSpanish: card.exampleSpanish ?? '',
-    category: card.category ?? '',
+    exampleEnglish: card.exampleEnglish ?? "",
+    exampleSpanish: card.exampleSpanish ?? "",
+    category: card.category ?? "",
     imageUrl: card.imageUrl,
     imagePreview: hasRealFlashcardImage(card.imageUrl) ? card.imageUrl : null,
-  }
+  };
 }
 
 export function resolveEnglishWordForSave(state: FlashcardFormState): string {
@@ -81,20 +86,22 @@ export function resolveEnglishWordForSave(state: FlashcardFormState): string {
       v1: state.verbV1,
       v2: state.verbV2,
       v3: state.verbV3,
-    })
+    });
   }
-  return state.englishWord.trim()
+  return state.englishWord.trim();
 }
 
 export function resolveFlashcardImageUrlForSave(imageUrl: string): string {
-  const trimmed = imageUrl.trim()
+  const trimmed = imageUrl.trim();
   if (!trimmed || trimmed === QUICK_FLASHCARD_PLACEHOLDER_IMAGE) {
-    return FLASHCARD_NO_IMAGE_PLACEHOLDER
+    return FLASHCARD_NO_IMAGE_PLACEHOLDER;
   }
-  return trimmed
+  return trimmed;
 }
 
-export function formStateToInput(state: FlashcardFormState): EnglishFlashcardInput {
+export function formStateToInput(
+  state: FlashcardFormState,
+): EnglishFlashcardInput {
   return {
     englishWord: resolveEnglishWordForSave(state),
     pronunciation: state.pronunciation || null,
@@ -104,9 +111,9 @@ export function formStateToInput(state: FlashcardFormState): EnglishFlashcardInp
     exampleSpanish: state.exampleSpanish || null,
     imageUrl: resolveFlashcardImageUrlForSave(state.imageUrl),
     category: state.category || null,
-    entryMode: 'full',
+    entryMode: "full",
     isQuickDraft: false,
-  }
+  };
 }
 
 export function quickFormToInput(
@@ -122,9 +129,9 @@ export function quickFormToInput(
     exampleSpanish: null,
     imageUrl: QUICK_FLASHCARD_PLACEHOLDER_IMAGE,
     category: null,
-    entryMode: 'quick',
+    entryMode: "quick",
     isQuickDraft: true,
-  }
+  };
 }
 
 /** Al editar una tarjeta rápida, actualiza flags según imagen y ejemplos. */
@@ -132,9 +139,9 @@ export function formStateToInputForCard(
   state: FlashcardFormState,
   editing: EnglishFlashcard | null,
 ): EnglishFlashcardInput {
-  const input = formStateToInput(state)
+  const input = formStateToInput(state);
   if (!editing || !isQuickFlashcardDraft(editing)) {
-    return input
+    return input;
   }
 
   const draftCard = {
@@ -142,37 +149,35 @@ export function formStateToInputForCard(
     imageUrl: input.imageUrl,
     exampleEnglish: input.exampleEnglish,
     exampleSpanish: input.exampleSpanish,
-    entryMode: 'quick' as const,
-  }
-  const complete = isQuickFlashcardComplete(draftCard)
+    entryMode: "quick" as const,
+  };
+  const complete = isQuickFlashcardComplete(draftCard);
 
   return {
     ...input,
-    entryMode: 'quick',
+    entryMode: "quick",
     isQuickDraft: !complete,
     imageUrl: hasRealFlashcardImage(input.imageUrl)
       ? input.imageUrl
       : complete
         ? FLASHCARD_NO_IMAGE_PLACEHOLDER
         : QUICK_FLASHCARD_PLACEHOLDER_IMAGE,
-  }
+  };
 }
 
 export function isVerbFormValid(state: FlashcardFormState): boolean {
   if (isVerbsCategory(state.category)) {
     return (
-      !!state.verbV1.trim() &&
-      !!state.verbV2.trim() &&
-      !!state.verbV3.trim()
-    )
+      !!state.verbV1.trim() && !!state.verbV2.trim() && !!state.verbV3.trim()
+    );
   }
   if (isGrammarCategory(state.category)) {
     return (
       !!state.englishWord.trim() &&
       !!plainTextFromFlashcardHtml(state.shortMeaning)
-    )
+    );
   }
-  return !!state.englishWord.trim()
+  return !!state.englishWord.trim();
 }
 
-export { VERBS_CATEGORY }
+export { VERBS_CATEGORY };
