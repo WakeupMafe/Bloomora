@@ -1,22 +1,22 @@
-import { useCallback, useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
-import { FlashcardDeckCard } from '@/features/flashcards/FlashcardDeckCard'
-import { getCategoryTheme } from '@/features/flashcards/flashcardCategoryTheme'
+import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { FlashcardDeckCard } from "@/features/flashcards/FlashcardDeckCard";
+import { getCategoryTheme } from "@/features/flashcards/flashcardCategoryTheme";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
-} from '@/features/flashcards/FlashcardIcons'
-import type { EnglishFlashcard } from '@/types/englishFlashcard'
-import { cn } from '@/utils/cn'
+} from "@/features/flashcards/FlashcardIcons";
+import type { EnglishFlashcard } from "@/types/englishFlashcard";
+import { cn } from "@/utils/cn";
 
-const STACK_LAYERS_MAX = 2
+const STACK_LAYERS_MAX = 2;
 
 type FlashcardDeckReviewProps = {
-  cards: EnglishFlashcard[]
-  packLabel: string
-  category: string | null
-  onClose: () => void
-}
+  cards: EnglishFlashcard[];
+  packLabel: string;
+  category: string | null;
+  onClose: () => void;
+};
 
 export function FlashcardDeckReview({
   cards,
@@ -24,59 +24,59 @@ export function FlashcardDeckReview({
   category,
   onClose,
 }: FlashcardDeckReviewProps) {
-  const [index, setIndex] = useState(0)
-  const [flipped, setFlipped] = useState(false)
-  const theme = getCategoryTheme(category)
-  const card = cards[index]
+  const [index, setIndex] = useState(0);
+  const [flipped, setFlipped] = useState(false);
+  const theme = getCategoryTheme(category);
+  const card = cards[index];
   const stackBehind = Math.min(
     STACK_LAYERS_MAX,
     Math.max(0, cards.length - index - 1),
-  )
+  );
 
   const goPrev = useCallback(() => {
-    setIndex((i) => Math.max(0, i - 1))
-    setFlipped(false)
-  }, [])
+    setIndex((i) => Math.max(0, i - 1));
+    setFlipped(false);
+  }, []);
 
   const goNext = useCallback(() => {
-    setIndex((i) => Math.min(cards.length - 1, i + 1))
-    setFlipped(false)
-  }, [cards.length])
+    setIndex((i) => Math.min(cards.length - 1, i + 1));
+    setFlipped(false);
+  }, [cards.length]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose()
-        return
+      if (e.key === "Escape") {
+        onClose();
+        return;
       }
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault()
-        goPrev()
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        goPrev();
       }
-      if (e.key === 'ArrowRight') {
-        e.preventDefault()
-        goNext()
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        goNext();
       }
-      if (e.key === ' ' || e.key === 'Enter') {
-        const tag = (e.target as HTMLElement)?.tagName
-        if (tag === 'INPUT' || tag === 'TEXTAREA') return
-        e.preventDefault()
-        setFlipped((f) => !f)
+      if (e.key === " " || e.key === "Enter") {
+        const tag = (e.target as HTMLElement)?.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA") return;
+        e.preventDefault();
+        setFlipped((f) => !f);
       }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [goNext, goPrev, onClose])
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [goNext, goPrev, onClose]);
 
   useEffect(() => {
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = prev
-    }
-  }, [])
+      document.body.style.overflow = prev;
+    };
+  }, []);
 
-  if (!card) return null
+  if (!card) return null;
 
   const content = (
     <>
@@ -84,7 +84,7 @@ export function FlashcardDeckReview({
         type="button"
         className="fixed inset-0 border-0 bg-[#2e106b]/35 p-0 backdrop-blur-sm"
         style={{ zIndex: 10_070 }}
-        aria-label="Cerrar repaso"
+        aria-label="Cerrar modo mazo de cartas"
         onClick={onClose}
       />
       <div
@@ -96,8 +96,8 @@ export function FlashcardDeckReview({
       >
         <div className="mb-4 flex w-full max-w-md items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-white/80">
-              Repaso
+            <p className="text-[0.65rem] font-bold tracking-wide text-white/80">
+              Modo mazo de cartas
             </p>
             <h2
               id="flashcard-deck-title"
@@ -121,8 +121,8 @@ export function FlashcardDeckReview({
             onClick={goPrev}
             disabled={index === 0}
             className={cn(
-              'flex size-11 shrink-0 items-center justify-center rounded-full bg-white/95 text-bloomora-violet shadow-lg transition',
-              'hover:scale-105 disabled:pointer-events-none disabled:opacity-35',
+              "flex size-11 shrink-0 items-center justify-center rounded-full bg-white/95 text-bloomora-violet shadow-lg transition",
+              "hover:scale-105 disabled:pointer-events-none disabled:opacity-35",
             )}
             aria-label="Carta anterior"
           >
@@ -131,7 +131,7 @@ export function FlashcardDeckReview({
 
           <div className="relative h-[min(68vh,28rem)] w-full min-w-0 max-w-[18.5rem] flex-1 sm:max-w-[20rem]">
             {Array.from({ length: stackBehind }, (_, i) => {
-              const layer = stackBehind - i
+              const layer = stackBehind - i;
               return (
                 <div
                   key={`stack-${layer}`}
@@ -145,12 +145,12 @@ export function FlashcardDeckReview({
                     zIndex: layer,
                   }}
                 />
-              )
+              );
             })}
 
             <div
               className="absolute inset-0 z-10"
-              style={{ perspective: '1200px' }}
+              style={{ perspective: "1200px" }}
             >
               {card ? (
                 <FlashcardDeckCard
@@ -169,8 +169,8 @@ export function FlashcardDeckReview({
             onClick={goNext}
             disabled={index >= cards.length - 1}
             className={cn(
-              'flex size-11 shrink-0 items-center justify-center rounded-full bg-white/95 text-bloomora-violet shadow-lg transition',
-              'hover:scale-105 disabled:pointer-events-none disabled:opacity-35',
+              "flex size-11 shrink-0 items-center justify-center rounded-full bg-white/95 text-bloomora-violet shadow-lg transition",
+              "hover:scale-105 disabled:pointer-events-none disabled:opacity-35",
             )}
             aria-label="Carta siguiente"
           >
@@ -186,8 +186,8 @@ export function FlashcardDeckReview({
         </p>
       </div>
     </>
-  )
+  );
 
-  if (typeof document === 'undefined') return null
-  return createPortal(content, document.body)
+  if (typeof document === "undefined") return null;
+  return createPortal(content, document.body);
 }

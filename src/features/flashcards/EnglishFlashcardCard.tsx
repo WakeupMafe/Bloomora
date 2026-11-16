@@ -1,11 +1,14 @@
-import { memo, useCallback } from 'react'
-import { FlashcardImageFrame } from '@/features/flashcards/FlashcardImageFrame'
+import { memo, useCallback } from "react";
+import { FlashcardImageFrame } from "@/features/flashcards/FlashcardImageFrame";
 import {
   isGrammarCategory,
   isVerbsCategory,
-} from '@/features/flashcards/flashcardCategories'
-import { getCategoryTheme } from '@/features/flashcards/flashcardCategoryTheme'
-import { isQuickFlashcardComplete, isQuickFlashcardDraft } from '@/features/flashcards/flashcardQuickMode'
+} from "@/features/flashcards/flashcardCategories";
+import { getCategoryTheme } from "@/features/flashcards/flashcardCategoryTheme";
+import {
+  isQuickFlashcardComplete,
+  isQuickFlashcardDraft,
+} from "@/features/flashcards/flashcardQuickMode";
 import {
   HeartFilledIcon,
   HeartOutlineIcon,
@@ -13,27 +16,27 @@ import {
   SparkleIcon,
   SpeakerIcon,
   TrashIcon,
-} from '@/features/flashcards/FlashcardIcons'
-import { FlashcardRichTextContent } from '@/features/flashcards/FlashcardRichTextContent'
-import { VerbFormsDisplay } from '@/features/flashcards/VerbFormsDisplay'
+} from "@/features/flashcards/FlashcardIcons";
+import { FlashcardRichTextContent } from "@/features/flashcards/FlashcardRichTextContent";
+import { VerbFormsDisplay } from "@/features/flashcards/VerbFormsDisplay";
 import {
   primaryEnglishDisplay,
   resolveVerbForms,
-} from '@/features/flashcards/verbFormsCodec'
-import type { EnglishFlashcard } from '@/types/englishFlashcard'
-import { cn } from '@/utils/cn'
+} from "@/features/flashcards/verbFormsCodec";
+import type { EnglishFlashcard } from "@/types/englishFlashcard";
+import { cn } from "@/utils/cn";
 
 type EnglishFlashcardCardProps = {
-  card: EnglishFlashcard
-  isFavorite: boolean
-  onToggleFavorite: () => void
-  onEdit: () => void
-  onDelete: () => void
-}
+  card: EnglishFlashcard;
+  isFavorite: boolean;
+  onToggleFavorite: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+};
 
 function capitalizeWord(w: string): string {
-  if (!w) return w
-  return w.charAt(0).toUpperCase() + w.slice(1)
+  if (!w) return w;
+  return w.charAt(0).toUpperCase() + w.slice(1);
 }
 
 export const EnglishFlashcardCard = memo(function EnglishFlashcardCard({
@@ -43,29 +46,30 @@ export const EnglishFlashcardCard = memo(function EnglishFlashcardCard({
   onEdit,
   onDelete,
 }: EnglishFlashcardCardProps) {
-  const theme = getCategoryTheme(card.category)
+  const theme = getCategoryTheme(card.category);
   const title = capitalizeWord(
     primaryEnglishDisplay(card.englishWord, card.category),
-  )
+  );
   const verbForms =
     isVerbsCategory(card.category) && card.verbForms
       ? card.verbForms
-      : resolveVerbForms(card.englishWord, card.category)
-  const showVerbs = verbForms && (verbForms.v1 || verbForms.v2 || verbForms.v3)
-  const isGrammar = isGrammarCategory(card.category)
-  const grammarExplanation = isGrammar ? card.shortMeaning?.trim() : null
-  const quickPending = isQuickFlashcardDraft(card) && !isQuickFlashcardComplete(card)
+      : resolveVerbForms(card.englishWord, card.category);
+  const showVerbs = verbForms && (verbForms.v1 || verbForms.v2 || verbForms.v3);
+  const isGrammar = isGrammarCategory(card.category);
+  const grammarExplanation = isGrammar ? card.shortMeaning?.trim() : null;
+  const quickPending =
+    isQuickFlashcardDraft(card) && !isQuickFlashcardComplete(card);
 
   const speak = useCallback(() => {
-    const text = primaryEnglishDisplay(card.englishWord, card.category)
-    if (!text || !('speechSynthesis' in window)) return
-    window.speechSynthesis.cancel()
-    const u = new SpeechSynthesisUtterance(text)
-    u.lang = 'en-US'
-    window.speechSynthesis.speak(u)
-  }, [card.category, card.englishWord])
+    const text = primaryEnglishDisplay(card.englishWord, card.category);
+    if (!text || !("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "en-US";
+    window.speechSynthesis.speak(u);
+  }, [card.category, card.englishWord]);
 
-  const exampleBlock = card.exampleEnglish || card.exampleSpanish
+  const exampleBlock = card.exampleEnglish || card.exampleSpanish;
 
   return (
     <article className="flex flex-col rounded-[1.35rem] bg-white shadow-[0_4px_24px_-4px_rgba(91,74,140,0.12)] ring-1 ring-bloomora-line/15 transition hover:shadow-[0_8px_32px_-6px_rgba(91,74,140,0.16)]">
@@ -78,35 +82,31 @@ export const EnglishFlashcardCard = memo(function EnglishFlashcardCard({
           <button
             type="button"
             onClick={(e) => {
-              e.stopPropagation()
-              onToggleFavorite()
+              e.stopPropagation();
+              onToggleFavorite();
             }}
             className={cn(
-              'absolute right-3 top-3 flex size-9 items-center justify-center rounded-full bg-white/95 shadow-md ring-1 ring-black/5 transition hover:scale-105',
-              isFavorite ? 'text-red-500' : 'text-red-400',
+              "absolute right-3 top-3 flex size-9 items-center justify-center rounded-full bg-white/95 shadow-md ring-1 ring-black/5 transition hover:scale-105",
+              isFavorite ? "text-red-500" : "text-red-400",
             )}
-            aria-label={isFavorite ? 'Quitar de favoritos' : 'Marcar favorito'}
+            aria-label={isFavorite ? "Quitar de favoritos" : "Marcar favorito"}
           >
-            {isFavorite ? (
-              <HeartFilledIcon />
-            ) : (
-              <HeartOutlineIcon />
-            )}
+            {isFavorite ? <HeartFilledIcon /> : <HeartOutlineIcon />}
           </button>
         }
       />
 
       <div
         className={cn(
-          'flex flex-1 flex-col px-5 pb-5 pt-4',
-          !isGrammar && 'items-center text-center',
+          "flex flex-1 flex-col px-5 pb-5 pt-4",
+          !isGrammar && "items-center text-center",
         )}
       >
         <span
           className={cn(
-            'inline-flex w-fit rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide',
+            "inline-flex w-fit rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide",
             theme.badgeClass,
-            !isGrammar && 'mx-auto',
+            !isGrammar && "mx-auto",
           )}
         >
           {theme.badge}
@@ -119,9 +119,9 @@ export const EnglishFlashcardCard = memo(function EnglishFlashcardCard({
 
         <h3
           className={cn(
-            'mt-2.5 text-2xl font-bold leading-tight tracking-tight',
+            "mt-2.5 text-2xl font-bold leading-tight tracking-tight",
             theme.accentText,
-            !isGrammar && 'max-w-md',
+            !isGrammar && "max-w-md",
           )}
         >
           {title}
@@ -130,8 +130,8 @@ export const EnglishFlashcardCard = memo(function EnglishFlashcardCard({
         {card.pronunciation ? (
           <div
             className={cn(
-              'mt-1.5 flex flex-wrap items-center gap-2',
-              !isGrammar && 'justify-center',
+              "mt-1.5 flex flex-wrap items-center gap-2",
+              !isGrammar && "justify-center",
             )}
           >
             <span className="text-sm text-bloomora-text-muted">
@@ -140,11 +140,11 @@ export const EnglishFlashcardCard = memo(function EnglishFlashcardCard({
             <button
               type="button"
               onClick={(e) => {
-                e.stopPropagation()
-                speak()
+                e.stopPropagation();
+                speak();
               }}
               className={cn(
-                'inline-flex size-8 items-center justify-center rounded-full transition',
+                "inline-flex size-8 items-center justify-center rounded-full transition",
                 theme.speakerClass,
               )}
               aria-label="Escuchar pronunciación"
@@ -154,16 +154,27 @@ export const EnglishFlashcardCard = memo(function EnglishFlashcardCard({
           </div>
         ) : null}
 
+        {!isGrammar && card.shortMeaning ? (
+          <div className="mt-2 max-w-md">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-bloomora-violet/80">
+              Pista
+            </p>
+            <p className="mt-1 text-sm font-semibold text-bloomora-violet">
+              {card.shortMeaning}
+            </p>
+          </div>
+        ) : null}
+
         <div className="my-3 h-px w-full bg-bloomora-line/40" />
 
         <p
           className={cn(
-            'flex gap-2 text-sm leading-relaxed text-bloomora-text-muted',
-            isGrammar ? 'items-start' : 'max-w-md items-center justify-center',
+            "flex gap-2 text-sm leading-relaxed text-bloomora-text-muted",
+            isGrammar ? "items-start" : "max-w-md items-center justify-center",
           )}
         >
           <SparkleIcon
-            className={cn('shrink-0 text-amber-400', isGrammar && 'mt-0.5')}
+            className={cn("shrink-0 text-amber-400", isGrammar && "mt-0.5")}
           />
           <span>{card.spanishMeaning}</span>
         </p>
@@ -171,7 +182,7 @@ export const EnglishFlashcardCard = memo(function EnglishFlashcardCard({
         {grammarExplanation ? (
           <div
             className={cn(
-              'mt-3 w-full rounded-2xl px-3.5 py-3 text-left ring-1',
+              "mt-3 w-full rounded-2xl px-3.5 py-3 text-left ring-1",
               theme.verbBoxClass,
             )}
           >
@@ -185,23 +196,14 @@ export const EnglishFlashcardCard = memo(function EnglishFlashcardCard({
           </div>
         ) : null}
 
-        {!isGrammar && card.shortMeaning ? (
-          <p className="mt-2 max-w-md text-sm font-semibold text-bloomora-violet">
-            {card.shortMeaning}
-          </p>
-        ) : null}
-
         {exampleBlock ? (
           <div
-            className={cn(
-              'mt-3 w-full space-y-1.5',
-              !isGrammar && 'max-w-md',
-            )}
+            className={cn("mt-3 w-full space-y-1.5", !isGrammar && "max-w-md")}
           >
             {card.exampleEnglish ? (
               <p className="text-xs italic leading-relaxed text-bloomora-text-muted/90 sm:text-sm">
                 <span className="font-semibold not-italic text-bloomora-text-muted/70">
-                  EN:{' '}
+                  EN:{" "}
                 </span>
                 &ldquo;{card.exampleEnglish}&rdquo;
               </p>
@@ -209,7 +211,7 @@ export const EnglishFlashcardCard = memo(function EnglishFlashcardCard({
             {card.exampleSpanish ? (
               <p className="text-xs leading-relaxed text-bloomora-deep/85 sm:text-sm">
                 <span className="font-semibold text-bloomora-violet/80">
-                  ES:{' '}
+                  ES:{" "}
                 </span>
                 {card.exampleSpanish}
               </p>
@@ -228,14 +230,14 @@ export const EnglishFlashcardCard = memo(function EnglishFlashcardCard({
 
         <div
           className={cn(
-            'mt-auto flex w-full items-center gap-3 pt-5',
-            isGrammar ? 'justify-between' : 'justify-center',
+            "mt-auto flex w-full items-center gap-3 pt-5",
+            isGrammar ? "justify-between" : "justify-center",
           )}
         >
           {isGrammar && card.category ? (
             <span
               className={cn(
-                'rounded-full px-3 py-1 text-xs font-semibold ring-1',
+                "rounded-full px-3 py-1 text-xs font-semibold ring-1",
                 theme.footerPillClass,
               )}
             >
@@ -248,7 +250,7 @@ export const EnglishFlashcardCard = memo(function EnglishFlashcardCard({
             {!isGrammar && card.category ? (
               <span
                 className={cn(
-                  'rounded-full px-3 py-1 text-xs font-semibold ring-1',
+                  "rounded-full px-3 py-1 text-xs font-semibold ring-1",
                   theme.footerPillClass,
                 )}
               >
@@ -258,11 +260,11 @@ export const EnglishFlashcardCard = memo(function EnglishFlashcardCard({
             <button
               type="button"
               onClick={(e) => {
-                e.stopPropagation()
-                onEdit()
+                e.stopPropagation();
+                onEdit();
               }}
               className={cn(
-                'flex size-9 items-center justify-center rounded-full transition hover:scale-105',
+                "flex size-9 items-center justify-center rounded-full transition hover:scale-105",
                 theme.editBtnClass,
               )}
               aria-label="Editar"
@@ -272,8 +274,8 @@ export const EnglishFlashcardCard = memo(function EnglishFlashcardCard({
             <button
               type="button"
               onClick={(e) => {
-                e.stopPropagation()
-                onDelete()
+                e.stopPropagation();
+                onDelete();
               }}
               className="flex size-9 items-center justify-center rounded-full bg-[#fce7f3] text-red-500 transition hover:scale-105 hover:bg-[#fbcfe8]/90"
               aria-label="Eliminar"
@@ -284,5 +286,5 @@ export const EnglishFlashcardCard = memo(function EnglishFlashcardCard({
         </div>
       </div>
     </article>
-  )
-})
+  );
+});

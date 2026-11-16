@@ -1,31 +1,31 @@
-import { memo } from 'react'
-import { BloomoraImage } from '@/components/ui/BloomoraImage'
-import { EnglishFlashcardCard } from '@/features/flashcards/EnglishFlashcardCard'
-import { getCategoryTheme } from '@/features/flashcards/flashcardCategoryTheme'
-import { ChevronDownIcon } from '@/features/flashcards/FlashcardIcons'
-import { FLASHCARD_NO_IMAGE_SURFACE } from '@/features/flashcards/FlashcardImageFrame'
-import { hasRealFlashcardImage } from '@/features/flashcards/flashcardQuickMode'
-import type { CategoryPack } from '@/features/flashcards/groupFlashcardsByCategory'
-import { primaryEnglishDisplay } from '@/features/flashcards/verbFormsCodec'
-import type { EnglishFlashcard } from '@/types/englishFlashcard'
-import { cn } from '@/utils/cn'
+import { memo } from "react";
+import { BloomoraImage } from "@/components/ui/BloomoraImage";
+import { EnglishFlashcardCard } from "@/features/flashcards/EnglishFlashcardCard";
+import { getCategoryTheme } from "@/features/flashcards/flashcardCategoryTheme";
+import { ChevronDownIcon } from "@/features/flashcards/FlashcardIcons";
+import { FLASHCARD_NO_IMAGE_SURFACE } from "@/features/flashcards/FlashcardImageFrame";
+import { hasRealFlashcardImage } from "@/features/flashcards/flashcardQuickMode";
+import type { CategoryPack } from "@/features/flashcards/groupFlashcardsByCategory";
+import { primaryEnglishDisplay } from "@/features/flashcards/verbFormsCodec";
+import type { EnglishFlashcard } from "@/types/englishFlashcard";
+import { cn } from "@/utils/cn";
 
-const PREVIEW_IMAGES_MAX = 2
+const PREVIEW_IMAGES_MAX = 2;
 
 type FlashcardCategoryPackProps = {
-  pack: CategoryPack
-  expanded: boolean
-  onToggle: () => void
-  onStartReview: () => void
-  favorites: Set<string>
-  onToggleFavorite: (id: string) => void
-  onEdit: (card: EnglishFlashcard) => void
-  onDelete: (card: EnglishFlashcard) => void
-}
+  pack: CategoryPack;
+  expanded: boolean;
+  onToggle: () => void;
+  onStartReview: () => void;
+  favorites: Set<string>;
+  onToggleFavorite: (id: string) => void;
+  onEdit: (card: EnglishFlashcard) => void;
+  onDelete: (card: EnglishFlashcard) => void;
+};
 
 function wordCountLabel(n: number): string {
-  if (n === 1) return '1 palabra'
-  return `${n} palabras`
+  if (n === 1) return "1 palabra";
+  return `${n} palabras`;
 }
 
 export const FlashcardCategoryPack = memo(function FlashcardCategoryPack({
@@ -38,19 +38,19 @@ export const FlashcardCategoryPack = memo(function FlashcardCategoryPack({
   onEdit,
   onDelete,
 }: FlashcardCategoryPackProps) {
-  const theme = getCategoryTheme(pack.category)
-  const previews = pack.cards.slice(0, PREVIEW_IMAGES_MAX)
+  const theme = getCategoryTheme(pack.category);
+  const previews = pack.cards.slice(0, PREVIEW_IMAGES_MAX);
   const previewWords = pack.cards
     .slice(0, 4)
     .map((c) => primaryEnglishDisplay(c.englishWord, c.category))
-    .join(', ')
+    .join(", ");
 
   return (
     <li className="min-w-0 list-none">
       <article
         className={cn(
-          'overflow-hidden rounded-[1.35rem] bg-white shadow-[0_4px_24px_-4px_rgba(91,74,140,0.12)] ring-1 ring-bloomora-line/15 transition-shadow',
-          expanded && 'shadow-[0_8px_32px_-6px_rgba(91,74,140,0.16)]',
+          "overflow-hidden rounded-[1.35rem] bg-white shadow-[0_4px_24px_-4px_rgba(91,74,140,0.12)] ring-1 ring-bloomora-line/15 transition-shadow",
+          expanded && "shadow-[0_8px_32px_-6px_rgba(91,74,140,0.16)]",
         )}
       >
         <button
@@ -65,9 +65,9 @@ export const FlashcardCategoryPack = memo(function FlashcardCategoryPack({
                 <div
                   key={card.id}
                   className={cn(
-                    'relative flex size-14 items-center justify-center overflow-hidden rounded-xl ring-2 ring-white sm:size-16',
+                    "relative flex size-14 items-center justify-center overflow-hidden rounded-xl ring-2 ring-white sm:size-16",
                     hasRealFlashcardImage(card.imageUrl)
-                      ? 'bg-bloomora-lavender-50/90'
+                      ? "bg-bloomora-lavender-50/90"
                       : FLASHCARD_NO_IMAGE_SURFACE,
                   )}
                   style={{ zIndex: PREVIEW_IMAGES_MAX - i }}
@@ -88,7 +88,7 @@ export const FlashcardCategoryPack = memo(function FlashcardCategoryPack({
           <div className="min-w-0 flex-1">
             <span
               className={cn(
-                'inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide',
+                "inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide",
                 theme.badgeClass,
               )}
             >
@@ -96,7 +96,7 @@ export const FlashcardCategoryPack = memo(function FlashcardCategoryPack({
             </span>
             <h2
               className={cn(
-                'mt-1.5 text-xl font-bold tracking-tight sm:text-2xl',
+                "mt-1.5 text-xl font-bold tracking-tight sm:text-2xl",
                 theme.accentText,
               )}
             >
@@ -108,28 +108,28 @@ export const FlashcardCategoryPack = memo(function FlashcardCategoryPack({
             <button
               type="button"
               onClick={(e) => {
-                e.stopPropagation()
-                onStartReview()
+                e.stopPropagation();
+                onStartReview();
               }}
               className={cn(
-                'mt-2.5 inline-flex items-center rounded-full px-4 py-1.5 text-xs font-bold ring-1 transition hover:brightness-[1.02] active:scale-[0.99]',
+                "mt-2.5 inline-flex items-center whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-bold ring-1 transition hover:brightness-[1.02] active:scale-[0.99]",
                 theme.footerPillClass,
               )}
             >
-              Repasar…
+              Modo mazo de cartas
             </button>
             {!expanded && previewWords ? (
               <p className="mt-1.5 line-clamp-1 text-xs text-bloomora-text-muted/90">
                 {previewWords}
-                {pack.cards.length > 4 ? '…' : ''}
+                {pack.cards.length > 4 ? "…" : ""}
               </p>
             ) : null}
           </div>
 
           <ChevronDownIcon
             className={cn(
-              'size-5 shrink-0 text-bloomora-violet transition-transform duration-300',
-              expanded && 'rotate-180',
+              "size-5 shrink-0 text-bloomora-violet transition-transform duration-300",
+              expanded && "rotate-180",
             )}
           />
         </button>
@@ -138,7 +138,10 @@ export const FlashcardCategoryPack = memo(function FlashcardCategoryPack({
           <div className="border-t border-bloomora-line/25 bg-[#faf8ff]/50 px-4 pb-5 pt-4 sm:px-5">
             <ul className="flashcard-pack-grid grid list-none items-start gap-6 p-0 lg:grid-cols-2">
               {pack.cards.map((card) => (
-                <li key={card.id} className="flashcard-pack-grid__item min-w-0 w-full">
+                <li
+                  key={card.id}
+                  className="flashcard-pack-grid__item min-w-0 w-full"
+                >
                   <EnglishFlashcardCard
                     card={card}
                     isFavorite={favorites.has(card.id)}
@@ -153,5 +156,5 @@ export const FlashcardCategoryPack = memo(function FlashcardCategoryPack({
         ) : null}
       </article>
     </li>
-  )
-})
+  );
+});
