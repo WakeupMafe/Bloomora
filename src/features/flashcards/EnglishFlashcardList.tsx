@@ -141,7 +141,7 @@ export function EnglishFlashcardList({
         <section className="rounded-[1.25rem] bg-white p-4 shadow-[0_8px_28px_-16px_rgba(62,44,65,0.16)] ring-1 ring-[#F0E4E8]">
           <h2
             className="text-base font-semibold tracking-tight text-[#3E2C41]"
-            style={{ fontFamily: "Fraunces, Georgia, serif" }}
+            style={{ fontFamily: "Poppins, sans-serif" }}
           >
             Repaso
           </h2>
@@ -191,7 +191,7 @@ export function EnglishFlashcardList({
         <div className="rounded-[1.25rem] bg-white px-6 py-12 text-center shadow-[0_8px_28px_-16px_rgba(62,44,65,0.12)] ring-1 ring-[#F0E4E8]">
           <p
             className="text-base font-semibold text-[#3E2C41]"
-            style={{ fontFamily: "Fraunces, Georgia, serif" }}
+            style={{ fontFamily: "Poppins, sans-serif" }}
           >
             {cards.length === 0
               ? "Aún no tienes flashcards"
