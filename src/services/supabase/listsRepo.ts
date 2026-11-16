@@ -5,6 +5,7 @@ export type ListRow = {
   user_cedula: string
   title: string
   sort_order: number
+  postit_palette: string | null
   created_at: string
   updated_at: string
 }
@@ -53,6 +54,18 @@ export async function updateListTitle(
   const { error } = await sb
     .from('lists')
     .update({ title: title.trim() })
+    .eq('id', listId)
+  if (error) throw error
+}
+
+export async function updateListPostitPalette(
+  sb: SupabaseClient,
+  listId: number,
+  palette: string,
+) {
+  const { error } = await sb
+    .from('lists')
+    .update({ postit_palette: palette })
     .eq('id', listId)
   if (error) throw error
 }

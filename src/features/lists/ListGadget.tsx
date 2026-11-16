@@ -12,6 +12,7 @@ import {
   useBloomoraListItems,
   useListItemsMutations,
 } from '@/hooks/useBloomoraListItems'
+import { useUpdateListPostitPaletteMutation } from '@/hooks/useBloomoraLists'
 import { cn } from '@/utils/cn'
 
 type DragPosition = { x: number; y: number }
@@ -90,6 +91,15 @@ function readStoredPalette(
   return PALETTE_ORDER[fallbackIndex % PALETTE_ORDER.length]!
 }
 
+function resolvePalette(
+  listId: string,
+  stackIndex: number,
+  saved: PostitPaletteId | null,
+): PostitPaletteId {
+  if (saved && saved in POSTIT_PALETTES) return saved
+  return readStoredPalette(listId, stackIndex)
+}
+
 function useDraggablePostit(initialOffset: number) {
   const [position, setPosition] = useState<DragPosition>(() => ({
     x:
@@ -161,6 +171,7 @@ type ListGadgetProps = {
   listId: string
   title: string
   stackIndex: number
+  postitPalette: PostitPaletteId | null
   onClose: () => void
 }
 
@@ -168,6 +179,7 @@ export function ListGadget({
   listId,
   title,
   stackIndex,
+  postitPalette,
   onClose,
 }: ListGadgetProps) {
   const { cedula } = useUserPhone()
@@ -176,9 +188,10 @@ export function ListGadget({
     cedula,
     listId,
   )
+  const updatePostitPalette = useUpdateListPostitPaletteMutation(cedula)
   const [draft, setDraft] = useState('')
   const [paletteId, setPaletteId] = useState<PostitPaletteId>(() =>
-    readStoredPalette(listId, stackIndex),
+    resolvePalette(listId, stackIndex, postitPalette),
   )
   const [colorPickerOpen, setColorPickerOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -189,6 +202,7 @@ export function ListGadget({
   const selectPalette = (id: PostitPaletteId) => {
     setPaletteId(id)
     window.localStorage.setItem(colorStorageKey(listId), id)
+    updatePostitPalette.mutate({ listId, palette: id })
     setColorPickerOpen(false)
   }
 

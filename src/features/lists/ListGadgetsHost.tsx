@@ -25,6 +25,7 @@ export function ListGadgetsHost() {
           listId={list.id}
           title={list.title}
           stackIndex={index}
+          postitPalette={list.postitPalette}
           onClose={() => closeListGadget(list.id)}
         />
       ))}

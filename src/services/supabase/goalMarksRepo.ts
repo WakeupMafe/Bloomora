@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { canMarkGoalDay } from '@/features/goals/goalTrackerUtils'
 
 export type GoalDayMarkRow = {
   goal_id: number
@@ -78,6 +79,15 @@ export async function toggleGoalDayMark(
 
   const markedDate = toMarkedDate(yearMonth, day)
   if (!markedDate) throw new Error('Fecha inválida para el día marcado.')
+  if (
+    !canMarkGoalDay(
+      markedDate.getFullYear(),
+      markedDate.getMonth(),
+      markedDate.getDate(),
+    )
+  ) {
+    throw new Error('Solo puedes marcar hoy o ayer.')
+  }
   const minAllowed = toStartDate(goalRow.start_date, goalRow.created_at)
   if (markedDate < minAllowed) {
     throw new Error('No puedes marcar días anteriores a la fecha de creación de la meta.')
@@ -131,6 +141,15 @@ export async function ensureGoalDayMark(
   if (selErr) throw selErr
 
   if (!existing) {
+    if (
+      !canMarkGoalDay(
+        markedDate.getFullYear(),
+        markedDate.getMonth(),
+        markedDate.getDate(),
+      )
+    ) {
+      throw new Error('Solo puedes marcar hoy o ayer.')
+    }
     const { error: insErr } = await sb.from('goal_day_marks').insert({
       goal_id: goalId,
       user_cedula: userCedula,

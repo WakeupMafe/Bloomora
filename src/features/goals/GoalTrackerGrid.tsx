@@ -1,7 +1,12 @@
 import type { MockGoalRow } from '@/data/dashboardMock'
 import { cn } from '@/utils/cn'
 import { MonthNavPill } from '@/features/goals/MonthNavPill'
-import { daysInMonth, monthLabelEs, monthWeekRows } from '@/features/goals/goalTrackerUtils'
+import {
+  canMarkGoalDay,
+  daysInMonth,
+  monthLabelEs,
+  monthWeekRows,
+} from '@/features/goals/goalTrackerUtils'
 import {
   getCompletedCellStyle,
   getTrackerSwatch,
@@ -55,8 +60,9 @@ function isFutureDay(
   day: number,
   ref: Date,
 ) {
-  const end = new Date(year, monthIndex0, day, 23, 59, 59, 999)
-  return end > ref
+  const cell = new Date(year, monthIndex0, day)
+  const today = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate())
+  return cell > today
 }
 
 export function GoalTrackerGrid({
@@ -153,13 +159,16 @@ export function GoalTrackerGrid({
             const complete = done.has(day)
             const today = isToday(year, monthIndex0, day, now)
             const future = isFutureDay(year, monthIndex0, day, now)
+            const markable = canMarkGoalDay(year, monthIndex0, day, now)
             const beforeGoalStart = isBeforeMinAllowedDate(
               year,
               monthIndex0,
               day,
               minAllowedDate,
             )
-            const interactive = !readOnly && !!onToggleDay && (!beforeGoalStart || complete)
+            const locked = future || !markable || beforeGoalStart
+            const interactive =
+              !readOnly && !!onToggleDay && markable && !beforeGoalStart
 
             return (
               <button
@@ -168,7 +177,7 @@ export function GoalTrackerGrid({
                 disabled={!interactive}
                 data-complete={complete ? 'true' : 'false'}
                 data-today={today ? 'true' : 'false'}
-                data-locked={beforeGoalStart && !complete ? 'true' : 'false'}
+                data-locked={locked && !complete ? 'true' : 'false'}
                 data-future={future ? 'true' : 'false'}
                 onClick={() => onToggleDay?.(day)}
                 style={complete ? getCompletedCellStyle(swatch) : undefined}
@@ -181,11 +190,8 @@ export function GoalTrackerGrid({
                   !complete &&
                     cn(
                       'bg-[color:var(--bloomora-day-bg)] text-[color:var(--bloomora-day-fg)] shadow-[inset_0_0_0_1px_var(--bloomora-day-border)]',
-                      beforeGoalStart &&
+                      locked &&
                         'border border-dashed border-[color:var(--bloomora-border)] bg-transparent text-[color:var(--bloomora-day-locked-fg)] shadow-none',
-                      future &&
-                        !beforeGoalStart &&
-                        'bg-transparent text-[color:var(--bloomora-text-muted)] shadow-[inset_0_0_0_1px_var(--bloomora-day-border)]',
                       interactive &&
                         'hover:scale-105 hover:brightness-110 hover:shadow-md active:scale-95',
                     ),

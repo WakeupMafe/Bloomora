@@ -5,10 +5,26 @@ import {
   insertList,
   listItemStatsByListIds,
   listLists,
+  updateListPostitPalette,
   type ListRow,
 } from '@/services/supabase/listsRepo'
 import { requireExistingProfileByCedula } from '@/services/supabase/profilesRepo'
 import { requireSupabase } from '@/services/supabase/typedClient'
+
+const POSTIT_PALETTES = new Set([
+  'sky',
+  'lavender',
+  'blush',
+  'mint',
+  'amber',
+])
+
+type PostitPalette = NonNullable<DashboardList['postitPalette']>
+
+function parsePostitPalette(value: string | null): DashboardList['postitPalette'] {
+  if (value && POSTIT_PALETTES.has(value)) return value as PostitPalette
+  return null
+}
 
 function rowToDashboardList(
   r: ListRow,
@@ -20,6 +36,7 @@ function rowToDashboardList(
     doneCount: stats?.done ?? 0,
     totalCount: stats?.total ?? 0,
     updatedAt: r.updated_at ?? null,
+    postitPalette: parsePostitPalette(r.postit_palette),
   }
 }
 
@@ -64,6 +81,40 @@ export function useDuplicateListMutation(cedula: string | null) {
         Number(vars.listId),
         vars.title,
       )
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['lists', cedula] })
+    },
+  })
+}
+
+export function useUpdateListPostitPaletteMutation(cedula: string | null) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (vars: { listId: string; palette: PostitPalette }) => {
+      if (!cedula) throw new Error('Sin sesión')
+      await updateListPostitPalette(
+        requireSupabase(),
+        Number(vars.listId),
+        vars.palette,
+      )
+    },
+    onMutate: async (vars) => {
+      await qc.cancelQueries({ queryKey: ['lists', cedula] })
+      const previous = qc.getQueryData<DashboardList[]>(['lists', cedula])
+      qc.setQueryData<DashboardList[]>(['lists', cedula], (old) =>
+        (old ?? []).map((list) =>
+          list.id === vars.listId
+            ? { ...list, postitPalette: vars.palette }
+            : list,
+        ),
+      )
+      return { previous }
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) {
+        qc.setQueryData(['lists', cedula], ctx.previous)
+      }
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['lists', cedula] })

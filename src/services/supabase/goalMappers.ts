@@ -29,6 +29,17 @@ function uiAccent(row: GoalDbRow): MockGoalRow['accent'] {
   return 'lavender'
 }
 
+/** YYYY-MM-DD en calendario local (igual que toStartDate), nunca UTC de ISO. */
+function localYmdFromTimestamp(iso: string | null | undefined): string | null {
+  if (!iso) return null
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return null
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 export function dbGoalToUi(
   row: GoalDbRow,
   completedDaysByMonth: Record<string, number[]>,
@@ -85,7 +96,7 @@ export function dbGoalToUi(
     categoria,
     prioridad,
     estado,
-    fecha_inicio: row.start_date ?? row.created_at?.slice(0, 10) ?? null,
+    fecha_inicio: row.start_date ?? localYmdFromTimestamp(row.created_at) ?? null,
     fecha_fin: row.end_date ?? null,
     label: row.progress_label ?? undefined,
     accent: uiAccent(row),

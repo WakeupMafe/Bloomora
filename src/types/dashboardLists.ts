@@ -4,4 +4,5 @@ export type DashboardList = {
   doneCount: number
   totalCount: number
   updatedAt: string | null
+  postitPalette: 'sky' | 'lavender' | 'blush' | 'mint' | 'amber' | null
 }

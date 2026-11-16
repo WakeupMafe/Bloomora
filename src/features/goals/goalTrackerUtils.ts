@@ -104,6 +104,21 @@ function toDateKey(d: Date): string {
   return `${y}-${m}-${day}`
 }
 
+/** Solo hoy o ayer (calendario local del dispositivo). */
+export function canMarkGoalDay(
+  year: number,
+  monthIndex0: number,
+  day: number,
+  ref: Date = new Date(),
+): boolean {
+  const targetKey = toDateKey(new Date(year, monthIndex0, day))
+  const todayKey = toDateKey(ref)
+  if (targetKey === todayKey) return true
+  const yesterday = new Date(ref)
+  yesterday.setDate(ref.getDate() - 1)
+  return targetKey === toDateKey(yesterday)
+}
+
 function parseMonthKey(month: string): { year: number; monthIndex0: number } | null {
   const m = /^(\d{4})-(\d{2})$/.exec(month)
   if (!m) return null
@@ -166,6 +181,9 @@ export function buildGoalProgressInsights(
 
   let diasConsecutivos = 0
   const walk = new Date(referenceDate)
+  if (!dateKeys.has(toDateKey(walk))) {
+    walk.setDate(walk.getDate() - 1)
+  }
   while (dateKeys.has(toDateKey(walk))) {
     diasConsecutivos++
     walk.setDate(walk.getDate() - 1)
