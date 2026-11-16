@@ -146,6 +146,52 @@ type View =
   | { kind: 'run' }
   | { kind: 'done' }
 
+type DurationUnit = 's' | 'min'
+
+type DurationField =
+  | 'preparacion'
+  | 'trabajo'
+  | 'descanso'
+  | 'descanso_series'
+  | 'enfriamiento'
+
+type DurationUnits = Record<DurationField, DurationUnit>
+
+const TABATA_DURATION_UNITS_KEY = 'bloomora:tabata-duration-units'
+const MAX_DURATION_SEC = 3600
+const DEFAULT_DURATION_UNITS: DurationUnits = {
+  preparacion: 's',
+  trabajo: 's',
+  descanso: 's',
+  descanso_series: 's',
+  enfriamiento: 's',
+}
+
+function readDurationUnits(): DurationUnits {
+  try {
+    const raw = localStorage.getItem(TABATA_DURATION_UNITS_KEY)
+    if (!raw) return { ...DEFAULT_DURATION_UNITS }
+    const parsed = JSON.parse(raw) as Partial<Record<DurationField, unknown>>
+    const pick = (key: DurationField): DurationUnit =>
+      parsed[key] === 'min' ? 'min' : 's'
+    return {
+      preparacion: pick('preparacion'),
+      trabajo: pick('trabajo'),
+      descanso: pick('descanso'),
+      descanso_series: pick('descanso_series'),
+      enfriamiento: pick('enfriamiento'),
+    }
+  } catch {
+    return { ...DEFAULT_DURATION_UNITS }
+  }
+}
+
+function formatDurationDisplay(valueSec: number, unit: DurationUnit): string {
+  if (unit === 's') return String(valueSec)
+  const mins = valueSec / 60
+  return Number.isInteger(mins) ? String(mins) : mins.toFixed(1)
+}
+
 type TabataPanelProps = {
   timer: TabataTimerController
   embedded?: boolean
@@ -162,6 +208,8 @@ function StepperRow({
   min = 0,
   step = 5,
   accent,
+  unit,
+  onUnitChange,
 }: {
   label: string
   value: number
@@ -169,7 +217,16 @@ function StepperRow({
   min?: number
   step?: number
   accent?: string
+  unit: DurationUnit
+  onUnitChange: (unit: DurationUnit) => void
 }) {
+  const emit = (next: number) => {
+    onChange(Math.min(MAX_DURATION_SEC, Math.max(min, Math.round(next))))
+  }
+
+  const delta = unit === 'min' ? 30 : step
+  const display = formatDurationDisplay(value, unit)
+
   return (
     <div
       className={cn(
@@ -185,21 +242,40 @@ function StepperRow({
           type="button"
           className="inline-flex size-11 items-center justify-center rounded-full bg-bloomora-mist text-lg font-bold text-bloomora-violet transition hover:bg-[color:var(--bloomora-surface-3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloomora-lilac"
           aria-label={`Disminuir ${label}`}
-          onClick={() => onChange(Math.max(min, value - step))}
+          onClick={() => emit(value - delta)}
         >
           −
         </button>
         <span className="min-w-[3.25rem] text-center text-base font-bold tabular-nums text-bloomora-deep">
-          {value}
-          <span className="ml-0.5 text-xs font-semibold text-bloomora-text-muted">
-            s
-          </span>
+          {display}
         </span>
+        <div
+          role="group"
+          aria-label={`Unidad de ${label}`}
+          className="inline-flex rounded-full bg-[color:var(--bloomora-surface-2)] p-0.5 ring-1 ring-[color:var(--bloomora-border)]"
+        >
+          {(['s', 'min'] as const).map((u) => (
+            <button
+              key={u}
+              type="button"
+              aria-pressed={unit === u}
+              className={cn(
+                'rounded-full px-1.5 py-0.5 text-[0.65rem] font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloomora-lilac',
+                unit === u
+                  ? 'bg-[color:var(--bloomora-accent-bg)] text-[color:var(--bloomora-accent-on)]'
+                  : 'text-bloomora-violet hover:bg-[color:var(--bloomora-surface-3)]',
+              )}
+              onClick={() => onUnitChange(u)}
+            >
+              {u === 's' ? 'seg' : 'min'}
+            </button>
+          ))}
+        </div>
         <button
           type="button"
           className="inline-flex size-11 items-center justify-center rounded-full bg-bloomora-mist text-lg font-bold text-bloomora-violet transition hover:bg-[color:var(--bloomora-surface-3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloomora-lilac"
           aria-label={`Aumentar ${label}`}
-          onClick={() => onChange(value + step)}
+          onClick={() => emit(value + delta)}
         >
           +
         </button>
@@ -291,21 +367,20 @@ function PhaseRing({
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="currentColor"
+          stroke="var(--bloomora-border)"
           strokeWidth={stroke}
-          className="text-bloomora-lavender-50"
         />
         <circle
           cx={size / 2}
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="currentColor"
+          stroke={tone.accent}
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={offset}
-          className={cn(tone.ring, !prefersReduced && 'transition-[stroke-dashoffset] duration-200')}
+          className={cn(!prefersReduced && 'transition-[stroke-dashoffset] duration-200')}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
@@ -359,6 +434,19 @@ export function TabataPanel({
 
   const [nombre, setNombre] = useState('')
   const [config, setConfig] = useState<TabataConfig>(defaults)
+  const [durationUnits, setDurationUnits] = useState<DurationUnits>(readDurationUnits)
+
+  const setDurationUnit = (field: DurationField, unit: DurationUnit) => {
+    setDurationUnits((prev) => {
+      const next = { ...prev, [field]: unit }
+      try {
+        localStorage.setItem(TABATA_DURATION_UNITS_KEY, JSON.stringify(next))
+      } catch {
+        /* ignorar */
+      }
+      return next
+    })
+  }
 
   useEffect(() => {
     if (timer.status === 'finished') setView({ kind: 'done' })
@@ -503,6 +591,18 @@ export function TabataPanel({
   const remainingSec = Math.max(0, Math.ceil(timer.remainingMs / 1000))
   const phaseKind = timer.currentPhase?.kind ?? 'preparacion'
   const tone = phaseTone(phaseKind)
+  const [runWide, setRunWide] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const sync = () => setRunWide(mq.matches)
+    sync()
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  }, [])
+  const upcomingPhases = timer.phases.slice(
+    timer.phaseIndex + 1,
+    timer.phaseIndex + 4,
+  )
 
   return (
     <div
@@ -583,7 +683,12 @@ export function TabataPanel({
         </div>
       ) : null}
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+      <div
+        className={cn(
+          'min-h-0 flex-1 overflow-y-auto',
+          view.kind === 'run' ? 'p-3 lg:p-4' : 'px-3 py-3',
+        )}
+      >
         {view.kind === 'list' ? (
           <div className="flex min-h-full flex-col gap-3">
             {!showChrome ? (
@@ -747,6 +852,8 @@ export function TabataPanel({
               value={config.preparacion}
               onChange={(preparacion) => setConfig((c) => ({ ...c, preparacion }))}
               accent="bg-[color:var(--bloomora-surface-2)]"
+              unit={durationUnits.preparacion}
+              onUnitChange={(unit) => setDurationUnit('preparacion', unit)}
             />
             <StepperRow
               label="Trabajo"
@@ -754,12 +861,16 @@ export function TabataPanel({
               min={1}
               onChange={(trabajo) => setConfig((c) => ({ ...c, trabajo }))}
               accent="bg-bloomora-blush/70"
+              unit={durationUnits.trabajo}
+              onUnitChange={(unit) => setDurationUnit('trabajo', unit)}
             />
             <StepperRow
               label="Descanso"
               value={config.descanso}
               onChange={(descanso) => setConfig((c) => ({ ...c, descanso }))}
               accent="bg-emerald-50/80"
+              unit={durationUnits.descanso}
+              onUnitChange={(unit) => setDurationUnit('descanso', unit)}
             />
             <CountStepper
               label="Intervalos"
@@ -781,6 +892,8 @@ export function TabataPanel({
                 setConfig((c) => ({ ...c, descanso_series }))
               }
               accent="bg-bloomora-lavender-100/70"
+              unit={durationUnits.descanso_series}
+              onUnitChange={(unit) => setDurationUnit('descanso_series', unit)}
             />
             <div className="rounded-[18px] ring-1 ring-[color:var(--bloomora-border)]">
               <div className="flex min-h-11 items-center justify-between gap-3 px-3 py-1.5">
@@ -831,6 +944,8 @@ export function TabataPanel({
                         enfriamiento: Math.max(5, enfriamiento),
                       }))
                     }
+                    unit={durationUnits.enfriamiento}
+                    onUnitChange={(unit) => setDurationUnit('enfriamiento', unit)}
                   />
                 </div>
               ) : null}
@@ -915,111 +1030,155 @@ export function TabataPanel({
         ) : null}
 
         {view.kind === 'run' && timer.currentPhase ? (
-          <div className="flex flex-col items-center gap-3">
-            <span
-              className={cn(
-                'inline-flex min-h-9 items-center rounded-pill px-3.5 text-xs font-bold tracking-wide ring-1',
-                tone.chip,
-              )}
-              aria-live="polite"
-            >
-              {timer.currentPhase.label}
-            </span>
-
-            <PhaseRing
-              progress={timer.phaseProgress}
-              remainingSec={remainingSec}
-              kind={phaseKind}
-              size={embedded ? 232 : 188}
-            />
-
-            {timer.currentPhase.intervalo > 0 ? (
-              <p className="text-center text-sm font-semibold text-bloomora-violet">
-                Intervalo {timer.currentPhase.intervalo} de{' '}
-                {timer.active?.intervalos ?? '—'} · Serie{' '}
-                {timer.currentPhase.serie} de {timer.active?.series ?? '—'}
-              </p>
-            ) : (
-              <p className="text-center text-sm font-semibold text-bloomora-violet">
-                {timer.currentPhase.kind === 'preparacion'
-                  ? 'Prepárate'
-                  : timer.currentPhase.kind === 'descanso_series'
-                    ? `Entre serie ${timer.currentPhase.serie} y ${(timer.currentPhase.serie || 0) + 1}`
-                    : 'Enfriamiento'}
-              </p>
-            )}
-
-            {timer.nextPhase && timer.nextPhase.kind !== 'fin' ? (
-              <p className="rounded-pill bg-bloomora-mist px-3 py-1.5 text-xs font-semibold text-bloomora-violet">
-                Siguiente: {timer.nextPhase.label}{' '}
-                {formatMmSs(timer.nextPhase.durationSec)}
-              </p>
-            ) : null}
-
-            <div className="mt-1 flex items-end justify-center gap-3">
-              <button
-                type="button"
-                className="inline-flex size-14 flex-col items-center justify-center rounded-full bg-bloomora-mist text-[0.65rem] font-bold text-bloomora-violet ring-1 ring-[color:var(--bloomora-border)]"
-                onClick={() => {
-                  timer.stop()
-                  setView({ kind: 'list' })
+          <div className="flex min-h-full flex-col gap-6 rounded-[28px] bg-[color:var(--bloomora-surface-1)] p-6 lg:grid lg:grid-cols-2 lg:items-stretch lg:gap-8 lg:p-7 xl:p-8">
+            <div className="flex flex-col items-center gap-4">
+              <span
+                className="inline-flex min-h-9 items-center rounded-pill px-3.5 text-xs font-bold tracking-wide"
+                style={{
+                  color: tone.accent,
+                  backgroundColor: `color-mix(in srgb, ${tone.accent} 22%, var(--bloomora-surface-1))`,
+                  boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${tone.accent} 40%, transparent)`,
                 }}
+                aria-live="polite"
               >
-                <span className="text-lg" aria-hidden>
-                  ■
-                </span>
-                Detener
-              </button>
-              <button
-                type="button"
-                className="inline-flex size-[72px] items-center justify-center rounded-full bg-[color:var(--bloomora-accent-bg)] text-2xl font-bold text-[color:var(--bloomora-accent-on)] shadow-[0_8px_20px_rgba(232,155,184,0.4)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloomora-lilac"
-                aria-label={
-                  timer.status === 'running' ? 'Pausar' : 'Reanudar'
-                }
-                onClick={() => {
-                  if (timer.status === 'running') timer.pause()
-                  else void timer.resume()
-                }}
-              >
-                {timer.status === 'running' ? 'Ⅱ' : '▶'}
-              </button>
-              <button
-                type="button"
-                className="inline-flex size-14 flex-col items-center justify-center rounded-full bg-bloomora-mist text-[0.65rem] font-bold text-bloomora-violet ring-1 ring-[color:var(--bloomora-border)]"
-                onClick={() => timer.skip()}
-              >
-                <span className="text-lg" aria-hidden>
-                  ⏭
-                </span>
-                Saltar
-              </button>
+                {timer.currentPhase.label}
+              </span>
+
+              <PhaseRing
+                progress={timer.phaseProgress}
+                remainingSec={remainingSec}
+                kind={phaseKind}
+                size={runWide ? 360 : embedded ? 232 : 188}
+              />
+
+              <div className="flex items-end justify-center gap-3">
+                <button
+                  type="button"
+                  className="inline-flex size-14 flex-col items-center justify-center rounded-full bg-bloomora-mist text-[0.65rem] font-bold text-bloomora-violet ring-1 ring-[color:var(--bloomora-border)]"
+                  onClick={() => {
+                    timer.stop()
+                    setView({ kind: 'list' })
+                  }}
+                >
+                  <span className="text-lg" aria-hidden>
+                    ■
+                  </span>
+                  Detener
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex size-[72px] items-center justify-center rounded-full text-2xl font-bold text-white shadow-[0_8px_20px_rgba(0,0,0,0.12)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bloomora-lilac"
+                  style={{ backgroundColor: tone.accent }}
+                  aria-label={
+                    timer.status === 'running' ? 'Pausar' : 'Reanudar'
+                  }
+                  onClick={() => {
+                    if (timer.status === 'running') timer.pause()
+                    else void timer.resume()
+                  }}
+                >
+                  {timer.status === 'running' ? 'Ⅱ' : '▶'}
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex size-14 flex-col items-center justify-center rounded-full bg-bloomora-mist text-[0.65rem] font-bold text-bloomora-violet ring-1 ring-[color:var(--bloomora-border)]"
+                  onClick={() => timer.skip()}
+                >
+                  <span className="text-lg" aria-hidden>
+                    ⏭
+                  </span>
+                  Saltar
+                </button>
+              </div>
             </div>
 
-            <div className="mt-2 w-full">
-              <div className="mb-1 flex justify-between text-[0.7rem] font-semibold tabular-nums text-bloomora-violet">
-                <span>
-                  {formatMmSs(timer.elapsedMs / 1000)} de{' '}
-                  {formatMmSs(timer.totalMs / 1000)}
-                </span>
-                <span>
-                  Faltan{' '}
-                  {formatMmSs(
-                    Math.max(0, (timer.totalMs - timer.elapsedMs) / 1000),
+            <div className="flex min-h-0 flex-1 flex-col gap-4 lg:justify-between">
+              <div className="flex flex-col gap-3">
+                <div className="text-center lg:text-left">
+                  <p className="text-lg font-bold text-bloomora-deep">
+                    {timer.currentPhase.label}
+                  </p>
+                  {timer.currentPhase.intervalo > 0 ? (
+                    <p className="mt-1 text-sm font-semibold text-bloomora-violet">
+                      Intervalo {timer.currentPhase.intervalo} de{' '}
+                      {timer.active?.intervalos ?? '—'} · Serie{' '}
+                      {timer.currentPhase.serie} de{' '}
+                      {timer.active?.series ?? '—'}
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-sm font-semibold text-bloomora-violet">
+                      {timer.currentPhase.kind === 'preparacion'
+                        ? 'Prepárate'
+                        : timer.currentPhase.kind === 'descanso_series'
+                          ? `Entre serie ${timer.currentPhase.serie} y ${(timer.currentPhase.serie || 0) + 1}`
+                          : 'Enfriamiento'}
+                    </p>
                   )}
-                </span>
+                </div>
+
+                {upcomingPhases.some((p) => p.kind !== 'fin') ? (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-xs font-bold uppercase tracking-wide text-bloomora-violet">
+                      Siguiente
+                    </p>
+                    <ul className="flex flex-col gap-2">
+                      {upcomingPhases
+                        .filter((p) => p.kind !== 'fin')
+                        .map((phase, i) => {
+                          const nextTone = phaseTone(phase.kind)
+                          return (
+                            <li
+                              key={`${phase.kind}-${phase.serie}-${phase.intervalo}-${i}`}
+                              className="flex items-center gap-2.5 text-sm font-semibold text-bloomora-deep"
+                            >
+                              <span
+                                className="size-2.5 shrink-0 rounded-full"
+                                style={{ backgroundColor: nextTone.accent }}
+                                aria-hidden
+                              />
+                              <span className="min-w-0 flex-1 truncate">
+                                {phase.label}
+                              </span>
+                              <span className="tabular-nums text-bloomora-violet">
+                                {formatMmSs(phase.durationSec)}
+                              </span>
+                            </li>
+                          )
+                        })}
+                    </ul>
+                  </div>
+                ) : null}
               </div>
-              <div
-                className="h-2 overflow-hidden rounded-full bg-[color:var(--bloomora-surface-2)]"
-                role="progressbar"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={Math.round(timer.overallProgress * 100)}
-                aria-label="Progreso total del Tabata"
-              >
+
+              <div className="mt-2 w-full lg:mt-0">
+                <div className="mb-2 flex justify-between gap-3 text-[0.7rem] font-semibold tabular-nums text-bloomora-violet">
+                  <span>
+                    {formatMmSs(timer.elapsedMs / 1000)} de{' '}
+                    {formatMmSs(timer.totalMs / 1000)}
+                  </span>
+                  <span>
+                    Faltan{' '}
+                    {formatMmSs(
+                      Math.max(0, (timer.totalMs - timer.elapsedMs) / 1000),
+                    )}
+                  </span>
+                </div>
                 <div
-                  className={cn('h-full rounded-full', tone.bar)}
-                  style={{ width: `${timer.overallProgress * 100}%` }}
-                />
+                  className="h-2 overflow-hidden rounded-full bg-[color:var(--bloomora-surface-2)]"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.round(timer.overallProgress * 100)}
+                  aria-label="Progreso total del Tabata"
+                >
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${timer.overallProgress * 100}%`,
+                      backgroundColor: tone.accent,
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>

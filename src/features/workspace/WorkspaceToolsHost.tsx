@@ -320,7 +320,7 @@ export function WorkspaceToolsHost() {
           }}
           onClose={() => void closeTabata()}
         >
-          <div className="mx-auto flex h-full min-h-0 w-[90%] max-w-lg flex-col min-[600px]:w-full">
+          <div className="mx-auto flex h-full min-h-0 w-[90%] flex-col lg:w-[90vw] lg:min-w-[80vw]">
             <TabataPanel timer={tabata} embedded />
           </div>
         </ToolFrame>

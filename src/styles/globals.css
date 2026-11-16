@@ -87,6 +87,11 @@
     --bloomora-toast-bg: #ffffff;
     --bloomora-toast-fg: var(--color-bloomora-text);
 
+    --tabata-phase-prep: #b8a6f0;
+    --tabata-phase-work: #f080a0;
+    --tabata-phase-rest: #8b7bd8;
+    --tabata-phase-set-rest: #6fa98a;
+    --tabata-phase-block-rest: #4a9bb8;
 
     /* Mismo criterio que la pantalla de bienvenida — reutilizar en toda la app */
     --bloomora-page-padding-inline: clamp(1rem, 1.35rem + 5.5vw, 5.75rem);
@@ -587,6 +592,11 @@
 
   html[data-bloomora-mode='dark'] {
     color-scheme: dark;
+    --tabata-phase-prep: #c3b8fa;
+    --tabata-phase-work: #f4a6c2;
+    --tabata-phase-rest: #b9aef5;
+    --tabata-phase-set-rest: #7ccb9f;
+    --tabata-phase-block-rest: #6fd3c3;
   }
 
   /* Wordmark: rosa en temas claros; blanco sólido en oscuro (gana a utilidades Tailwind). */
