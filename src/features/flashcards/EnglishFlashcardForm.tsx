@@ -1,4 +1,4 @@
-import { type FormEvent, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useBloomoraToast } from "@/contexts/BloomoraToastContext";
 import { uploadFlashcardImage } from "@/services/supabase/flashcardImageUpload";
@@ -50,6 +50,7 @@ export function EnglishFlashcardForm({
 }: EnglishFlashcardFormProps) {
   const { showToast } = useBloomoraToast();
   const fileRef = useRef<HTMLInputElement>(null);
+  const previewUrlRef = useRef<string | null>(null);
   const [form, setForm] = useState<FlashcardFormState>(() =>
     editing ? flashcardToFormState(editing) : emptyFlashcardFormState(),
   );
@@ -64,6 +65,13 @@ export function EnglishFlashcardForm({
     hasRealFlashcardImage(form.imageUrl)
   );
 
+  const revokePreview = () => {
+    if (previewUrlRef.current?.startsWith("blob:")) {
+      URL.revokeObjectURL(previewUrlRef.current);
+    }
+    previewUrlRef.current = null;
+  };
+
   const handleFile = async (file: File | undefined) => {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
@@ -77,7 +85,9 @@ export function EnglishFlashcardForm({
         cedula,
         file,
       );
+      revokePreview();
       const preview = URL.createObjectURL(compressed);
+      previewUrlRef.current = preview;
       set({ imageUrl: url, imagePreview: preview });
     } catch {
       showToast("No se pudo subir la imagen. Revisa la conexión o el bucket.");
@@ -87,9 +97,12 @@ export function EnglishFlashcardForm({
   };
 
   const clearImage = () => {
+    revokePreview();
     set({ imageUrl: "", imagePreview: null });
     if (fileRef.current) fileRef.current.value = "";
   };
+
+  useEffect(() => () => revokePreview(), []);
 
   const isVerb = isVerbsCategory(form.category);
   const isGrammar = isGrammarCategory(form.category);

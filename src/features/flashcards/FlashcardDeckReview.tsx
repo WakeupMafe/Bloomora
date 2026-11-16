@@ -9,6 +9,8 @@ import {
 import { useFlashcardErrorMarks } from "@/features/flashcards/flashcardErrorMarks";
 import type { EnglishFlashcard } from "@/types/englishFlashcard";
 import { cn } from "@/utils/cn";
+import { hasRealFlashcardImage } from "@/features/flashcards/flashcardQuickMode";
+import { optimizeImageUrl } from "@/utils/imageUrl";
 
 const STACK_LAYERS_MAX = 2;
 
@@ -112,6 +114,22 @@ export function FlashcardDeckReview({
       document.body.style.overflow = prev;
     };
   }, []);
+
+  useEffect(() => {
+    if (showSummary) return;
+    const nextCards = [sessionCards[index + 1], sessionCards[index + 2]];
+    const preloaded: HTMLImageElement[] = [];
+    for (const next of nextCards) {
+      if (!next || !hasRealFlashcardImage(next.imageUrl)) continue;
+      const img = new Image();
+      img.decoding = "async";
+      img.src = optimizeImageUrl(next.imageUrl, "deck");
+      preloaded.push(img);
+    }
+    return () => {
+      for (const img of preloaded) img.src = "";
+    };
+  }, [index, sessionCards, showSummary]);
 
   if (!showSummary && !card) return null;
 

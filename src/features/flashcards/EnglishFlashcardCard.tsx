@@ -75,7 +75,7 @@ export const EnglishFlashcardCard = memo(function EnglishFlashcardCard({
     <article className="flex flex-col rounded-[1.35rem] bg-white shadow-[0_4px_24px_-4px_rgba(91,74,140,0.12)] ring-1 ring-bloomora-line/15 transition hover:shadow-[0_8px_32px_-6px_rgba(91,74,140,0.16)]">
       <FlashcardImageFrame
         src={card.imageUrl}
-        size="card"
+        size="list"
         variant="card"
         className="shrink-0"
         overlay={

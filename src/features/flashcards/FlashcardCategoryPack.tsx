@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useEffect, useState } from "react";
 import { BloomoraImage } from "@/components/ui/BloomoraImage";
 import { EnglishFlashcardCard } from "@/features/flashcards/EnglishFlashcardCard";
 import { getCategoryTheme } from "@/features/flashcards/flashcardCategoryTheme";
@@ -11,6 +11,7 @@ import type { EnglishFlashcard } from "@/types/englishFlashcard";
 import { cn } from "@/utils/cn";
 
 const PREVIEW_IMAGES_MAX = 2;
+const VISIBLE_CARDS_STEP = 12;
 
 type FlashcardCategoryPackProps = {
   pack: CategoryPack;
@@ -44,6 +45,15 @@ export const FlashcardCategoryPack = memo(function FlashcardCategoryPack({
     .slice(0, 4)
     .map((c) => primaryEnglishDisplay(c.englishWord, c.category))
     .join(", ");
+
+  const [visibleCount, setVisibleCount] = useState(VISIBLE_CARDS_STEP);
+
+  useEffect(() => {
+    if (!expanded) setVisibleCount(VISIBLE_CARDS_STEP);
+  }, [expanded, pack.key]);
+
+  const visibleCards = pack.cards.slice(0, visibleCount);
+  const hiddenCount = Math.max(0, pack.cards.length - visibleCount);
 
   return (
     <li className="min-w-0 list-none">
@@ -137,7 +147,7 @@ export const FlashcardCategoryPack = memo(function FlashcardCategoryPack({
         {expanded ? (
           <div className="border-t border-bloomora-line/25 bg-[#faf8ff]/50 px-4 pb-5 pt-4 sm:px-5">
             <ul className="flashcard-pack-grid grid list-none items-start gap-6 p-0 lg:grid-cols-2">
-              {pack.cards.map((card) => (
+              {visibleCards.map((card) => (
                 <li
                   key={card.id}
                   className="flashcard-pack-grid__item min-w-0 w-full"
@@ -152,6 +162,20 @@ export const FlashcardCategoryPack = memo(function FlashcardCategoryPack({
                 </li>
               ))}
             </ul>
+            {hiddenCount > 0 ? (
+              <div className="mt-4 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount((n) => n + VISIBLE_CARDS_STEP)}
+                  className={cn(
+                    "inline-flex items-center rounded-full px-4 py-1.5 text-xs font-bold ring-1 transition hover:brightness-[1.02] active:scale-[0.99]",
+                    theme.footerPillClass,
+                  )}
+                >
+                  Ver más ({hiddenCount} restantes)
+                </button>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </article>
