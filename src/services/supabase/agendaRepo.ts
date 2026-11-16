@@ -210,28 +210,23 @@ export async function updateAgendaTask(
     Pick<AgendaTaskRow, 'title' | 'start_min' | 'end_min' | 'completed' | 'sort_order'>
   >,
 ) {
-  if (patch.title !== undefined || patch.sort_order !== undefined) {
-    const taskPatch: Record<string, unknown> = {}
-    if (patch.title !== undefined) taskPatch.title = patch.title.trim()
-    if (patch.sort_order !== undefined) taskPatch.sort_order = patch.sort_order
-    if (Object.keys(taskPatch).length > 0) {
-      const { error } = await sb.from('tasks').update(taskPatch).eq('id', taskId)
-      if (error) throw error
-    }
+  const taskPatch: Record<string, unknown> = {}
+  if (patch.title !== undefined) taskPatch.title = patch.title.trim()
+  if (patch.sort_order !== undefined) taskPatch.sort_order = patch.sort_order
+  if (patch.completed !== undefined) {
+    taskPatch.status = patch.completed ? 'completed' : 'pending'
+    taskPatch.completed_at = patch.completed ? new Date().toISOString() : null
   }
 
-  if (patch.completed !== undefined) {
-    const { error } = await sb
-      .from('tasks')
-      .update({
-        status: patch.completed ? 'completed' : 'pending',
-        completed_at: patch.completed ? new Date().toISOString() : null,
-      })
-      .eq('id', taskId)
+  const updateTaskRow = async () => {
+    if (Object.keys(taskPatch).length === 0) return
+    const { error } = await sb.from('tasks').update(taskPatch).eq('id', taskId)
     if (error) throw error
   }
 
-  if (patch.start_min !== undefined || patch.end_min !== undefined) {
+  const updateBlock = async () => {
+    if (patch.start_min === undefined && patch.end_min === undefined) return
+
     const { data: blk, error: fErr } = await sb
       .from('task_blocks')
       .select('id, start_at, end_at')
@@ -276,6 +271,13 @@ export async function updateAgendaTask(
       if (error) throw error
     }
   }
+
+  if (patch.start_min !== undefined || patch.end_min !== undefined) {
+    await Promise.all([updateTaskRow(), updateBlock()])
+    return
+  }
+
+  await updateTaskRow()
 }
 
 export async function deleteAgendaTask(sb: SupabaseClient, id: number) {

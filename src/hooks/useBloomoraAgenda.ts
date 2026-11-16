@@ -14,7 +14,6 @@ import {
   type AgendaSubtaskRow,
   type AgendaTaskRow,
 } from '@/services/supabase/agendaRepo'
-import { requireExistingProfileByCedula } from '@/services/supabase/profilesRepo'
 import { requireSupabase } from '@/services/supabase/typedClient'
 
 function rowToAgendaTask(r: AgendaTaskRow, subtasks: AgendaSubtask[]): AgendaTask {
@@ -34,7 +33,6 @@ export function useBloomoraAgenda(cedula: string | null, dayKey: string) {
     enabled: !!cedula && !!dayKey,
     queryFn: async (): Promise<AgendaTask[]> => {
       const sb = requireSupabase()
-      await requireExistingProfileByCedula(sb, cedula!)
       const rows = await listAgendaTasks(sb, cedula!, dayKey)
       const taskIds = rows.map((r) => r.id)
       const subRows = await listSubtasksForTaskIds(sb, cedula!, taskIds)
@@ -81,19 +79,20 @@ export function useAgendaMutations(cedula: string | null, dayKey: string) {
         completed: vars.completed,
       })
       if (vars.completed && cedula) {
-        await markLinkedGoalsDoneForDay(sb, {
+        void markLinkedGoalsDoneForDay(sb, {
           userCedula: cedula,
           taskId,
           dayKey,
+        }).finally(() => {
+          void qc.invalidateQueries({ queryKey: ['goals', cedula] })
         })
       }
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.previous) qc.setQueryData(agendaQueryKey, ctx.previous)
     },
-    onSuccess: () => {
-      invalidate()
-      void qc.invalidateQueries({ queryKey: ['goals', cedula] })
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: agendaQueryKey })
     },
   })
 
@@ -180,7 +179,9 @@ export function useAgendaMutations(cedula: string | null, dayKey: string) {
     onError: (_err, _vars, ctx) => {
       if (ctx?.previous) qc.setQueryData(agendaQueryKey, ctx.previous)
     },
-    onSuccess: invalidate,
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: agendaQueryKey })
+    },
   })
 
   const removeTask = useMutation({
@@ -202,19 +203,70 @@ export function useAgendaMutations(cedula: string | null, dayKey: string) {
   })
 
   const addSubtask = useMutation({
+    onMutate: async (vars: { taskId: string; title: string }) => {
+      await qc.cancelQueries({ queryKey: agendaQueryKey })
+      const previous = qc.getQueryData<AgendaTask[]>(agendaQueryKey)
+      const tempId = `temp-${Date.now()}`
+      qc.setQueryData<AgendaTask[]>(agendaQueryKey, (curr = []) =>
+        curr.map((task) =>
+          task.id === vars.taskId
+            ? {
+                ...task,
+                subtasks: [
+                  ...task.subtasks,
+                  { id: tempId, title: vars.title, completed: false },
+                ],
+              }
+            : task,
+        ),
+      )
+      return { previous, tempId }
+    },
     mutationFn: async (vars: { taskId: string; title: string }) => {
       if (!cedula) throw new Error('Sin sesión')
-      await insertAgendaSubtask(
+      return insertAgendaSubtask(
         requireSupabase(),
         cedula,
         Number(vars.taskId),
         vars.title,
       )
     },
-    onSuccess: invalidate,
+    onSuccess: (id, _vars, ctx) => {
+      if (!ctx?.tempId) return
+      const realId = String(id)
+      qc.setQueryData<AgendaTask[]>(agendaQueryKey, (curr = []) =>
+        curr.map((task) => ({
+          ...task,
+          subtasks: task.subtasks.map((sub) =>
+            sub.id === ctx.tempId ? { ...sub, id: realId } : sub,
+          ),
+        })),
+      )
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(agendaQueryKey, ctx.previous)
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: agendaQueryKey })
+    },
   })
 
   const toggleSubtask = useMutation({
+    onMutate: async (vars: { subtaskId: string; completed: boolean }) => {
+      await qc.cancelQueries({ queryKey: agendaQueryKey })
+      const previous = qc.getQueryData<AgendaTask[]>(agendaQueryKey)
+      qc.setQueryData<AgendaTask[]>(agendaQueryKey, (curr = []) =>
+        curr.map((task) => ({
+          ...task,
+          subtasks: task.subtasks.map((sub) =>
+            sub.id === vars.subtaskId
+              ? { ...sub, completed: vars.completed }
+              : sub,
+          ),
+        })),
+      )
+      return { previous }
+    },
     mutationFn: async (vars: { subtaskId: string; completed: boolean }) => {
       if (!cedula) throw new Error('Sin sesión')
       await setAgendaSubtaskCompleted(
@@ -224,18 +276,52 @@ export function useAgendaMutations(cedula: string | null, dayKey: string) {
         vars.completed,
       )
     },
-    onSuccess: invalidate,
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(agendaQueryKey, ctx.previous)
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: agendaQueryKey })
+    },
   })
 
   const removeSubtask = useMutation({
+    onMutate: async (vars: { subtaskId: string }) => {
+      await qc.cancelQueries({ queryKey: agendaQueryKey })
+      const previous = qc.getQueryData<AgendaTask[]>(agendaQueryKey)
+      qc.setQueryData<AgendaTask[]>(agendaQueryKey, (curr = []) =>
+        curr.map((task) => ({
+          ...task,
+          subtasks: task.subtasks.filter((sub) => sub.id !== vars.subtaskId),
+        })),
+      )
+      return { previous }
+    },
     mutationFn: async (vars: { subtaskId: string }) => {
       if (!cedula) throw new Error('Sin sesión')
       await deleteAgendaSubtask(requireSupabase(), cedula, Number(vars.subtaskId))
     },
-    onSuccess: invalidate,
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(agendaQueryKey, ctx.previous)
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: agendaQueryKey })
+    },
   })
 
   const renameSubtask = useMutation({
+    onMutate: async (vars: { subtaskId: string; title: string }) => {
+      await qc.cancelQueries({ queryKey: agendaQueryKey })
+      const previous = qc.getQueryData<AgendaTask[]>(agendaQueryKey)
+      qc.setQueryData<AgendaTask[]>(agendaQueryKey, (curr = []) =>
+        curr.map((task) => ({
+          ...task,
+          subtasks: task.subtasks.map((sub) =>
+            sub.id === vars.subtaskId ? { ...sub, title: vars.title } : sub,
+          ),
+        })),
+      )
+      return { previous }
+    },
     mutationFn: async (vars: { subtaskId: string; title: string }) => {
       if (!cedula) throw new Error('Sin sesión')
       await updateAgendaSubtaskTitle(
@@ -245,7 +331,12 @@ export function useAgendaMutations(cedula: string | null, dayKey: string) {
         vars.title,
       )
     },
-    onSuccess: invalidate,
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(agendaQueryKey, ctx.previous)
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: agendaQueryKey })
+    },
   })
 
   return {
