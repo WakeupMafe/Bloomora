@@ -5,20 +5,6 @@ import {
 } from '@/features/goals/goalTrackerUtils'
 import type { GoalDbRow } from '@/services/supabase/goalsRepo'
 
-function goalPercent(row: GoalDbRow): number {
-  if (
-    row.percent_display != null &&
-    !Number.isNaN(Number(row.percent_display))
-  ) {
-    return Math.round(Number(row.percent_display))
-  }
-  const t = row.target_value != null ? Number(row.target_value) : null
-  if (t != null && t > 0) {
-    return Math.round((Number(row.current_value) / t) * 100)
-  }
-  return 0
-}
-
 function uiVariant(row: GoalDbRow): MockGoalRow['variant'] {
   const v = row.variant as MockGoalRow['variant'] | undefined
   if (v === 'bar' || v === 'days' || v === 'pages') return v
