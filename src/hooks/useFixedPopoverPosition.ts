@@ -22,6 +22,7 @@ export function useFixedPopoverPosition(
   triggerRef: RefObject<HTMLElement | null>,
   panelWidth: number,
   panelHeightEstimate: number,
+  bottomInset = 0,
 ): FixedPopoverCoords | null {
   const [coords, setCoords] = useState<FixedPopoverCoords | null>(null)
 
@@ -38,7 +39,7 @@ export function useFixedPopoverPosition(
     if (left < MARGIN) left = MARGIN
     if (left + panelWidth > vw - MARGIN) left = vw - panelWidth - MARGIN
 
-    if (top + panelHeightEstimate > vh - MARGIN) {
+    if (top + panelHeightEstimate > vh - bottomInset - MARGIN) {
       top = r.top - panelHeightEstimate - MARGIN
     }
     if (top < MARGIN) top = MARGIN
@@ -51,7 +52,7 @@ export function useFixedPopoverPosition(
     requestAnimationFrame(() => {
       setCoords(next)
     })
-  }, [triggerRef, panelWidth, panelHeightEstimate])
+  }, [triggerRef, panelWidth, panelHeightEstimate, bottomInset])
 
   useLayoutEffect(() => {
     if (!open) return

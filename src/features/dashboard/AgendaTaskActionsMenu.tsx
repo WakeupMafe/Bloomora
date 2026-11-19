@@ -5,8 +5,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { usePopoverDismiss } from '@/hooks/usePopoverDismiss'
 import { cn } from '@/utils/cn'
 
-const MENU_WIDTH = 200
-const MENU_HEIGHT_EST = 148
+const MENU_WIDTH = 192
 /** Por encima del selector de color del tracker (10050) */
 const Z_MENU = 10_060
 const Z_BACKDROP_MOBILE = 10_055
@@ -69,12 +68,16 @@ export function AgendaTaskActionsMenu({
   const close = useCallback(() => onClose(), [onClose])
   usePopoverDismiss(open, triggerRef, menuRef, close)
 
+  const itemCount = [onEdit, onOpenBlockCountdown, onDelete].filter(Boolean).length
+  const menuHeight = 12 + itemCount * 42
+
   const isNarrow = useMediaQuery('(max-width: 639px)')
   const coords = useFixedPopoverPosition(
-    open && !isNarrow,
+    open,
     triggerRef,
     MENU_WIDTH,
-    MENU_HEIGHT_EST,
+    menuHeight,
+    isNarrow ? 72 + 8 : 0,
   )
 
   const runEdit = () => {
@@ -100,7 +103,7 @@ export function AgendaTaskActionsMenu({
           <button
             type="button"
             data-backdrop
-            className="fixed inset-0 border-0 bg-bloomora-deep/15 p-0 transition-[background-color] duration-200 ease-out hover:bg-bloomora-deep/22 active:bg-bloomora-deep/28"
+            className="fixed inset-0 border-0 bg-transparent p-0"
             style={{ zIndex: Z_BACKDROP_MOBILE }}
             aria-label="Cerrar menú"
             onClick={close}
@@ -113,38 +116,24 @@ export function AgendaTaskActionsMenu({
           role="menu"
           aria-labelledby={triggerId}
           className={cn(
-            'min-w-[11.5rem] overflow-hidden rounded-xl bg-bloomora-blush/[0.98] py-1 shadow-[0_14px_40px_rgba(91,74,140,0.18)] ring-1 ring-[color:var(--bloomora-border)] backdrop-blur-sm',
-            isNarrow
-              ? 'fixed rounded-[18px] p-1'
-              : 'fixed rounded-xl p-1',
+            'fixed min-w-[180px] overflow-hidden rounded-xl bg-bloomora-blush/[0.98] p-1 shadow-[0_14px_40px_rgba(91,74,140,0.18)] ring-1 ring-[color:var(--bloomora-border)] backdrop-blur-sm',
           )}
           style={
-            isNarrow
+            coords
               ? {
+                  top: coords.top,
+                  left: coords.left,
+                  width: coords.width,
+                  zIndex: Z_MENU,
+                }
+              : {
                   position: 'fixed',
                   zIndex: Z_MENU,
-                  left: 'max(12px, env(safe-area-inset-left))',
-                  right: 'max(12px, env(safe-area-inset-right))',
-                  bottom: 'max(12px, env(safe-area-inset-bottom))',
-                  width: 'auto',
-                  maxWidth: 'min(100vw - 24px, 16rem)',
+                  top: 10,
+                  left: 10,
+                  width: MENU_WIDTH,
+                  visibility: 'hidden' as const,
                 }
-              : coords
-                ? {
-                    position: 'fixed',
-                    zIndex: Z_MENU,
-                    top: coords.top,
-                    left: coords.left,
-                    width: coords.width,
-                  }
-                : {
-                    position: 'fixed',
-                    zIndex: Z_MENU,
-                    top: 10,
-                    left: 10,
-                    width: MENU_WIDTH,
-                    visibility: 'hidden' as const,
-                  }
           }
         >
           {onEdit ? (
