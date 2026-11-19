@@ -559,7 +559,7 @@ export function AgendaCard({ className }: AgendaCardProps) {
         ) : null}
 
         {!isLoading && sortedTasks.length > 0 ? (
-          <div className="min-h-0 overflow-hidden rounded-xl ring-1 ring-[color:var(--bloomora-border)]">
+          <div className="shrink-0 overflow-hidden rounded-xl border border-[color:var(--bloomora-border)]">
             <ul className="divide-y divide-bloomora-line/30">
               {sortedTasks.map((task) => (
                 <li key={task.id} className="flex flex-col">
