@@ -17,7 +17,9 @@ import {
   profileFirstName,
 } from '@/lib/profileAvatarSrc'
 import { mockProfileFirstName } from '@/data/dashboardMock'
+import { openInstallFlow } from '@/features/pwa/InstallBloomoraPrompt'
 import { usePopoverDismiss } from '@/hooks/usePopoverDismiss'
+import { usePwaInstall } from '@/hooks/usePwaInstall'
 import { cn } from '@/utils/cn'
 
 const NAV_ITEMS = [
@@ -94,6 +96,7 @@ export function DashboardShellNav() {
   )
   const avatarUrl = profileAvatarSrc(profile ?? undefined)
 
+  const { isStandalone } = usePwaInstall()
   const [menuOpen, setMenuOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -205,6 +208,19 @@ export function DashboardShellNav() {
                 >
                   Editar perfil
                 </Link>
+                {!isStandalone ? (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="block w-full px-3 py-2.5 text-left text-sm font-medium text-bloomora-deep transition hover:bg-bloomora-mist/90"
+                    onClick={() => {
+                      setMenuOpen(false)
+                      openInstallFlow()
+                    }}
+                  >
+                    Instalar Bloomora
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   role="menuitem"

@@ -6,10 +6,13 @@ import {
 } from '@/features/tabata/tabataPlan'
 import type { Tabata, TabataPhase } from '@/features/tabata/tabataTypes'
 import {
+  cancelTabataSpeech,
   playCountdownBeep,
   playPhaseChangeBeep,
+  primeTabataSpeech,
   releaseTabataWakeLock,
   requestTabataWakeLock,
+  speakTabata,
   unlockTabataAudio,
   vibrateTabata,
 } from '@/features/tabata/tabataSounds'
@@ -20,6 +23,56 @@ export type TabataTimerController = ReturnType<typeof useTabataTimer>
 
 const TICK_MS = 250
 const MUTE_KEY = 'bloomora:tabata-muted'
+const COUNTDOWN_BEEP_FROM_SEC = 10
+const VOICE_ANNOUNCE_AT_SEC = 15
+
+function spokenDuration(seconds: number): string {
+  const n = Math.max(0, Math.round(seconds))
+  if (n < 60) return `${n} segundos`
+  const minutes = Math.floor(n / 60)
+  const rest = n % 60
+  const minuteLabel = minutes === 1 ? '1 minuto' : `${minutes} minutos`
+  return rest > 0 ? `${minuteLabel} y ${rest} segundos` : minuteLabel
+}
+
+function buildNextPhaseAnnouncement(
+  next: TabataPhase | null,
+  short: boolean,
+): string {
+  if (!next || next.kind === 'fin') {
+    return short ? 'Ya casi terminas' : 'Último tramo, ya casi terminas'
+  }
+  const dur = spokenDuration(next.durationSec)
+  if (short) {
+    switch (next.kind) {
+      case 'trabajo':
+        return `Luego: trabajo, ${dur}`
+      case 'descanso':
+        return `Luego: descanso, ${dur}`
+      case 'descanso_series':
+        return `Luego: descanso entre series, ${dur}`
+      case 'enfriamiento':
+        return `Luego: enfriamiento, ${dur}`
+      default:
+        return `Luego: preparación, ${dur}`
+    }
+  }
+  switch (next.kind) {
+    case 'trabajo':
+      if (next.intervalo === 1 && next.serie > 1) {
+        return `Tu próxima sesión es la serie ${next.serie}, de trabajo, de ${dur}`
+      }
+      return `Tu próxima sesión es de trabajo, de ${dur}`
+    case 'descanso':
+      return `Tu próxima sesión es de descanso, de ${dur}`
+    case 'descanso_series':
+      return `Tu próxima sesión es descanso entre series, de ${dur}`
+    case 'enfriamiento':
+      return `Tu próxima sesión es de enfriamiento, de ${dur}`
+    default:
+      return `Tu próxima sesión es de preparación, de ${dur}`
+  }
+}
 
 export function useTabataTimer() {
   const [active, setActive] = useState<Tabata | null>(null)
@@ -44,6 +97,7 @@ export function useTabataTimer() {
   const remainingMsRef = useRef(remainingMs)
   const mutedRef = useRef(muted)
   const lastBeepSecRef = useRef<number | null>(null)
+  const lastAnnouncedPhaseRef = useRef<number | null>(null)
   const runStartedAtRef = useRef<number | null>(null)
   const pausedAccumulatedRef = useRef(0)
   const pauseStartedAtRef = useRef<number | null>(null)
@@ -59,6 +113,7 @@ export function useTabataTimer() {
 
   const setMuted = useCallback((next: boolean) => {
     setMutedState(next)
+    if (next) cancelTabataSpeech()
     try {
       localStorage.setItem(MUTE_KEY, next ? '1' : '0')
     } catch {
@@ -92,6 +147,7 @@ export function useTabataTimer() {
     }
 
     if (result.finished) {
+      cancelTabataSpeech()
       setPhaseIndex(result.phaseIndex)
       setPhaseEndsAt(null)
       setRemainingMs(0)
@@ -124,7 +180,15 @@ export function useTabataTimer() {
     }
 
     const secLeft = Math.ceil(result.remainingMs / 1000)
-    if (secLeft >= 1 && secLeft <= 3 && lastBeepSecRef.current !== secLeft) {
+    const idx = result.phaseIndex
+    const phase = phasesRef.current[idx]
+    if (phase && lastAnnouncedPhaseRef.current !== idx && secLeft >= 1 && secLeft <= VOICE_ANNOUNCE_AT_SEC) {
+      lastAnnouncedPhaseRef.current = idx
+      const next = phasesRef.current[idx + 1] ?? null
+      // fases ≤10 s: la voz sale al inicio y en versión corta para no pisar los pitidos
+      speakTabata(buildNextPhaseAnnouncement(next, phase.durationSec <= COUNTDOWN_BEEP_FROM_SEC), mutedRef.current)
+    }
+    if (secLeft >= 1 && secLeft <= COUNTDOWN_BEEP_FROM_SEC && lastBeepSecRef.current !== secLeft) {
       lastBeepSecRef.current = secLeft
       playCountdownBeep(mutedRef.current)
       vibrateTabata(20)
@@ -162,11 +226,13 @@ export function useTabataTimer() {
 
   useEffect(() => {
     return () => {
+      cancelTabataSpeech()
       void releaseTabataWakeLock()
     }
   }, [])
 
   const start = useCallback(async (tabata: Tabata) => {
+    primeTabataSpeech()
     await unlockTabataAudio()
     const plan = buildPhasePlan(tabata)
     const firstWorkable = plan.findIndex(
@@ -188,12 +254,14 @@ export function useTabataTimer() {
     pausedAccumulatedRef.current = 0
     pauseStartedAtRef.current = null
     lastBeepSecRef.current = null
+    lastAnnouncedPhaseRef.current = null
     await requestTabataWakeLock()
     playPhaseChangeBeep(mutedRef.current)
   }, [])
 
   const pause = useCallback(() => {
     if (statusRef.current !== 'running' || phaseEndsAtRef.current == null) return
+    cancelTabataSpeech()
     const left = Math.max(0, phaseEndsAtRef.current - Date.now())
     setRemainingMs(left)
     setPhaseEndsAt(null)
@@ -204,6 +272,7 @@ export function useTabataTimer() {
 
   const resume = useCallback(async () => {
     if (statusRef.current !== 'paused') return
+    primeTabataSpeech()
     await unlockTabataAudio()
     const now = Date.now()
     if (pauseStartedAtRef.current != null) {
@@ -218,12 +287,14 @@ export function useTabataTimer() {
 
   const skip = useCallback(() => {
     if (statusRef.current !== 'running' && statusRef.current !== 'paused') return
+    cancelTabataSpeech()
     const plan = phasesRef.current
     let idx = phaseIndexRef.current + 1
     while (idx < plan.length && plan[idx].durationSec <= 0 && plan[idx].kind !== 'fin') {
       idx += 1
     }
     if (idx >= plan.length || plan[idx].kind === 'fin') {
+      cancelTabataSpeech()
       setPhaseIndex(plan.length - 1)
       setPhaseEndsAt(null)
       setRemainingMs(0)
@@ -237,6 +308,7 @@ export function useTabataTimer() {
     const dur = next.durationSec * 1000
     setPhaseIndex(idx)
     lastBeepSecRef.current = null
+    lastAnnouncedPhaseRef.current = null
     playPhaseChangeBeep(mutedRef.current)
     vibrateTabata(30)
     if (statusRef.current === 'paused') {
@@ -250,6 +322,7 @@ export function useTabataTimer() {
   }, [totalMs])
 
   const stop = useCallback(() => {
+    cancelTabataSpeech()
     setStatus('idle')
     setActive(null)
     setPhases([])
@@ -261,6 +334,7 @@ export function useTabataTimer() {
     pausedAccumulatedRef.current = 0
     pauseStartedAtRef.current = null
     lastBeepSecRef.current = null
+    lastAnnouncedPhaseRef.current = null
     void releaseTabataWakeLock()
   }, [])
 

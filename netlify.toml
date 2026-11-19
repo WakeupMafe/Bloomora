@@ -8,6 +8,13 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
+# Sin esto Netlify sirve el manifest como application/octet-stream.
+[[headers]]
+  for = "/site.webmanifest"
+  [headers.values]
+    Content-Type = "application/manifest+json"
+    Cache-Control = "public, max-age=0, must-revalidate"
+
 # Misma regla que public/_redirects: recargas en /app/..., /entrar, etc.
 # (assets reales tienen archivo en dist; los que no existen caen al SPA — la app
 # se recupera con reloadOnceForStaleChunk en main/router.)

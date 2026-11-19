@@ -45,7 +45,7 @@ function beep(freq: number, durationMs: number, gain = 0.45) {
   osc.stop(t + dur + 0.03)
 }
 
-/** Beep corto en cuenta regresiva 3-2-1. */
+/** Beep corto en cuenta regresiva (últimos 10 s). */
 export function playCountdownBeep(muted: boolean) {
   if (muted) return
   void unlockTabataAudio().then(() => beep(880, 110, 0.5))
@@ -89,4 +89,48 @@ export async function releaseTabataWakeLock(): Promise<void> {
     /* ignorar */
   }
   wakeLock = null
+}
+
+const ES_VOICE_PREFIXES = ['es-CO', 'es-419', 'es-MX', 'es-US', 'es-ES'] as const
+
+function spanishVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | undefined {
+  for (const prefix of ES_VOICE_PREFIXES) {
+    const match = voices.find((voice) =>
+      voice.lang.toLowerCase().startsWith(prefix.toLowerCase()),
+    )
+    if (match) return match
+  }
+  return voices.find((voice) => voice.lang.toLowerCase().startsWith('es'))
+}
+
+/** Desbloquea speechSynthesis dentro del gesto del usuario (iOS/Android). */
+export function primeTabataSpeech(): void {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return
+  const utterance = new SpeechSynthesisUtterance('')
+  utterance.volume = 0
+  window.speechSynthesis.speak(utterance)
+}
+
+export function speakTabata(text: string, muted: boolean): void {
+  if (muted || typeof window === 'undefined' || !window.speechSynthesis) return
+  const synth = window.speechSynthesis
+  synth.cancel()
+  const utterance = new SpeechSynthesisUtterance(text)
+  utterance.lang = 'es-ES'
+  utterance.rate = 1.05
+  utterance.volume = 1
+  const voices = synth.getVoices()
+  if (voices.length > 0) {
+    const voice = spanishVoice(voices)
+    if (voice) utterance.voice = voice
+  }
+  synth.speak(utterance)
+}
+
+export function cancelTabataSpeech(): void {
+  try {
+    window.speechSynthesis?.cancel()
+  } catch {
+    /* sin soporte */
+  }
 }

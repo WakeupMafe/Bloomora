@@ -3,6 +3,7 @@ import { ListGadgetsProvider } from '@/contexts/ListGadgetsContext'
 import { TaskBlockCountdownProvider } from '@/contexts/TaskBlockCountdownContext'
 import { WorkspaceToolsProvider } from '@/contexts/WorkspaceToolsContext'
 import { AgendaStartSoonHost } from '@/features/dashboard/AgendaStartSoonHost'
+import { InstallBloomoraPrompt } from '@/features/pwa/InstallBloomoraPrompt'
 import { DashboardShellNav } from '@/features/dashboard/DashboardShellNav'
 import { ListGadgetsHost } from '@/features/lists/ListGadgetsHost'
 import { WorkspaceToolsHost } from '@/features/workspace/WorkspaceToolsHost'
@@ -26,6 +27,7 @@ export function AppLayout() {
               <WorkspaceToolsHost />
               <ListGadgetsHost />
               <AgendaStartSoonHost />
+              <InstallBloomoraPrompt />
             </RequirePhone>
           </ListGadgetsProvider>
         </WorkspaceToolsProvider>

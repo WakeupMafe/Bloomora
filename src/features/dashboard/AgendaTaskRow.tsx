@@ -1,32 +1,6 @@
+import { useState } from "react";
+import { AgendaTaskActionsMenu, ClockIcon } from "@/features/dashboard/AgendaTaskActionsMenu";
 import { cn } from "@/utils/cn";
-
-function ClockIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden
-    >
-      <circle
-        cx="12"
-        cy="12"
-        r="9"
-        stroke="currentColor"
-        strokeWidth="1.75"
-      />
-      <path
-        d="M12 7v5l3 2"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 type AgendaTaskRowProps = {
   title: string;
@@ -50,6 +24,9 @@ export function AgendaTaskRow({
   onDelete,
   onOpenBlockCountdown,
 }: AgendaTaskRowProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const hasActions = Boolean(onOpenBlockCountdown || onEdit || onDelete);
+
   return (
     <div
       className={cn(
@@ -89,23 +66,51 @@ export function AgendaTaskRow({
             </svg>
           ) : null}
         </button>
-        <p
-          className={cn(
-            "min-w-0 w-full flex-1 whitespace-normal break-words",
-            "font-semibold leading-snug text-bloomora-deep",
-            "text-[clamp(0.875rem,0.82rem+0.45vw,0.9375rem)]",
-            completed &&
-              "text-bloomora-text-muted line-through decoration-bloomora-lilac/45",
-          )}
-        >
-          {title}
-        </p>
+        <div className="min-w-0 flex-1">
+          <p
+            className={cn(
+              "min-w-0 w-full flex-1 whitespace-normal break-words",
+              "font-semibold leading-snug text-bloomora-deep",
+              "text-[clamp(0.875rem,0.82rem+0.45vw,0.9375rem)]",
+              completed &&
+                "text-bloomora-text-muted line-through decoration-bloomora-lilac/45",
+            )}
+          >
+            {title}
+          </p>
+          <p
+            className={cn(
+              "mt-1 whitespace-nowrap",
+              "min-w-0 text-left text-[clamp(0.6875rem,0.62rem+0.35vw,0.75rem)] font-semibold tabular-nums tracking-tight text-bloomora-violet/90",
+              "md:hidden",
+            )}
+          >
+            {startLabel}
+            <span className="mx-0.5 font-normal text-bloomora-text-muted/80">
+              –
+            </span>
+            {endLabel}
+          </p>
+        </div>
+        {hasActions ? (
+          <div className="-mr-1 -mt-1 shrink-0 md:hidden">
+            <AgendaTaskActionsMenu
+              taskTitle={title}
+              open={menuOpen}
+              onClose={() => setMenuOpen(false)}
+              onTriggerClick={() => setMenuOpen((open) => !open)}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onOpenBlockCountdown={onOpenBlockCountdown}
+            />
+          </div>
+        ) : null}
       </div>
 
       {/* Fila 2 (móvil): hora + acciones · Desktop: alineado a la derecha en la misma fila */}
       <div
         className={cn(
-          "flex min-w-0 items-center justify-between gap-3",
+          "hidden min-w-0 items-center justify-between gap-3 md:flex",
           "pl-10 md:shrink-0 md:justify-end md:gap-3 md:pl-0",
         )}
       >
