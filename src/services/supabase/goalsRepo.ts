@@ -142,6 +142,7 @@ export async function insertGoal(
   userCedula: string,
   fields: {
     title: string
+    description?: string | null
     accent?: string
     variant?: string
     progress_label?: string | null
@@ -187,7 +188,7 @@ export async function insertGoal(
     .insert({
       user_cedula: userCedula,
       title: fields.title.trim(),
-      description: null,
+      description: fields.description ?? null,
       status: 'active',
       goal_type: goalType,
       target_value: targetValue,

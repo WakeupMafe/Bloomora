@@ -20,6 +20,7 @@ export type AgendaTask = {
 export type MockGoalRow = {
   id: string
   title: string
+  description?: string | null
   percent: number
   variant: 'bar' | 'days' | 'pages'
   tipo: 'habito' | 'frecuencia' | 'objetivo' | 'tiempo'

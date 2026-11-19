@@ -80,6 +80,7 @@ export function dbGoalToUi(
   return {
     id: String(row.id),
     title: row.title,
+    description: row.description ?? null,
     percent,
     variant: uiVariant(row),
     tipo,

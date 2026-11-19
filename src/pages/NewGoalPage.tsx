@@ -128,6 +128,7 @@ export function NewGoalPage() {
     insertMut.mutate(
       {
         title: `${icon} ${cleanTitle}`,
+        description: motivation.trim() || null,
         variant,
         accent,
         progress_label,

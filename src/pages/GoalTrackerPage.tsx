@@ -142,9 +142,16 @@ export function GoalTrackerPage() {
     <div className="bloomora-goal-tracker-page app-shell-padding app-content-fluid mx-auto flex min-h-dvh flex-col gap-6 bg-bloomora-snow pb-16">
       <header className="flex items-center gap-3">
         <BackButton parentTo="/app/goals/overview" parentLabel="Metas" />
-        <h1 className="min-w-0 truncate text-lg font-bold text-bloomora-deep sm:text-xl">
-          {goal.title}
-        </h1>
+        <div className="min-w-0">
+          <h1 className="min-w-0 truncate text-lg font-bold text-bloomora-deep sm:text-xl">
+            {goal.title}
+          </h1>
+          {goal.description?.trim() ? (
+            <p className="mt-1 text-xs italic text-bloomora-violet/85">
+              “{goal.description.trim()}”
+            </p>
+          ) : null}
+        </div>
       </header>
 
       {editingTitle ? (

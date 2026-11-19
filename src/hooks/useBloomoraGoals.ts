@@ -133,6 +133,7 @@ export function useInsertGoalMutation(cedula: string | null) {
   return useMutation({
     mutationFn: async (fields: {
       title: string
+      description?: string | null
       accent?: string
       variant?: string
       progress_label?: string | null
