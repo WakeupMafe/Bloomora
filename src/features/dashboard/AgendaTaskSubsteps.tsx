@@ -93,8 +93,8 @@ export function AgendaTaskSubsteps({
   return (
     <div
       className={cn(
-        'border-t border-bloomora-sky-deep/20',
-        'bg-bloomora-sky/40',
+        'mx-3 mb-3 overflow-hidden rounded-xl border border-bloomora-sky-deep/20',
+        'bg-bloomora-sky/40 md:mx-2',
       )}
     >
       <button

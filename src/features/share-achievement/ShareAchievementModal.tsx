@@ -289,8 +289,8 @@ export function ShareAchievementModal({
           />
         ) : (
           <p className="flex h-full items-center justify-center p-4 text-center text-sm text-bloomora-text-muted">
-            Aún no hay un logro para compartir este mes. Marca más días en el
-            tracker.
+            Debes completar mínimo 7 días de meta cumplida para que puedas
+            compartir tu logro. ¡Mantente constante!
           </p>
         )}
       </div>
