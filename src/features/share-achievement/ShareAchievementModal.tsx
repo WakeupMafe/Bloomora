@@ -67,6 +67,7 @@ export function ShareAchievementModal({
   const [style, setStyle] = useState<ShareStyle>('fondo')
   const [customPhoto, setCustomPhoto] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const blobCacheRef = useRef<{ key: string; blob: Blob } | null>(null)
   const [previewMaxW, setPreviewMaxW] = useState(300)
 
   useEffect(() => {
@@ -115,6 +116,25 @@ export function ShareAchievementModal({
     format === 'story' ? EXAMPLE_PHOTO_STORY : EXAMPLE_PHOTO_POST
   const photoUrl =
     style === 'foto' ? customPhoto ?? examplePhoto : null
+  const exportKey = `${kind}|${format}|${style}|${photoUrl ?? ''}`
+
+  useEffect(() => {
+    if (!open || !stats) return
+    let cancelled = false
+    const t = window.setTimeout(async () => {
+      if (!exportRef.current) return
+      try {
+        const blob = await cardElementToPngBlob(exportRef.current, format)
+        if (!cancelled) blobCacheRef.current = { key: exportKey, blob }
+      } catch {
+        /* se intentará al hacer clic */
+      }
+    }, 400)
+    return () => {
+      cancelled = true
+      window.clearTimeout(t)
+    }
+  }, [open, stats, format, exportKey])
 
   const onPickPhoto = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -131,17 +151,30 @@ export function ShareAchievementModal({
     if (!exportRef.current || !stats) return
     setBusy(true)
     try {
-      // Esperar un frame para que el nodo off-screen pinte
-      await new Promise((r) => requestAnimationFrame(() => r(undefined)))
-      const blob = await cardElementToPngBlob(exportRef.current, format)
+      const cached =
+        blobCacheRef.current?.key === exportKey
+          ? blobCacheRef.current.blob
+          : null
+      let blob: Blob
+      if (cached) {
+        blob = cached
+      } else {
+        showToast('Preparando tu imagen, espera un momento…')
+        // Esperar un frame para que el nodo off-screen pinte
+        await new Promise((r) => requestAnimationFrame(() => r(undefined)))
+        blob = await cardElementToPngBlob(exportRef.current!, format)
+        blobCacheRef.current = { key: exportKey, blob }
+      }
       const filename = `bloomora-${slugifyShareName(goal.title)}-${format}.png`
       if (mode === 'download') {
         downloadBlob(blob, filename)
-        showToast('PNG descargado')
+        showToast('¡Listo! Tu imagen se descargó 🌸')
       } else {
         const result = await shareOrDownloadPng(blob, filename)
         showToast(
-          result === 'shared' ? 'Listo para compartir' : 'PNG descargado',
+          result === 'shared'
+            ? 'Listo para compartir'
+            : '¡Listo! Tu imagen se descargó 🌸',
         )
       }
     } catch (err) {
@@ -254,7 +287,7 @@ export function ShareAchievementModal({
           disabled={busy || !stats}
           onClick={() => void runExport('share')}
         >
-          Compartir
+          {busy ? 'Preparando…' : 'Compartir'}
         </Button>
         <Button
           variant="primary"
@@ -262,7 +295,7 @@ export function ShareAchievementModal({
           disabled={busy || !stats}
           onClick={() => void runExport('download')}
         >
-          Descargar PNG
+          {busy ? 'Preparando imagen…' : 'Descargar PNG'}
         </Button>
       </div>
     </div>

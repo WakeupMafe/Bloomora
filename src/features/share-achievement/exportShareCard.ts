@@ -1,22 +1,25 @@
-import { toPng } from 'html-to-image'
+import { toBlob, getFontEmbedCSS } from 'html-to-image'
 import type { ShareFormat } from '@/features/share-achievement/shareAchievementTypes'
 import { SHARE_EXPORT_SIZE } from '@/features/share-achievement/shareAchievementTypes'
+
+let fontCssCache: Promise<string> | null = null
 
 export async function cardElementToPngBlob(
   node: HTMLElement,
   format: ShareFormat,
 ): Promise<Blob> {
   const { width, height } = SHARE_EXPORT_SIZE[format]
-  const dataUrl = await toPng(node, {
+  fontCssCache ??= getFontEmbedCSS(node)
+  const fontEmbedCSS = await fontCssCache
+  const blob = await toBlob(node, {
     width,
     height,
     pixelRatio: 1,
-    cacheBust: true,
-    // Fondos con CSS vars / imágenes externas
-    skipFonts: false,
+    cacheBust: false,
+    fontEmbedCSS,
   })
-  const res = await fetch(dataUrl)
-  return res.blob()
+  if (!blob) throw new Error('png-empty')
+  return blob
 }
 
 export function downloadBlob(blob: Blob, filename: string) {
@@ -28,7 +31,7 @@ export function downloadBlob(blob: Blob, filename: string) {
   document.body.appendChild(a)
   a.click()
   a.remove()
-  URL.revokeObjectURL(url)
+  setTimeout(() => URL.revokeObjectURL(url), 1500)
 }
 
 export async function shareOrDownloadPng(
